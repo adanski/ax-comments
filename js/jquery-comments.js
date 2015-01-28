@@ -11,10 +11,12 @@
             sendText: 'Send',
             likeText: 'Like',
             replyText: 'Reply',
+            youText: 'You',
 
             highlightColor: '#1B7FCC',
             roundProfilePictures: false,
             textareaRows: 2,
+            textareaRowsOnFocus: 2,
             textareaMaxRows: 5,
 
             getComments: function() {},
@@ -50,11 +52,28 @@
             });
         },
 
-        postComment: function() {
-            this.options.postComment();
+        postComment: function(commentJSON) {
+            var success = function() {};
+            var error = function() {};
+
+            commentJSON.fullname = this.options.youText;
+            commentJSON.profile_picture_url = this.options.profilePictureURL;
+
+            var commentEl = this.createCommentElement(commentJSON);
+            this.$el.find('.comment-list').prepend(commentEl);
+
+            this.options.postComment(commentJSON, success, error);
         },
 
         editComment: function() {
+        },
+
+        createCommentJSON: function(content, parent) {
+            var comment = {
+                content: content,
+                parent: parent,
+            }
+            return comment;
         },
 
 
@@ -62,8 +81,25 @@
         // =============
 
         createHTML: function() {
+            var self = this;
+
             // Commenting field
-            this.$el.append(this.createCommentingFieldElement());
+            var mainCommentingField = this.createCommentingFieldElement();
+            this.$el.append(mainCommentingField);
+
+            // Adjust the height of the main commenting field when clicking elsewhere
+            var mainTextarea = mainCommentingField.find('textarea');
+            var mainControlRow = mainCommentingField.find('.control-row');
+            this.$el.bind('click', function(ev) {
+                if(ev.target != mainTextarea[0]) {
+                    self.adjustTextareaHeight(mainTextarea, false);
+                    mainControlRow.hide();
+                }
+            });
+            mainControlRow.hide();
+            mainTextarea.bind('focus', function() {
+                mainControlRow.show();
+            });
 
             // Navigation bar
             this.$el.append(this.createNavigationElement());
@@ -75,7 +111,16 @@
             this.$el.append(commentList);
         },
 
+        createProfilePictureElement: function(src) {
+            var profilePicture = $('<img/>', {
+                src: src,
+                class: 'profile-picture' + (this.options.roundProfilePictures ? ' round' : '')
+            });
+            return profilePicture;
+        },
+
         createCommentingFieldElement: function() {
+            var self = this;
 
             // Commenting field
             var commentingField = $('<div/>', {
@@ -90,58 +135,80 @@
             var textareaWrapper = $('<div/>', {
                 class: 'textarea-wrapper',
             });
+        
+            // Control row
+            var controlRow = $('<div/>', {
+                class: 'control-row',
+            });
+
+            // Textarea
+            var textarea = this.createTextareaElement();
 
             // Send -button
             var sendButton = $('<span/>', {
-                class: 'send',
-                text: this.options.sendText
+                class: 'send highlight-background',
+                text: this.options.sendText,
+            }).bind('click', function(ev) {
+                if(sendButton.hasClass('enabled')) {
+                    var parent = null;
+                    var data = sendButton.parents('.comment').data();
+                    if(data && data.id) parent = data.id;
+
+                    var commentJSON = self.createCommentJSON(textarea.val(), parent);
+                    self.postComment(commentJSON);
+                    textarea.val('');
+                }
+            });
+            //TODO: hide commenting after succesfull reply
+
+            // Enable and disable send button when necessary
+            textarea.bind('input', function() {
+                if(textarea.val().length) {
+                    sendButton.addClass('enabled');
+                } else {
+                    sendButton.removeClass('enabled');
+                }
             });
 
-            textareaWrapper.append(this.createTextareaElement()).append(sendButton);
+            controlRow.append(sendButton);
+            textareaWrapper.append(textarea).append(controlRow);
             commentingField.append(profilePicture).append(textareaWrapper);
             return commentingField;
-        },
-
-        createProfilePictureElement: function(src) {
-            var profilePicture = $('<img/>', {
-                src: src,
-                class: 'profile-picture' + (this.options.roundProfilePictures ? ' round' : '')
-            });
-            return profilePicture;
         },
 
         createTextareaElement: function() {
             var self = this;
 
             // Due to bug with Firefox the placeholder need to be embedded like this
-            var textareaEl = $('<textarea placeholder="'+this.options.textareaPlaceholder+'"/>');
-            var lineHeight = 20;
-            var textareaBaseHeight = 30;
+            var textarea = $('<textarea placeholder="'+this.options.textareaPlaceholder+'"/>');
 
-            var setRows = function(rows) {
-                textareaEl.css('height', textareaBaseHeight + (rows - 1) * lineHeight);
-            }
-
-            // Setting maximum height to the textarea so that it remains unscrollable
-            var adjustHeight = function()  {
-                var verticalPadding = parseInt(textareaEl.css('padding-top'))
-                    + parseInt(textareaEl.css('padding-bottom'));
-
-                var rowCount = self.options.textareaRows;
-                do {
-                    setRows(rowCount);
-                    rowCount++;
-                    var isAreaScrollable = textareaEl[0].scrollHeight > textareaEl.height() + verticalPadding;
-                } while(isAreaScrollable && rowCount <= self.options.textareaMaxRows);
-            }
+            // Adjust the height dynamically
+            textarea.bind('focus input', function() {
+                self.adjustTextareaHeight(textarea, true);
+            });
 
             // Setting the initial height
-            adjustHeight();
+            self.adjustTextareaHeight(textarea, false);
 
-            // Increase the height if neccessary
-            textareaEl.bind('input blur', adjustHeight);
+            return textarea;
+        },
 
-            return textareaEl;
+        adjustTextareaHeight: function(textarea, focus) {
+            var textareaBaseHeight = 2.2;
+            var lineHeight = 1.4;
+
+            var setRows = function(rows) {
+                var height = textareaBaseHeight + (rows - 1) * lineHeight;
+                textarea.css('height', height + 'em');
+            }
+
+            var textarea = $(textarea);
+            var rowCount = focus == true ? this.options.textareaRowsOnFocus : this.options.textareaRows;
+            do {
+                setRows(rowCount);
+                rowCount++;
+                var isAreaScrollable = textarea[0].scrollHeight > textarea.outerHeight();
+            } while(isAreaScrollable && rowCount <= this.options.textareaMaxRows);
         },
 
         createNavigationElement: function() {
@@ -168,6 +235,7 @@
 
             // Comment container element
             var commentEl = $('<li/>', {
+                'data-id': commentJSON.id,
                 class: 'comment'
             });
 
@@ -204,9 +272,15 @@
 
             // Reply
             var reply = this.createReplyElement();
+
+            // Child comments
+            var childComments = $('<ul/>', {
+                class: 'child-comments'
+            });
             
             wrapper.append(content);
-            wrapper.append(like).append(reply);
+            wrapper.append(like).append(reply)
+            wrapper.append(childComments);
             commentEl.append(profilePicture).append(time).append(name).append(wrapper);
             return commentEl;
         },
@@ -220,17 +294,24 @@
             }).bind('click', function(ev) {
 
                 // Case: remove exsiting field
-                var existingEl = $(ev.currentTarget).parents('li.comment').find('.commenting-field');
+                var existingEl = reply.parents('li.comment').find('.commenting-field');
                 if(existingEl.length) {
-                    existingEl.remove();
+                    if(existingEl.is(':visible')) {
+                        existingEl.hide();
+                    } else {
+                        existingEl.show();
+                        existingEl.find('textarea').focus();
+                    }
+                    reply.toggleClass('highlight-font');
 
                 // Case: creating a new reply field
                 } else {
                     var replyField = self.createCommentingFieldElement();
-                    $(ev.currentTarget).after(replyField);
+                    reply.after(replyField);
 
                     var textarea = replyField.find('textarea')
                     textarea.focus();
+                    reply.addClass('highlight-font');
                 }
 
             });
@@ -243,16 +324,22 @@
         // =======
 
         createCssDeclarations: function() {
+
             // Navigation underline
             this.createCss('.comments ul.navigation li.active:after {background: '
-                + this.options.highlightColor 
+                + this.options.highlightColor  + ' !important;',
                 +'}');
 
-            // Send button
-            this.createCss('.comments span.send {background: '
-                + this.options.highlightColor 
+            // Background highlight
+            this.createCss('.comments .highlight-background {background: '
+                + this.options.highlightColor  + ' !important;',
                 +'}');
 
+            // Font highlight
+            this.createCss('.comments .highlight-font {color: '
+                + this.options.highlightColor + ' !important;'
+                + 'font-weight: bold;'
+                +'}');
         },
 
         createCss: function(css) {
@@ -262,11 +349,6 @@
             });
             $('head').append(styleEl);
         },
-
-
-        // Utilities
-        // =========
-
 
     }
 

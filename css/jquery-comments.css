@@ -2,7 +2,7 @@ textarea,
 input,
 select {
   margin: 0;
-  vertical-align: bottom;
+  vertical-align: top;
 }
 
 .comments * {
@@ -14,13 +14,18 @@ select {
 	color: #666;
 }
 
-.comments .profile-picture {
-	float: left;
+.comments ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
 }
 
-.comments .profile-picture.own {
-	width: 50px;
-	height: 50px;
+.comments .profile-picture {
+	float: left;
+	width: 3.6em;
+	height: 3.6em;
+	max-width: 50px;
+	max-height: 50px;	
 }
 
 .comments .profile-picture.round {
@@ -60,36 +65,41 @@ select {
 	border-left-color: rgba(0, 0, 0, 0);
 }
 
-.comments .textarea-wrapper span.send {
-	float: right;
-	cursor: pointer;
-
-	color: #FFF;
-	padding: 3px 10px;
-	font-size: 14px;
-	margin-top: 5px;
-	border: 1px solid rgba(0, 0, 0, 0);
-}
-
 .comments .textarea-wrapper textarea {
+	display: block;
 	width: 100%;
 	resize: none;
 	margin: 0;
+	outline: 0;
 
 	border: 1px solid #CCC;;
-	font-size: 14px;
-	line-height: 20px;
-	padding: 4px 10px;
-	outline: 0;
+	font-size: 1em;
+	line-height: 1.45em;
+	padding: .25em .8em;
 }
 
-.comments .textarea-wrapper textarea:focus {
-	min-height: 50px;
+.comments .textarea-wrapper span.send {
+	float: right;
+
+	color: #FFF;
+	padding: 0 1em;
+	font-size: 1em;
+	line-height: 1.6em;
+	margin-top: .4em;
+	border: 1px solid rgba(0, 0, 0, 0);
+	opacity: .5;
+}
+
+.comments .textarea-wrapper span.send.enabled {
+	opacity: 1;
+	cursor: pointer;
+}
+
+.comments .textarea-wrapper span.send.enabled:hover {
+	opacity: .9;
 }
 
 .comments ul.navigation {
-	list-style: none;
-	padding: 0;
 	clear: both;
 	float: left;
 	width: 100%;
@@ -124,22 +134,12 @@ select {
 	left: 0;
 }
 
-.comments ul.comment-list {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-}
-
 .comments ul.comment-list li.comment {
 	width: 100%;
 	display: inline-block;
 }
 
 .comments ul.comment-list li > .profile-picture {
-	width: 3.5em;
-	height: 3.5em;
-	max-width: 50px;
-	max-height: 50px;
 	margin-right: .5em;
 }
 
@@ -148,7 +148,7 @@ select {
 }
 
 .comments ul.comment-list li.comment:not(:first-child) {
-	border-top: 1px solid #CCC;
+	border-top: 1px solid #DDD;
 }
 
 .comments ul.comment-list li.comment time {
@@ -173,7 +173,7 @@ select {
 }
 
 .comments ul.comment-list li.comment .wrapper > span {
-	font-size: 0.8em;
+	font-size: 0.9em;
 	color: #666;
 	cursor: pointer;
 }
