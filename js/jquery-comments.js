@@ -17,7 +17,7 @@
             replyText: 'Reply',
             youText: 'You',
 
-            viewAllRepliesText: 'View all replies',
+            viewAllRepliesText: 'View all __replyCount__ replies',
             hideRepliesText: 'Hide replies',
 
             highlightColor: '#1B7FCC',
@@ -115,6 +115,7 @@
                 var outerMostParent = directParentEl.parents('.comment');
                 if(outerMostParent.length == 0) {
                     var childCommentsEl = directParentEl.find('.child-comments');
+                    outerMostParent = directParentEl;
                 } else {
                     var childCommentsEl = outerMostParent.find('.child-comments');
                 }
@@ -129,20 +130,27 @@
 
                 // Append button to toggle all replies if necessary
                 if(hiddenReplies.length && !childCommentsEl.find('li.toggle-all').length) {
+
+                    var getViewAllReplysText = function() {
+                        var text = self.options.viewAllRepliesText;
+                        var replyCount = self.commentTree[outerMostParent.data().id].childs.length;
+                        return text.replace('__replyCount__', replyCount);
+                    }
+
                     var toggleAllContainer = $('<li/>', {
                         class: 'toggle-all highlight-font',
                     });
                     var toggleAllButton = $('<span/>', {
-                        text: self.options.viewAllRepliesText,
+                        text: getViewAllReplysText(),
                     });
                     var caret = $('<span/>', {
-                        class: 'caret highlight-border',
+                        class: 'caret',
                     });
 
                     toggleAllContainer.bind('click', function(){
                         // Toggle text in toggle button
                         if(toggleAllButton.text() == self.options.hideRepliesText) {
-                            toggleAllButton.text(self.options.viewAllRepliesText);
+                            toggleAllButton.text(getViewAllReplysText());
                         } else {
                             toggleAllButton.text(self.options.hideRepliesText);
                         }
@@ -529,11 +537,6 @@
             this.createCss('.comments .highlight-font {color: '
                 + this.options.highlightColor + ' !important;'
                 + 'font-weight: bold;'
-                +'}');
-
-            // Font highlight
-            this.createCss('.comments .highlight-border {border-color: '
-                + this.options.highlightColor + ';'
                 +'}');
         },
 
