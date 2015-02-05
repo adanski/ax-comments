@@ -249,7 +249,7 @@
             this.$el.append(mainCommentingField);
 
             // Adjust the height of the main commenting field when clicking elsewhere
-            var mainTextarea = mainCommentingField.find('textarea');
+            var mainTextarea = mainCommentingField.find('.textarea');
             var mainControlRow = mainCommentingField.find('.control-row');
             this.$el.bind('click', function(ev) {
                 if(ev.target != mainTextarea[0]) {
@@ -311,9 +311,7 @@
                 text: this.options.sendText,
             }).bind('click', function(ev) {
                 if(sendButton.hasClass('enabled')) {
-                    var parent = null;
-                    var data = sendButton.parents('.comment').data();
-                    if(data && data.id) parent = data.id;
+                    var parent = parseInt(textarea.attr('data-parent')) || null;
 
                     var commentJSON = self.createCommentJSON(textarea.val(), parent);
                     self.postComment(commentJSON);
@@ -324,10 +322,17 @@
 
             // Enable and disable send button when necessary
             textarea.bind('input', function() {
-                if(textarea.val().length) {
+                var content = textarea.text();
+                if(content.trim().length) {
                     sendButton.addClass('enabled');
                 } else {
                     sendButton.removeClass('enabled');
+                }
+
+                // Remove reply-to badge if necessary
+                if(!content.length) {
+                    textarea.empty();
+                    textarea.attr('data-parent', textarea.parents('li.comment').data('id'));
                 }
             });
 
@@ -340,8 +345,12 @@
         createTextareaElement: function() {
             var self = this;
 
-            // Due to bug with Firefox the placeholder need to be embedded like this
-            var textarea = $('<textarea placeholder="'+this.options.textareaPlaceholder+'"/>');
+            // Textarea element
+            var textarea = $('<div/>', {
+                class: 'textarea',
+                placeholder: this.options.textareaPlaceholder,
+                contenteditable: true,
+            });
 
             // Adjust the height dynamically
             textarea.bind('focus input', function() {
@@ -370,6 +379,8 @@
                 rowCount++;
                 var isAreaScrollable = textarea[0].scrollHeight > textarea.outerHeight();
             } while(isAreaScrollable && rowCount <= this.options.textareaMaxRows);
+
+            //TODO scroll to bottom if scrollbar became visible
         },
 
         createNavigationElement: function() {
@@ -485,32 +496,43 @@
                 text: this.options.replyText,
             }).bind('click', function(ev) {
 
-                var toggleReplyField = function() {
-                    if(replyField.is(':visible')) {
-                        replyField.hide();
-                    } else {
-                        replyField.show();
-                        replyField.find('textarea').focus();
-                    }
-                    reply.toggleClass('highlight-font');
+                // Remove existing field
+                var replyField = reply.parents('.wrapper').last().find('.commenting-field');
+                if(replyField.length) replyField.remove();
+
+                // Create the reply field
+                var replyField = self.createCommentingFieldElement();
+                reply.parents('.wrapper').last().append(replyField);
+                textarea = replyField.find('.textarea');
+
+                // Set the correct parent id to the field
+                var parentId = reply.parents('.comment').first().data().id;
+                textarea.attr('data-parent', parentId);
+
+                // Append reply-to badge if necessary
+                var parentModel = self.commentTree[parentId].model;
+                if(parentModel.parent) {
+                    textarea.html('&nbsp;');
+
+                    var replyToBadge = $('<input/>', {
+                        class: 'reply-to-badge highlight-font',
+                        type: 'button'
+                    });
+                    var replyToName = '@' + parentModel.fullname;
+                    replyToBadge.val(replyToName);
+                    textarea.prepend(replyToBadge);
+
+
+                    // Move cursor to the end
+                    var range = document.createRange();
+                    var selection = window.getSelection();
+                    range.setStart(textarea[0], 2);
+                    range.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
                 }
-
-                // Case: remove exsiting field
-                var replyField = reply.siblings('.commenting-field');
-                if(replyField.length) {
-                    toggleReplyField();
-
-                // Case: creating a new reply field
-                } else {
-                    var replyField = self.createCommentingFieldElement();
-                    reply.after(replyField);
-
-                    // Hide the field on send
-                    replyField.find('.send').bind('click', toggleReplyField);
-
-                    replyField.find('textarea').focus();
-                    reply.addClass('highlight-font');
-                }
+                
+                textarea.focus();
 
             });
 
