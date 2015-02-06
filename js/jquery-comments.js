@@ -2,6 +2,9 @@
 
     var Comments = {
 
+        // Instance variables
+        // ==================
+
         $el: null,
         commentArray: [],
         commentTree: {},
@@ -30,13 +33,36 @@
             getComments: function() {},
             postComment: function() {},
             timeFormatter: function(time) {
-                return new Date(time).toLocaleDateString('fi-FI');;
+                return new Date(time).toLocaleDateString(navigator.language);
             }
         },
+
+        events: {
+
+            // Navigation
+            'click .navigation li' : 'navigationElementClicked',
+
+            // Main comenting field
+            'focus .commenting-field.main .textarea': 'showMainControlRow',
+            'click' : 'hideMainControlRow',
+
+            // All commenting fields
+            'focus .commenting-field .textarea' : 'increaseTextareaHeight',
+            'input .commenting-field .textarea' : 'increaseTextareaHeight textareaContentChanged',
+            'click .commenting-field .send' : 'sendButtonCliked',
+
+            // Comment
+            'click li.comment .child-comments .toggle-all': 'toggleReplies',
+            'click li.comment .reply': 'replyButtonClicked',
+        },
+
+        // Initialization
+        // ==============
 
         init: function(options, el) {
             this.$el = $(el);
             this.$el.addClass('comments')
+            this.delegateEvents();
 
             // Init options
             var self = this;
@@ -50,6 +76,175 @@
             this.refresh();
             this.render();
         },
+
+        delegateEvents: function() {
+            for (var key in this.events) {
+                var eventName = key.split(' ')[0];
+                var selector = key.split(' ').slice(1).join(' ');
+                var methodNames = this.events[key].split(' ');
+
+                for(var index in methodNames) {
+                    var method = this[methodNames[index]];
+
+                    // Keep the context
+                    method = $.proxy(method, this);
+
+                    if (selector == '') {
+                        this.$el.on(eventName, method);
+                    } else {
+                        this.$el.on(eventName, selector, method);
+                    }
+                }
+            }
+        },
+
+
+        // Event handlers
+        // ==============
+
+        navigationElementClicked: function(ev) {
+            var navigationEl = $(ev.currentTarget);
+
+            // Indicate active sort
+            navigationEl.siblings().removeClass('active');
+            navigationEl.addClass('active');
+
+            // Sort the comments
+            var sortKey = navigationEl.data().sortKey;
+            this.sortAndReArrangeComments(sortKey);
+
+            // Save the current sort key
+            this.currentSortKey = sortKey;
+        },
+
+        showMainControlRow: function(ev) {
+            var textarea = $(ev.currentTarget);
+            textarea.siblings('.control-row').show();
+        },
+
+        hideMainControlRow: function(ev) {
+            var mainTextarea = this.$el.find('.commenting-field.main .textarea');
+            var mainControlRow = this.$el.find('.commenting-field.main .control-row');
+
+            var clickSource = ev.target;
+            var sourceIsMainTextarea = clickSource == mainTextarea[0];
+            var sourceIsChildOfMainTextarea = $(clickSource).parents('.textarea').first()[0] == mainTextarea[0];
+
+            // Hide the main control row if the click didn't originate from the main textarea
+            if(!sourceIsMainTextarea && !sourceIsChildOfMainTextarea) {
+                this.adjustTextareaHeight(mainTextarea, false);
+                mainControlRow.hide();
+            }
+        },
+
+        increaseTextareaHeight: function(ev) {
+            var textarea = $(ev.currentTarget);
+            this.adjustTextareaHeight(textarea, true);
+        },
+
+        textareaContentChanged: function(ev) {
+            var el = $(ev.currentTarget);
+            var content = el.text();
+            var sendButton = el.siblings('.control-row').find('.send');
+
+            if(content.trim().length) {
+                sendButton.addClass('enabled');
+            } else {
+                sendButton.removeClass('enabled');
+            }
+
+            // Remove reply-to badge if necessary
+            if(!content.length) {
+                el.empty();
+                el.attr('data-parent', el.parents('li.comment').data('id'));
+            }
+        },
+
+        sendButtonCliked: function(ev) {
+            var sendButton = $(ev.currentTarget);
+            var commentingField = sendButton.parents('.commenting-field').first();
+            var textarea = commentingField.find('.textarea');
+
+            if(sendButton.hasClass('enabled')) {
+                var parent = parseInt(textarea.attr('data-parent')) || null;
+
+                var commentJSON = this.createCommentJSON(textarea.text(), parent);
+                this.postComment(commentJSON);
+
+                // Proper handling for textarea
+                if(commentingField.hasClass('main')) {
+                    textarea.empty().trigger('input');
+                } else {
+                    commentingField.remove();
+                }
+            }
+        },
+
+        toggleReplies: function(ev) {
+            var el = $(ev.currentTarget);
+            var toggleAllButton = el.find('span').first();
+            var caret = el.find('.caret');
+
+            // Toggle text in toggle button
+            if(toggleAllButton.text() == this.options.hideRepliesText) {
+                var parentId = toggleAllButton.parents('li.comment').last().data().id;
+                toggleAllButton.text(this.getViewAllReplysText(parentId));
+            } else {
+                toggleAllButton.text(this.options.hideRepliesText);
+            }
+            // Toggle direction of the caret
+            caret.toggleClass('up');
+
+            // Toggle replies
+            el.siblings('.hidden-reply').toggle();
+        },
+
+        replyButtonClicked: function(ev) {
+            var replyButton = $(ev.currentTarget);
+            var wrapperOfOuterMostParent = replyButton.parents('.wrapper').last();
+
+            // Remove existing field
+            var replyField = wrapperOfOuterMostParent.find('.commenting-field');
+            if(replyField.length) replyField.remove();
+
+            // Create the reply field
+            var replyField = this.createCommentingFieldElement();
+            wrapperOfOuterMostParent.append(replyField);
+            textarea = replyField.find('.textarea');
+
+            // Set the correct parent id to the field
+            var parentId = replyButton.parents('.comment').first().data().id;
+            textarea.attr('data-parent', parentId);
+
+            // Append reply-to badge if necessary
+            var parentModel = this.commentTree[parentId].model;
+            if(parentModel.parent) {
+                textarea.html('&nbsp;');    // Needed to set the cursor to correct place
+
+                // Creating the reply-to badge
+                var replyToBadge = $('<input/>', {
+                    class: 'reply-to-badge highlight-font',
+                    type: 'button'
+                });
+                var replyToName = '@' + parentModel.fullname;
+                replyToBadge.val(replyToName);
+                textarea.prepend(replyToBadge);
+
+                // Move cursor to the end
+                var range = document.createRange();
+                var selection = window.getSelection();
+                range.setStart(textarea[0], 2);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            
+            textarea.focus();
+        },
+
+
+        // Basic functionalities
+        // =====================
 
         refresh: function () {
             // Get comments
@@ -131,34 +326,14 @@
                 // Append button to toggle all replies if necessary
                 if(hiddenReplies.length && !childCommentsEl.find('li.toggle-all').length) {
 
-                    var getViewAllReplysText = function() {
-                        var text = self.options.viewAllRepliesText;
-                        var replyCount = self.commentTree[outerMostParent.data().id].childs.length;
-                        return text.replace('__replyCount__', replyCount);
-                    }
-
                     var toggleAllContainer = $('<li/>', {
                         class: 'toggle-all highlight-font',
                     });
                     var toggleAllButton = $('<span/>', {
-                        text: getViewAllReplysText(),
+                        text: self.getViewAllReplysText(outerMostParent.data().id),
                     });
                     var caret = $('<span/>', {
                         class: 'caret',
-                    });
-
-                    toggleAllContainer.bind('click', function(){
-                        // Toggle text in toggle button
-                        if(toggleAllButton.text() == self.options.hideRepliesText) {
-                            toggleAllButton.text(getViewAllReplysText());
-                        } else {
-                            toggleAllButton.text(self.options.hideRepliesText);
-                        }
-                        // Toggle direction of the caret
-                        caret.toggleClass('up');
-
-                        // Toggle replies
-                        childCommentsEl.find('.hidden-reply').toggle();
                     });
 
                     // Append toggle button to DOM
@@ -166,7 +341,6 @@
                     childCommentsEl.prepend(toggleAllContainer);
                 }
             });
-
         },
 
         sortComments: function (comments, sortKey) {
@@ -246,21 +420,13 @@
 
             // Commenting field
             var mainCommentingField = this.createCommentingFieldElement();
+            mainCommentingField.addClass('main');
             this.$el.append(mainCommentingField);
 
             // Adjust the height of the main commenting field when clicking elsewhere
             var mainTextarea = mainCommentingField.find('.textarea');
             var mainControlRow = mainCommentingField.find('.control-row');
-            this.$el.bind('click', function(ev) {
-                if(ev.target != mainTextarea[0]) {
-                    self.adjustTextareaHeight(mainTextarea, false);
-                    mainControlRow.hide();
-                }
-            });
             mainControlRow.hide();
-            mainTextarea.bind('focus', function() {
-                mainControlRow.show();
-            });
 
             // Navigation bar
             this.$el.append(this.createNavigationElement());
@@ -303,84 +469,25 @@
             });
 
             // Textarea
-            var textarea = this.createTextareaElement();
-
-            // Send -button
-            var sendButton = $('<span/>', {
-                class: 'send highlight-background',
-                text: this.options.sendText,
-            }).bind('click', function(ev) {
-                if(sendButton.hasClass('enabled')) {
-                    var parent = parseInt(textarea.attr('data-parent')) || null;
-
-                    var commentJSON = self.createCommentJSON(textarea.val(), parent);
-                    self.postComment(commentJSON);
-                    textarea.val('');
-                }
-            });
-            //TODO: hide commenting after succesfull reply
-
-            // Enable and disable send button when necessary
-            textarea.bind('input', function() {
-                var content = textarea.text();
-                if(content.trim().length) {
-                    sendButton.addClass('enabled');
-                } else {
-                    sendButton.removeClass('enabled');
-                }
-
-                // Remove reply-to badge if necessary
-                if(!content.length) {
-                    textarea.empty();
-                    textarea.attr('data-parent', textarea.parents('li.comment').data('id'));
-                }
-            });
-
-            controlRow.append(sendButton);
-            textareaWrapper.append(textarea).append(controlRow);
-            commentingField.append(profilePicture).append(textareaWrapper);
-            return commentingField;
-        },
-
-        createTextareaElement: function() {
-            var self = this;
-
-            // Textarea element
             var textarea = $('<div/>', {
                 class: 'textarea',
                 placeholder: this.options.textareaPlaceholder,
                 contenteditable: true,
             });
 
-            // Adjust the height dynamically
-            textarea.bind('focus input', function() {
-                self.adjustTextareaHeight(textarea, true);
+            // Setting the initial height for the textarea
+            this.adjustTextareaHeight(textarea, false);
+
+            // Send -button
+            var sendButton = $('<span/>', {
+                class: 'send highlight-background',
+                text: this.options.sendText,
             });
 
-            // Setting the initial height
-            self.adjustTextareaHeight(textarea, false);
-
-            return textarea;
-        },
-
-        adjustTextareaHeight: function(textarea, focus) {
-            var textareaBaseHeight = 2.2;
-            var lineHeight = 1.4;
-
-            var setRows = function(rows) {
-                var height = textareaBaseHeight + (rows - 1) * lineHeight;
-                textarea.css('height', height + 'em');
-            }
-
-            var textarea = $(textarea);
-            var rowCount = focus == true ? this.options.textareaRowsOnFocus : this.options.textareaRows;
-            do {
-                setRows(rowCount);
-                rowCount++;
-                var isAreaScrollable = textarea[0].scrollHeight > textarea.outerHeight();
-            } while(isAreaScrollable && rowCount <= this.options.textareaMaxRows);
-
-            //TODO scroll to bottom if scrollbar became visible
+            controlRow.append(sendButton);
+            textareaWrapper.append(textarea).append(controlRow);
+            commentingField.append(profilePicture).append(textareaWrapper);
+            return commentingField;
         },
 
         createNavigationElement: function() {
@@ -402,23 +509,6 @@
             });
 
             navigationEl.append(popular).append(newest);;
-
-            // Bind click to sorting
-            var self = this;
-            navigationEl.find('li').bind('click', function(ev) {
-                var el = $(ev.currentTarget);
-
-                // Indicate active sort
-                navigationEl.find('li').removeClass('active');
-                el.addClass('active');
-
-                // Sort the comments
-                var sortKey = el.data().sortKey;
-                self.sortAndReArrangeComments(sortKey);
-
-                // Save the current sort key
-                self.currentSortKey = sortKey;
-            });
             return navigationEl;
         },
 
@@ -474,7 +564,10 @@
             });
 
             // Reply
-            var reply = this.createReplyElement();
+            var reply = $('<span/>', {
+                class: 'reply',
+                text: this.options.replyText,
+            })
 
             // Child comments
             var childComments = $('<ul/>', {
@@ -486,57 +579,6 @@
             if(commentJSON.parent == null) wrapper.append(childComments);
             commentEl.append(profilePicture).append(time).append(name).append(wrapper);
             return commentEl;
-        },
-
-        createReplyElement: function() {
-            var self = this;
-
-            var reply = $('<span/>', {
-                class: 'reply',
-                text: this.options.replyText,
-            }).bind('click', function(ev) {
-
-                // Remove existing field
-                var replyField = reply.parents('.wrapper').last().find('.commenting-field');
-                if(replyField.length) replyField.remove();
-
-                // Create the reply field
-                var replyField = self.createCommentingFieldElement();
-                reply.parents('.wrapper').last().append(replyField);
-                textarea = replyField.find('.textarea');
-
-                // Set the correct parent id to the field
-                var parentId = reply.parents('.comment').first().data().id;
-                textarea.attr('data-parent', parentId);
-
-                // Append reply-to badge if necessary
-                var parentModel = self.commentTree[parentId].model;
-                if(parentModel.parent) {
-                    textarea.html('&nbsp;');
-
-                    var replyToBadge = $('<input/>', {
-                        class: 'reply-to-badge highlight-font',
-                        type: 'button'
-                    });
-                    var replyToName = '@' + parentModel.fullname;
-                    replyToBadge.val(replyToName);
-                    textarea.prepend(replyToBadge);
-
-
-                    // Move cursor to the end
-                    var range = document.createRange();
-                    var selection = window.getSelection();
-                    range.setStart(textarea[0], 2);
-                    range.collapse(true);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                }
-                
-                textarea.focus();
-
-            });
-
-            return reply;
         },
 
 
@@ -568,6 +610,34 @@
                 text: css,
             });
             $('head').append(styleEl);
+        },
+
+
+        // Utilities
+        // =========
+
+        getViewAllReplysText: function(id) {
+            var text = this.options.viewAllRepliesText;
+            var replyCount = this.commentTree[id].childs.length;
+            return text.replace('__replyCount__', replyCount);
+        },
+
+        adjustTextareaHeight: function(textarea, focus) {
+            var textareaBaseHeight = 2.2;
+            var lineHeight = 1.4;
+
+            var setRows = function(rows) {
+                var height = textareaBaseHeight + (rows - 1) * lineHeight;
+                textarea.css('height', height + 'em');
+            }
+
+            var textarea = $(textarea);
+            var rowCount = focus == true ? this.options.textareaRowsOnFocus : this.options.textareaRows;
+            do {
+                setRows(rowCount);
+                rowCount++;
+                var isAreaScrollable = textarea[0].scrollHeight > textarea.outerHeight();
+            } while(isAreaScrollable && rowCount <= this.options.textareaMaxRows);
         },
 
     }
