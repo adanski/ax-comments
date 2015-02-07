@@ -12,7 +12,7 @@
 
         options: {
             profilePictureURL: '',
-            textareaPlaceholder: 'Leave a message',
+            textareaPlaceholder: 'Leave a comment',
             newestText: 'Newest',
             popularText: 'Popular',
             sendText: 'Send',
@@ -49,7 +49,7 @@
             // All commenting fields
             'focus .commenting-field .textarea' : 'increaseTextareaHeight',
             'input .commenting-field .textarea' : 'increaseTextareaHeight textareaContentChanged',
-            'click .commenting-field .send' : 'sendButtonCliked',
+            'click .commenting-field .send' : 'sendButtonClicked',
             'click .commenting-field .close' : 'closeButtonClicked',
 
             // Comment
@@ -172,15 +172,15 @@
             }
         },
 
-        sendButtonCliked: function(ev) {
+        sendButtonClicked: function(ev) {
             var sendButton = $(ev.currentTarget);
             var commentingField = sendButton.parents('.commenting-field').first();
             var textarea = commentingField.find('.textarea');
 
             if(sendButton.hasClass('enabled')) {
                 var parent = parseInt(textarea.attr('data-parent')) || null;
-
-                var commentJSON = this.createCommentJSON(textarea.text(), parent);
+                var content = this.getTextareaContent(textarea)
+                var commentJSON = this.createCommentJSON(content, parent);
                 this.postComment(commentJSON);
 
                 // Proper handling for textarea
@@ -444,11 +444,8 @@
             mainCommentingField.addClass('main');
             this.$el.append(mainCommentingField);
 
-            // Adjust the height of the main commenting field when clicking elsewhere
-            var mainTextarea = mainCommentingField.find('.textarea');
-            var mainControlRow = mainCommentingField.find('.control-row');
-            
             // Hide control row and close button
+            var mainControlRow = mainCommentingField.find('.control-row');
             mainControlRow.hide();
             mainCommentingField.find('.close').hide();
 
@@ -671,7 +668,25 @@
 
         clearTextarea: function(textarea) {
             textarea.empty().trigger('input');
-            this.$el.focus();
+        },
+
+        getTextareaContent: function(textarea) {
+            var content = '';
+            var raw = textarea.html();
+            var indexOfFirstElement = raw.indexOf('<');
+
+            if(indexOfFirstElement == -1) {
+                content = raw;
+            } else {
+                content = raw.substring(0, indexOfFirstElement);
+                var childs = $(raw.substring(indexOfFirstElement));
+                childs.each(function(index, child) {
+                    if(content.length) content += '\n';
+                    content += $(child).text();
+                });
+            }
+
+            return content;
         },
 
     }
