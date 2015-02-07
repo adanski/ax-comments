@@ -50,6 +50,7 @@
             'focus .commenting-field .textarea' : 'increaseTextareaHeight',
             'input .commenting-field .textarea' : 'increaseTextareaHeight textareaContentChanged',
             'click .commenting-field .send' : 'sendButtonCliked',
+            'click .commenting-field .close' : 'closeButtonClicked',
 
             // Comment
             'click li.comment .child-comments .toggle-all': 'toggleReplies',
@@ -120,6 +121,7 @@
         showMainControlRow: function(ev) {
             var textarea = $(ev.currentTarget);
             textarea.siblings('.control-row').show();
+            textarea.parent().find('.close').show();
         },
 
         hideMainControlRow: function(ev) {
@@ -134,6 +136,7 @@
             if(!sourceIsMainTextarea && !sourceIsChildOfMainTextarea) {
                 this.adjustTextareaHeight(mainTextarea, false);
                 mainControlRow.hide();
+                mainTextarea.parent().find('.close').hide();
             }
         },
 
@@ -143,10 +146,11 @@
         },
 
         textareaContentChanged: function(ev) {
-            var el = $(ev.currentTarget);
-            var content = el.text();
-            var sendButton = el.siblings('.control-row').find('.send');
+            var textarea = $(ev.currentTarget);
+            var content = textarea.text();
+            var sendButton = textarea.siblings('.control-row').find('.send');
 
+            // Check whether send button needs to be enabled
             if(content.trim().length) {
                 sendButton.addClass('enabled');
             } else {
@@ -155,8 +159,16 @@
 
             // Remove reply-to badge if necessary
             if(!content.length) {
-                el.empty();
-                el.attr('data-parent', el.parents('li.comment').data('id'));
+                textarea.empty();
+                textarea.attr('data-parent', textarea.parents('li.comment').data('id'));
+            }
+
+            // Move close button if scrollbar is visible
+            var commentingField = textarea.parents('.commenting-field').first();
+            if(textarea[0].scrollHeight > textarea.outerHeight()) {
+                commentingField.addClass('scrollable');
+            } else {
+                commentingField.removeClass('scrollable');
             }
         },
 
@@ -173,10 +185,19 @@
 
                 // Proper handling for textarea
                 if(commentingField.hasClass('main')) {
-                    textarea.empty().trigger('input');
+                    this.clearTextarea(textarea);
                 } else {
                     commentingField.remove();
                 }
+            }
+        },
+
+        closeButtonClicked: function(ev) {
+            var commentingField = $(ev.currentTarget).parents('.commenting-field').first();
+            if(commentingField.hasClass('main')) {
+                this.clearTextarea(commentingField.find('.textarea'));
+            } else {
+                commentingField.remove();
             }
         },
 
@@ -426,7 +447,10 @@
             // Adjust the height of the main commenting field when clicking elsewhere
             var mainTextarea = mainCommentingField.find('.textarea');
             var mainControlRow = mainCommentingField.find('.control-row');
+            
+            // Hide control row and close button
             mainControlRow.hide();
+            mainCommentingField.find('.close').hide();
 
             // Navigation bar
             this.$el.append(this.createNavigationElement());
@@ -477,15 +501,20 @@
 
             // Setting the initial height for the textarea
             this.adjustTextareaHeight(textarea, false);
+            
+            // Close button
+            var closeButton = $('<span/>', {
+                class: 'close',
+            }).append($('<span class="left"/>')).append($('<span class="right"/>'));
 
-            // Send -button
+            // Send button
             var sendButton = $('<span/>', {
                 class: 'send highlight-background',
                 text: this.options.sendText,
             });
 
             controlRow.append(sendButton);
-            textareaWrapper.append(textarea).append(controlRow);
+            textareaWrapper.append(closeButton).append(textarea).append(controlRow);
             commentingField.append(profilePicture).append(textareaWrapper);
             return commentingField;
         },
@@ -638,6 +667,11 @@
                 rowCount++;
                 var isAreaScrollable = textarea[0].scrollHeight > textarea.outerHeight();
             } while(isAreaScrollable && rowCount <= this.options.textareaMaxRows);
+        },
+
+        clearTextarea: function(textarea) {
+            textarea.empty().trigger('input');
+            this.$el.focus();
         },
 
     }
