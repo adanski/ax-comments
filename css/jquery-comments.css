@@ -201,8 +201,12 @@
 	margin-right: .5em;
 }
 
-.comments ul#comment-list li.comment:not(:first-child) {
+.comments ul#comment-list li.comment {
 	border-top: 1px solid #DDD;
+}
+
+.comments ul#comment-list > li.comment:first-child {
+	border-top: none;
 }
 
 .comments ul#comment-list li.comment time {
@@ -222,9 +226,11 @@
 }
 
 .comments ul#comment-list li.comment .name .reply-to {
-	color: #666;
-	font-size: .9em;
+	color: #999;
+	font-size: .8em;
 	font-weight: normal;
+	margin-left: .5em;
+	vertical-align: top;
 }
 
 .comments ul#comment-list li.comment .wrapper{
