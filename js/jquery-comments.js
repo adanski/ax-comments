@@ -74,8 +74,7 @@
             // Create CSS declarations for highlight color
             this.createCssDeclarations();
 
-            this.updateData();
-            this.render();
+            this.refresh();
         },
 
         delegateEvents: function() {
@@ -103,7 +102,14 @@
         // Basic functionalities
         // =====================
 
+        refresh: function() {
+            this.updateData();
+            this.render();
+        },
+
         updateData: function () {
+            this.commentsById = {};
+
             // Get comments
             var commentsArray = this.options.getComments();
 
@@ -185,7 +191,6 @@
         },
 
         addComment: function(commentModel, rearrange) {
-            this.addCommentToDataModel(commentModel);
             var commentEl = this.createCommentElement(commentModel);
 
             // Case: reply
@@ -401,6 +406,7 @@
                     content: this.getTextareaContent(textarea)
                 }
                 var commentModel = this.createCommentModel(data);
+                this.addCommentToDataModel(commentModel);
 
                 this.postComment(commentModel);
                 this.addComment(commentModel, true);
@@ -590,7 +596,7 @@
             var commentEl = $('<li/>', {
                 'data-id': commentModel.id,
                 class: 'comment'
-            });
+            }).data('model', commentModel);
 
             // Profile picture
             var profilePicture = this.createProfilePictureElement(commentModel.profile_picture_url);
