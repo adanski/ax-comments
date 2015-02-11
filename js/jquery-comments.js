@@ -541,7 +541,7 @@
 
             // Profile picture
             var profilePicture = this.createProfilePictureElement(this.options.profilePictureURL);
-            profilePicture.addClass('own');
+            profilePicture.addClass('by-current-user');
 
             // New comment
             var textareaWrapper = $('<div/>', {
@@ -556,7 +556,7 @@
             // Textarea
             var textarea = $('<div/>', {
                 class: 'textarea',
-                placeholder: this.options.textareaPlaceholder,
+                'data-placeholder': this.options.textareaPlaceholder,
                 contenteditable: true,
             });
 

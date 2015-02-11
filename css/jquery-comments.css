@@ -10,8 +10,9 @@
 }
 
 .jquery-comments [contentEditable=true]:empty:not(:focus):before{
-    content:attr(placeholder);
+    content:attr(data-placeholder);
     color: #CCC;
+    position: inherit;
 }
 
 .jquery-comments h3 {
@@ -77,6 +78,12 @@
 	position: absolute;
 	margin-top: .5em;
 	margin-right: .5em;
+	font-size: inherit;
+	opacity: 0.5;
+}
+
+.jquery-comments .textarea-wrapper .close:hover {
+	opacity: 1;
 }
 
 .jquery-comments .scrollable .textarea-wrapper .close {
@@ -84,7 +91,7 @@
 }
 
 .jquery-comments .textarea-wrapper .close span {
-	background: #CCC;
+	background: #999;
 	width: 25%;
 	left: 37.5%;
 	height: 100%;
@@ -101,12 +108,10 @@
 }
 
 .jquery-comments .textarea-wrapper .textarea {
-	display: block;
-	width: 100%;
-	resize: none;
 	margin: 0;
 	outline: 0;
 	overflow-y: auto;
+	cursor: text;
 
 	border: 1px solid #CCC;;
 	font-size: 1em;
@@ -153,12 +158,9 @@
 
 .jquery-comments ul.navigation {
 	clear: both;
-	float: left;
-	width: 100%;
 
 	color: #CCC;
 	border-bottom: 2px solid #CCC;
-	margin-top: .5em;
 	margin-bottom: 1em;
 	line-height: 2em;
 	font-size: 1em;
@@ -187,9 +189,11 @@
 	left: 0;
 }
 
-.jquery-comments ul#comment-list li {
-	width: 100%;
+.jquery-comments ul#comment-list {
 	display: inline-block;
+}
+
+.jquery-comments ul#comment-list li {
 	padding: .5em 0;
 }
 
@@ -244,6 +248,10 @@
 	cursor: pointer;
 }
 
+.jquery-comments ul#comment-list li.comment .wrapper > span.like {
+	display: none;
+}
+
 .jquery-comments ul#comment-list li.comment .wrapper .profile-picture {
 	height: 3em;
 	width: 3em;
@@ -251,6 +259,7 @@
 
 .jquery-comments ul#comment-list li.comment .wrapper .content {
 	white-space: pre-line;
+	word-break: break-word;
 }
 
 .jquery-comments ul#comment-list li.comment .wrapper > span:not(:last-child) {
@@ -263,6 +272,10 @@
 
 .jquery-comments ul#comment-list li.comment .child-comments {
 	padding-top: 0.5em;
+}
+
+.jquery-comments ul#comment-list li.comment .child-comments:empty {
+	padding-top: 0;
 }
 
 .jquery-comments ul#comment-list li.comment .child-comments li.toggle-all {
