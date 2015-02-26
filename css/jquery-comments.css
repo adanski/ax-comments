@@ -19,6 +19,12 @@
 	color: #666;
 }
 
+.jquery-comments .spinner {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
 .jquery-comments ul {
 	list-style: none;
 	padding: 0;
@@ -127,7 +133,6 @@
 .jquery-comments .textarea-wrapper .textarea .reply-to-badge {
 	background: #EEE;
 	border: 1px solid #DDD;
-	font-weight: normal;
 	margin-right: .5em;
 	vertical-align: baseline;
 	line-height: 1.4em;
