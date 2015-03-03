@@ -243,7 +243,7 @@ describe('Basic features', function() {
                 expect(replyField.find('.reply-to-badge').length).toBe(0);
 
                 // Check that the field is last child
-                var lastChild = mostPopularComment.children().last().children().last();
+                var lastChild = mostPopularComment.find('.child-comments').children().last();
                 expect(lastChild[0]).toBe(replyField[0]);
             }); 
 
@@ -264,7 +264,7 @@ describe('Basic features', function() {
                 expect(replyField.find('.reply-to-badge').val()).toBe('@Bryan Connery');
 
                 // Check that the field is last child
-                var lastChild = mostPopularComment.children().last().children().last()
+                var lastChild = mostPopularComment.find('.child-comments').children().last();
                 expect(lastChild[0]).toBe(replyField[0]);
             });
 

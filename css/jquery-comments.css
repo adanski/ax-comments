@@ -38,8 +38,8 @@
 
 .jquery-comments .profile-picture {
 	float: left;
-	width: 50px;
-	height: 50px;
+	width: 3.6em;
+	height: 3.6em;
 	max-width: 50px;
 	max-height: 50px;
 }
@@ -48,12 +48,15 @@
 	border-radius: 50%;
 }
 
+.jquery-comments .commenting-field.main .profile-picture {
+	margin-bottom: 1em;
+}
+
 .jquery-comments .textarea-wrapper {
 	overflow: hidden;
 	padding-left: 15px;
 	position: relative;
 }
-
 
 .jquery-comments .textarea-wrapper:before {
 	content: " ";
@@ -87,8 +90,8 @@
 	height: 1em;
 	right: 0;
 	position: absolute;
-	margin-top: .5em;
-	margin-right: .5em;
+	border: .5em solid rgba(0,0,0,0);
+	box-sizing: content-box;
 	font-size: inherit;
 	opacity: 0.5;
 
@@ -102,8 +105,8 @@
 	opacity: 1;
 }
 
-.jquery-comments .scrollable .textarea-wrapper .close {
-	margin-right: calc(.5em + 15px);	/* Because of scrollbar */
+.jquery-comments:not(.mobile) .scrollable .textarea-wrapper .close {
+	margin-right: 15px;	/* Because of scrollbar */
 }
 
 .jquery-comments .textarea-wrapper .close span {
@@ -141,7 +144,7 @@
 	padding: 0;
 }
 
-.jquery-comments .scrollable .textarea-wrapper .textarea {
+.jquery-comments:not(.mobile) .scrollable .textarea-wrapper .textarea {
 	padding-right: calc(2em + 15px);	/* Because of scrollbar */
 }
 
@@ -227,7 +230,7 @@
 	border-top: none;
 }
 
-.jquery-comments ul#comment-list li.comment .profile-picture {
+.jquery-comments ul#comment-list li.comment .comment-wrapper .profile-picture {
 	margin-right: .5em;
 }
 
@@ -260,6 +263,10 @@
 	overflow: hidden;
 }
 
+.jquery-comments.mobile ul#comment-list li.comment .child-comments li.comment .wrapper{
+	overflow: inherit;
+}
+
 .jquery-comments ul#comment-list li.comment .wrapper > span {
 	font-size: 0.9em;
 	color: #666;
@@ -279,23 +286,26 @@
 	margin-right: 2em;
 }
 
-.jquery-comments ul#comment-list li.comment .other-content {
-	margin-left: calc(50px + .5em);	/* Profile picture width plus margin */
+.jquery-comments ul#comment-list > li.comment > .other-content:before {
+	content: "";
+	height: 1px;
+	float: left;
+
+	width: calc(3.6em + .5em);	/* Profile picture width plus margin */
+	max-width: calc(50px + .5em);	/* Profile picture max width plus margin */
+}
+
+.jquery-comments ul#comment-list > li.comment > .other-content > * {
+	overflow: hidden;
 }
 
 .jquery-comments ul#comment-list li.comment .other-content .profile-picture {
-	width: 3em;
-	height: 3em;
-	min-width: 30px;
-	min-height: 30px;
-}
-
-.jquery-comments ul#comment-list li.comment .child-comments:not(:empty) {
-	padding-bottom: .5em;
+	width: 2.4em;
+	height: 2.4em;
 }
 
 .jquery-comments ul#comment-list li.comment .child-comments li.toggle-all {
-	padding-top: 0;
+	padding-top: .25em .5em;
 }
 
 .jquery-comments ul#comment-list li.comment .child-comments li.toggle-all span:first-child {
