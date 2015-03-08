@@ -52,6 +52,7 @@
 
             getComments: function(callback) {callback()},
             postComment: function(commentJSON, success, error) {success(commentJSON)},
+            updateComment: function(commentJSON, success, error) {success(commentJSON)},
             refresh: function() {},
             timeFormatter: function(time) {
                 return new Date(time).toLocaleDateString();
@@ -432,10 +433,16 @@
                 saveButton.removeClass('enabled');
             }
 
-            // Remove reply-to badge if necessary
-            if(!content.length) {
-                textarea.empty();
-                textarea.attr('data-parent', textarea.parents('li.comment').data('id'));
+            // Update parent id if reply-to-badge was removed
+            if(!textarea.find('.reply-to-badge').length) {
+
+                var parentId = textarea.parents('li.comment').last().data('id');
+                var commentId = textarea.attr('data-comment');
+                
+                // Make sure that comment and the parent of the comment are not the same (editing)
+                if(parentId != commentId) {
+                    textarea.attr('data-parent', parentId);
+                }
             }
 
             // Move close button if scrollbar is visible
@@ -468,7 +475,7 @@
             sendButton.removeClass('enabled');
 
             var time = new Date().getTime();
-            var commentJSON = {                    
+            var commentJSON = {
                 id: 'c' +  (this.getComments().length + 1),   // Temporary id
                 parent: textarea.attr('data-parent') || null,
                 created: time,
@@ -497,7 +504,43 @@
         },
 
         updateComment: function(ev) {
+            var self = this;
+            var saveButton = $(ev.currentTarget);
+            var commentingField = saveButton.parents('.commenting-field').first();
+            var textarea = commentingField.find('.textarea');
+
+            // Disable send button while request is pending
+            saveButton.removeClass('enabled');
+
+            // Use a clone of the existing model and update the model after succesfull update
+            var commentJSON =  $.extend({}, this.commentsById[textarea.attr('data-comment')]);
+            $.extend(commentJSON, {
+                parent: textarea.attr('data-parent') || null,
+                content: this.getTextareaContent(textarea),
+                modified: new Date().getTime(),
+            });
+
+            // Reverse mapping
+            commentJSON = this.applyExternalMappings(commentJSON);
             
+            var success = function(commentJSON) {
+                // The outermost parent can not be changed by editing the comment so the childs array
+                // of parent does not require an update
+
+                var commentModel = self.createCommentModel(commentJSON);
+
+                // Delete childs array from new comment model since it doesn't need an update
+                delete commentModel['childs'];
+                $.extend(self.commentsById[commentModel.id], commentModel);
+
+                commentingField.find('.close').trigger('click');
+            }
+
+            var error = function() {
+                saveButton.addClass('enabled');
+            }
+
+            this.options.updateComment(commentJSON, success, error);
         },
 
         toggleReplies: function(ev) {
@@ -536,15 +579,16 @@
 
             // Create the editing field
             var saveText = this.options.textFormatter(this.options.saveText);
-            var editField = this.createCommentingFieldElement(commentModel.id, saveText);
+            var editField = this.createCommentingFieldElement(commentModel.parent, saveText);
             commentEl.find('.comment-wrapper').first().append(editField);
             
             // Append original content
             var textarea = editField.find('.textarea');
             textarea.append(commentModel.content);
+            textarea.attr('data-comment', commentModel.id);
 
             // Move cursor to end
-            this.moveCursorToEnd(textarea)
+            this.moveCursorToEnd(textarea);
         },
 
 
@@ -585,7 +629,7 @@
             return profilePicture;
         },
 
-        createCommentingFieldElement: function(parentId, primaryAcitionIsUpdate) {
+        createCommentingFieldElement: function(parentId, primaryActionIsUpdate) {
             var self = this;
 
             // Commenting field
@@ -623,8 +667,8 @@
             }).append($('<span class="left"/>')).append($('<span class="right"/>'));
 
             // Save button
-            var saveButtonClass = primaryAcitionIsUpdate ? 'update' : 'send';
-            if(primaryAcitionIsUpdate) {
+            var saveButtonClass = primaryActionIsUpdate ? 'update' : 'send';
+            if(primaryActionIsUpdate) {
                 var saveButtonText = this.options.textFormatter(this.options.saveText);
             } else {
                 var saveButtonText = this.options.textFormatter(this.options.sendText);
