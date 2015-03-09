@@ -780,7 +780,7 @@
                 if(parent.parent) {
                     var replyTo = $('<span/>', {
                         class: 'reply-to',
-                        text: ' @' + parent.fullname,
+                        text: parent.fullname,
                     });
                     name.append(replyTo);
                 }
@@ -947,7 +947,7 @@
         },
 
         convertTextToHTML: function(text) {
-            return text.replace(/(?:\r\n|\r|\n)/g, '<br />');
+            return text.replace(/(?:\r\n|\r|\n)/g, '<br>');
         },
 
         moveCursorToEnd: function(el) {
