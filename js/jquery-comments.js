@@ -599,7 +599,7 @@
             
             // Append original content
             var textarea = editField.find('.textarea');
-            textarea.append(this.convertTextToHTML(commentModel.content));
+            textarea.append(this.convertTextToHTML(commentModel.content)).trigger('input');
             textarea.attr('data-comment', commentModel.id);
 
             // Move cursor to end
@@ -970,7 +970,11 @@
 
         moveCursorToEnd: function(el) {
             el = $(el)[0];
-            el.focus();
+
+            // Scroll to bottom
+            $(el).scrollTop(el.scrollHeight);
+
+            // Move cursor to end
             if (typeof window.getSelection != 'undefined' && typeof document.createRange != 'undefined') {
                 var range = document.createRange();
                 range.selectNodeContents(el);
@@ -984,6 +988,9 @@
                 textRange.collapse(false);
                 textRange.select();
             }
+
+            // Focus
+            el.focus();
         },
 
         applyInternalMappings: function(commentJSON) {
