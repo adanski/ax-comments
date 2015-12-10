@@ -195,8 +195,29 @@
 	cursor: pointer;
 }
 
+.jquery-comments .textarea-wrapper .control-row > span:not(.enabled) {
+	pointer-events: none;
+}
+
 .jquery-comments .textarea-wrapper .control-row > span.enabled:hover {
 	opacity: .9;
+}
+
+.jquery-comments .textarea-wrapper .control-row > span.upload {
+	position: relative;
+    overflow: hidden;
+	background-color: #AAA;
+}
+
+.jquery-comments .textarea-wrapper .control-row > span.upload input {
+	cursor: pointer;
+	position: absolute;
+	top: 0;
+	right: 0;
+	margin: 0;
+	padding: 0;
+	opacity: 0;
+	height: 100%;
 }
 
 .jquery-comments ul.navigation {
@@ -309,6 +330,10 @@
 .jquery-comments ul#comment-list li.comment .wrapper .content {
 	white-space: pre-line;
 	word-break: break-word;
+}
+
+.jquery-comments ul#comment-list li.comment .wrapper .content i {
+	margin-right: 0.5em;
 }
 
 .jquery-comments ul#comment-list li.comment .wrapper .content time.edited {
