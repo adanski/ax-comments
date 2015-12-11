@@ -83,7 +83,7 @@
             defaultNavigationSortKey: 'newest',
 
             // Colors
-            highlightColor: '#337AB7',
+            highlightColor: '#1D8CEA',
             deleteButtonColor: '#C9302C',
 
             roundProfilePictures: false,
@@ -333,8 +333,8 @@
             if(commentModel.parent) {
                 var directParentEl = commentList.find('.comment[data-id="'+commentModel.parent+'"]');
 
-                // Re-render direct parent element
-                this.reRenderComment(commentModel.parent);
+                // Re-render action bar of direct parent element
+                this.reRenderCommentActionBar(commentModel.parent);
 
                 // Force replies into one level only
                 var outerMostParent = directParentEl.parents('.comment').last();
@@ -703,7 +703,7 @@
 
             var success = function() {
                 self.removeComment(commentId);
-                if(parentId) self.reRenderComment(parentId);
+                if(parentId) self.reRenderCommentActionBar(parentId);
             };
 
             var error = function() {
@@ -1136,35 +1136,56 @@
             // Case: attachment
             var isAttachment = commentModel.file != undefined;
             if(isAttachment) {
-
-                // Attachment icon
-                var availableIcons = ['archive', 'audio', 'code', 'excel', 'image', 'movie', 'pdf', 'photo',
-                    'picture', 'powerpoint', 'sound', 'video', 'word', 'zip'];
-                
-                var iconClass = 'fa fa-file-o';
                 var format = commentModel.fileMimeType.split('/')[1];
                 var type = commentModel.fileMimeType.split('/')[0];
-                if(availableIcons.indexOf(format) > 0) {
-                    iconClass = 'fa fa-file-' + format + '-o';
-                } else if(availableIcons.indexOf(type) > 0) {
-                    iconClass = 'fa fa-file-' + type + '-o';
-                }
-
-
-                var fileIcon = $('<i/>', {
-                    'class': iconClass
-                });
-                if(this.options.fileIconURL.length) {
-                    fileIcon.css('background-image', 'url("'+this.options.fileIconURL+'")');
-                    fileIcon.addClass('image');
-                }
 
                 // Attachment link
                 var link = $('<a/>', {
+                    'class': 'attachment',
                     href: commentModel.file,
-                    text: commentModel.fileName
+                    target: '_blank'
                 });
-                content.append(fileIcon).append(link);
+
+                // Case: image preview
+                if(type == 'image') {
+                    var image = $('<img/>', {
+                        src: commentModel.file,
+                        alt: commentModel.fileName
+                    });
+                    link.html(image);
+
+                // Case: video preview
+                } else if(type == 'video') {
+                    var video = $('<video/>', {
+                        src: commentModel.file,
+                        type: commentModel.fileMimeType,
+                        controls: 'controls'
+                    });
+                    link.html(video);
+
+                // Case: icon and text
+                } else {
+                    var availableIcons = ['archive', 'audio', 'code', 'excel', 'image', 'movie', 'pdf', 'photo',
+                        'picture', 'powerpoint', 'sound', 'video', 'word', 'zip'];
+                    
+                    var iconClass = 'fa fa-file-o';
+                    if(availableIcons.indexOf(format) > 0) {
+                        iconClass = 'fa fa-file-' + format + '-o';
+                    } else if(availableIcons.indexOf(type) > 0) {
+                        iconClass = 'fa fa-file-' + type + '-o';
+                    }
+
+                    var fileIcon = $('<i/>', {
+                        'class': iconClass
+                    });
+                    if(this.options.fileIconURL.length) {
+                        fileIcon.css('background-image', 'url("'+this.options.fileIconURL+'")');
+                        fileIcon.addClass('image');
+                    }
+                    link.text(commentModel.fileName);
+                    link.prepend(fileIcon);
+                }
+                content.html(link);
 
             // Case: regular comment
             } else {
@@ -1275,6 +1296,13 @@
             var commentWrapper = this.createCommentWrapperElement(commentModel);
             var commentEl = this.$el.find('li.comment[data-id="'+commentModel.id+'"]');
             commentEl.find('> .comment-wrapper').replaceWith(commentWrapper);
+        },
+
+        reRenderCommentActionBar: function(id) {
+            var commentModel = this.commentsById[id];
+            var commentWrapper = this.createCommentWrapperElement(commentModel);
+            var commentEl = this.$el.find('li.comment[data-id="'+commentModel.id+'"]');
+            commentEl.find('.actions').first().replaceWith(commentWrapper.find('.actions'));
         },
 
         reRenderUpvotes: function(id) {
