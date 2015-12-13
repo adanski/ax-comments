@@ -68,6 +68,7 @@
             viewAllRepliesText: 'View all __replyCount__ replies',
             hideRepliesText: 'Hide replies',
             noCommentsText: 'No comments',
+            attachmentDropText: 'Drop files here',
             textFormatter: function(text) {
                 return text;
             },
@@ -78,7 +79,7 @@
             enableUpvoting: true,
             enableDeleting: true,
             enableAttachments: true,
-            enableDeletingCommentWithReplies: true,
+            enableDeletingCommentWithReplies: false,
             enableNavigation: true,
             defaultNavigationSortKey: 'newest',
 
@@ -156,7 +157,18 @@
             // Other
             'click li.comment ul.child-comments .toggle-all': 'toggleReplies',
             'click li.comment button.reply': 'replyButtonClicked',
-            'click li.comment button.edit': 'editButtonClicked'
+            'click li.comment button.edit': 'editButtonClicked',
+
+            // Drag & dropping attachments
+            'dragenter' : 'showDroppableOverlay',
+
+            'dragenter .droppable-overlay' : 'handleDragEnter',
+            'dragleave .droppable-overlay' : 'handleDragLeaveForOverlay',
+            'dragenter .droppable-overlay .droppable' : 'handleDragEnter',
+            'dragleave .droppable-overlay .droppable' : 'handleDragLeaveForDroppable',
+
+            'dragover .droppable-overlay' : 'handleDragOverForOverlay',
+            'drop .droppable-overlay' : 'handleDrop'
         },
 
 
@@ -483,6 +495,64 @@
 
         // Event handlers
         // ==============
+
+        showDroppableOverlay: function(ev) {
+            if(this.options.enableAttachments) {
+                this.$el.find('.droppable-overlay').css('top', this.$el[0].scrollTop);
+                this.$el.find('.droppable-overlay').show();
+                this.$el.addClass('drag-ongoing');
+            }
+        },
+
+        handleDragEnter: function(ev) {
+            var count = $(ev.currentTarget).data('dnd-count') || 0;
+            count++;
+            $(ev.currentTarget).data('dnd-count', count);
+            $(ev.currentTarget).addClass('drag-over');
+        },
+
+        handleDragLeave: function(ev, callback) {
+            var count = $(ev.currentTarget).data('dnd-count');
+            count--;
+            $(ev.currentTarget).data('dnd-count', count);
+
+            if(count == 0) {            
+                $(ev.currentTarget).removeClass('drag-over');
+                if(callback) callback();
+            }
+        },
+
+        handleDragLeaveForOverlay: function(ev) {
+            var self = this;
+            this.handleDragLeave(ev, function() {
+                self.hideDroppableOverlay();
+            });
+        },
+
+        handleDragLeaveForDroppable: function(ev) {
+            this.handleDragLeave(ev);
+        },
+
+        handleDragOverForOverlay: function(ev) {
+            ev.stopPropagation();
+            ev.preventDefault();
+            ev.originalEvent.dataTransfer.dropEffect = 'copy';
+        },
+
+        hideDroppableOverlay: function() {
+            this.$el.find('.droppable-overlay').hide();
+            this.$el.removeClass('drag-ongoing');
+        },
+
+        handleDrop: function(ev) {
+            ev.stopPropagation();
+            ev.preventDefault();
+            var files = ev.originalEvent.dataTransfer.files;
+            $(files).each(function(index, file) {
+                console.log(file)
+            });
+            this.hideDroppableOverlay();
+        },
 
         saveOnKeydown: function(ev) {
             // Save comment on cmd/ctrl + enter
@@ -898,6 +968,39 @@
             }
             noComments.prepend($('<br/>')).prepend(noCommentsIcon);
             this.$el.append(noComments);
+
+
+            // Drag & dropping attachments
+            if(this.options.enableAttachments) {
+                var droppableOverlay = $('<div/>', {
+                    'class': 'droppable-overlay'
+                });
+
+                var droppableContainer = $('<div/>', {
+                    'class': 'droppable-container'
+                });
+
+                var droppable = $('<div/>', {
+                    'class': 'droppable'
+                });
+
+                var uploadIcon = $('<i/>', {
+                    'class': 'fa fa-upload'
+                });
+                if(this.options.uploadIconURL.length) {
+                    uploadIcon.css('background-image', 'url("'+this.options.uploadIconURL+'")');
+                    uploadIcon.addClass('image');
+                }
+
+                var dropAttachmentText = $('<div/>', {
+                    text: this.options.textFormatter(this.options.attachmentDropText)
+                });
+                droppable.append(uploadIcon);
+                droppable.append(dropAttachmentText);
+
+                droppableOverlay.html(droppableContainer.html(droppable)).hide();
+                this.$el.append(droppableOverlay);
+            }
         },
 
         createProfilePictureElement: function(src) {
@@ -972,7 +1075,8 @@
                         'class': 'fa fa-upload'
                     });
                     var fileInput = $('<input/>', {
-                        type: 'file'
+                        type: 'file',
+                        multiple: 'multiple'
                     });
                     if(this.options.uploadIconURL.length) {
                         uploadIcon.css('background-image', 'url("'+this.options.uploadIconURL+'")');
