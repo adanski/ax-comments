@@ -436,11 +436,11 @@
             // Remove the comment from data model
             delete this.commentsById[commentId];
 
-            var commentEl = this.$el.find('li.comment[data-id="'+commentId+'"]');
-            var parentEl = commentEl.parents('li.comment').last();
+            var commentElements = this.$el.find('li.comment[data-id="'+commentId+'"]');
+            var parentEl = commentElements.parents('li.comment').last();
 
             // Remove the element
-            commentEl.remove();
+            commentElements.remove();
 
             // Update the toggle all button
             this.updateToggleAllButton(parentEl);
@@ -1537,16 +1537,24 @@
 
         reRenderComment: function(id) {
             var commentModel = this.commentsById[id];
-            var commentWrapper = this.createCommentWrapperElement(commentModel);
-            var commentEl = this.$el.find('li.comment[data-id="'+commentModel.id+'"]');
-            commentEl.find('> .comment-wrapper').replaceWith(commentWrapper);
+            var commentElements = this.$el.find('li.comment[data-id="'+commentModel.id+'"]');
+
+            var self = this;
+            commentElements.each(function(index, commentEl) {
+                var commentWrapper = self.createCommentWrapperElement(commentModel);
+                $(commentEl).find('.comment-wrapper').first().replaceWith(commentWrapper);
+            });
         },
 
         reRenderCommentActionBar: function(id) {
             var commentModel = this.commentsById[id];
-            var commentWrapper = this.createCommentWrapperElement(commentModel);
-            var commentEl = this.$el.find('li.comment[data-id="'+commentModel.id+'"]');
-            commentEl.find('.actions').first().replaceWith(commentWrapper.find('.actions'));
+            var commentElements = this.$el.find('li.comment[data-id="'+commentModel.id+'"]');
+
+            var self = this;
+            commentElements.each(function(index, commentEl) {
+                var commentWrapper = self.createCommentWrapperElement(commentModel);
+                $(commentEl).find('.actions').first().replaceWith(commentWrapper.find('.actions'));
+            });
         },
 
         reRenderUpvotes: function(id) {
