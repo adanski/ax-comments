@@ -8,7 +8,7 @@
     <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
-    <script type="text/javascript" src="demo/js/lib/jquery-1.9.0.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -156,7 +156,7 @@
 <pre><code>&lt;link rel="stylesheet" type="text/css" href="css/jquery-comments.css"&gt;
 &lt;link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"&gt;
 
-&lt;script type="text/javascript" src=""https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js"&gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js"&gt;&lt;/script&gt;
 &lt;script type="text/javascript" src="js/jquery-comments.js"&gt;&lt;/script&gt;
 </code></pre>
 
@@ -195,14 +195,13 @@ fileIconURL: '',        // Only if attachments are enabled
 
 <table>
 
-
-<tr><th colspan="2">Images</th></tr>
+<tr><th colspan="2">Current user</th></tr>
 
 <tr>
 <td><code>profilePictureURL</code></td>
 <td>
 <p>
-An <code>url</code> for profile picture of the current user
+An <code>url</code> for profile picture of the current user. Not required if Font Awesome is used.
 </p>
 <label>DEFAULT</label>  
 <code class="string">""</code>
@@ -214,8 +213,25 @@ $('#comments-container').comments({
 </pre>
 </td>
 </tr>
+<tr>
+<td><code>currentUserIsAdmin</code></td>
+<td>
+<p>
+A <code>boolean</code> value determing whether the current user is administarator
+</p>
+<label>DEFAULT</label>  
+<code class="boolean">false</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    currentUserIsAdmin: true
+});
+</pre>
+</td>
+</tr>
 
 
+<tr><th colspan="2">Images</th></tr>
 <tr>
 <td><code>spinnerIconURL</code></td>
 <td>
@@ -269,6 +285,56 @@ $('#comments-container').comments({
 </td>
 </tr>
 
+<tr>
+<td><code>uploadIconURL</code></td>
+<td>
+<p>
+An <code>url</code> for upload icon that is used as a button for uploading attachments. Not required if Font Awesome is used.
+</p>
+<label>DEFAULT</label>  
+<code class="string">""</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    uploadIconURL: '/img/upload-icon.png'
+});
+</pre>
+</td>
+</tr>
+
+<tr>
+<td><code>attachmentIconURL</code></td>
+<td>
+<p>
+An <code>url</code> for attachment icon that is used as a symbor for attachments. Not required if Font Awesome is used.
+</p>
+<label>DEFAULT</label>  
+<code class="string">""</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    attachmentIconURL: '/img/attachment-icon.png'
+});
+</pre>
+</td>
+</tr>
+
+<tr>
+<td><code>fileIconURL</code></td>
+<td>
+<p>
+An <code>url</code> for file icon that is used to indicate that a link is an attachment. Not required if Font Awesome is used.
+</p>
+<label>DEFAULT</label>  
+<code class="string">""</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    fileIconURL: '/img/file-icon.png'
+});
+</pre>
+</td>
+</tr>
 
 <tr>
 <td><code>noCommentsIconURL</code></td>
@@ -302,24 +368,6 @@ A <code>string</code> that is displayed as a placeholder in commenting fields
 <pre class="prettyprint linemus">
 $('#comments-container').comments({
     textareaPlaceholderText: 'Leave a comment'
-});
-</pre>
-</td>
-</tr>
-
-
-<tr>
-<td><code>popularText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on sorting button for most popular comments
-</p>
-<label>DEFAULT</label>  
-<code class="string">"Popular"</code>
-<label class="example">EXAMPLE</label>  
-<pre class="prettyprint linemus">
-$('#comments-container').comments({
-    popularText: 'Most popular'
 });
 </pre>
 </td>
@@ -361,6 +409,39 @@ $('#comments-container').comments({
 </td>
 </tr>
 
+<tr>
+<td><code>popularText</code></td>
+<td>
+<p>
+A <code>string</code> that is displayed on sorting button for most popular comments
+</p>
+<label>DEFAULT</label>  
+<code class="string">"Popular"</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    popularText: 'Most popular'
+});
+</pre>
+</td>
+</tr>
+
+<tr>
+<td><code>attachmentsText</code></td>
+<td>
+<p>
+A <code>string</code> that is displayed on sorting button for attachments
+</p>
+<label>DEFAULT</label>  
+<code class="string">"Attachments"</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    attachmentsText: 'Show attachments'
+});
+</pre>
+</td>
+</tr>
 
 <tr>
 <td><code>sendText</code></td>
@@ -415,42 +496,6 @@ $('#comments-container').comments({
 </td>
 </tr>
 
-
-<tr>
-<td><code>saveText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on save button
-</p>
-<label>DEFAULT</label>  
-<code class="string">"Save"</code>
-<label class="example">EXAMPLE</label>  
-<pre class="prettyprint linemus">
-$('#comments-container').comments({
-    saveText: 'Update'
-});
-</pre>
-</td>
-</tr>
-
-
-<tr>
-<td><code>deleteText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on delete button
-</p>
-<label>DEFAULT</label>  
-<code class="string">"Delete"</code>
-<label class="example">EXAMPLE</label>  
-<pre class="prettyprint linemus">
-$('#comments-container').comments({
-    deleteText: 'Remove'
-});
-</pre>
-</td>
-</tr>
-
 <tr>
 <td><code>editedText</code></td>
 <td>
@@ -486,6 +531,40 @@ $('#comments-container').comments({
 </td>
 </tr>
 
+<tr>
+<td><code>saveText</code></td>
+<td>
+<p>
+A <code>string</code> that is displayed on save button
+</p>
+<label>DEFAULT</label>  
+<code class="string">"Save"</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    saveText: 'Update'
+});
+</pre>
+</td>
+</tr>
+
+
+<tr>
+<td><code>deleteText</code></td>
+<td>
+<p>
+A <code>string</code> that is displayed on delete button
+</p>
+<label>DEFAULT</label>  
+<code class="string">"Delete"</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    deleteText: 'Remove'
+});
+</pre>
+</td>
+</tr>
 
 <tr>
 <td><code>viewAllRepliesText</code></td>
@@ -540,6 +619,41 @@ $('#comments-container').comments({
 </td>
 </tr>
 
+
+<tr>
+<td><code>noAttachmentsText</code></td>
+<td>
+<p>
+A <code>string</code> that is displayed if there are no attachments to show
+</p>
+<label>DEFAULT</label>  
+<code class="string">"No attachments"</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    noAttachmentsText: 'There are no attachments'
+});
+</pre>
+</td>
+</tr>
+
+
+<tr>
+<td><code>attachmentDropText</code></td>
+<td>
+<p>
+A <code>string</code> that is used to inform the user where the attachments can be dropped
+</p>
+<label>DEFAULT</label>  
+<code class="string">"Drop files here"</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    attachmentDropText: 'Drop here'
+});
+</pre>
+</td>
+</tr>
 
 
 <tr><th colspan="2">Colors</th></tr>
@@ -670,6 +784,114 @@ $('#comments-container').comments({
 </tr>
 
 
+<tr>
+<td><code>enableAttachments</code></td>
+<td>
+<p>
+A <code>boolean</code> value determing whether attachments are enabled
+</p>
+<label>DEFAULT</label>  
+<code>false</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    enableAttachments: true
+});
+</pre>
+</td>
+</tr>
+
+
+<tr>
+<td><code>enableHashtags</code></td>
+<td>
+<p>
+A <code>boolean</code> value determing whether hashtags are enabled. Enabling this functionality highlights the hashtags and the <code>hashtagClicked</code> callback function will be executed once the user has clicked a hashtag.
+</p>
+<label>DEFAULT</label>  
+<code>false</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    enableHashtags: true
+});
+</pre>
+</td>
+</tr>
+
+
+<tr>
+<td><code>enableNavigation</code></td>
+<td>
+<p>
+A <code>boolean</code> value determing whether navigation is enabled
+</p>
+<label>DEFAULT</label>  
+<code>true</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    enableNavigation: false
+});
+</pre>
+</td>
+</tr>
+
+
+<tr>
+<td><code>postCommentOnEnter</code></td>
+<td>
+<p>
+A <code>boolean</code> value determing whether comments will be posted by pressing enter
+</p>
+<label>DEFAULT</label>  
+<code>false</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    postCommentOnEnter: true
+});
+</pre>
+</td>
+</tr>
+
+
+<tr>
+<td><code>forceResponsive</code></td>
+<td>
+<p>
+A <code>boolean</code> value determing whether the main navigation elements are presented in a dropdown
+</p>
+<label>DEFAULT</label>  
+<code>false</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    forceResponsive: true
+});
+</pre>
+</td>
+</tr>
+
+
+<tr>
+<td><code>readOnly</code></td>
+<td>
+<p>
+A <code>boolean</code> value determing whether any actions are enabled
+</p>
+<label>DEFAULT</label>  
+<code>false</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    readOnly: true
+});
+</pre>
+</td>
+</tr>
+
+
 <tr><th colspan="2">Field mappings</th></tr>
 
 <tr>
@@ -684,9 +906,13 @@ id                      // Required
 parent                  // Required if replying is enabled
 created                 // Required
 modified                // Required if editing is enabled
-content                 // Required
+content                 // Either content or fileURL must be present
+fileURL                 // Either content or fileURL must be present
+file                    // Required when uploading an attachment
+fileMimeType            // Optional
 fullname                // Required
-profilePictureURL       // Required
+profileURL              // Optional
+profilePictureURL       // Optional
 createdByAdmin          // Optional
 createdByCurrentUser    // Required if editing is enabled
 upvoteCount             // Required if upvoting is enabled
@@ -695,17 +921,21 @@ userHasUpvoted          // Required if upvoting is enabled
 <label>DEFAULT</label>  
 <pre class="prettyprint linemus">
 fieldMappings: {
-   id: 'id',
-   parent: 'parent',
-   created: 'created',
-   modified: 'modified',
-   content: 'content',
-   fullname: 'fullname',
-   profilePictureURL: 'profile_picture_url',
-   createdByAdmin: 'created_by_admin',
-   createdByCurrentUser: 'created_by_current_user',
-   upvoteCount: 'upvote_count',
-   userHasUpvoted: 'user_has_upvoted',
+    id: 'id',
+    parent: 'parent',
+    created: 'created',
+    modified: 'modified',
+    content: 'content',
+    file: 'file',
+    fileURL: 'file_url',
+    fileMimeType: 'file_mime_type',
+    fullname: 'fullname',
+    profileURL: 'profile_url',
+    profilePictureURL: 'profile_picture_url',
+    createdByAdmin: 'created_by_admin',
+    createdByCurrentUser: 'created_by_current_user',
+    upvoteCount: 'upvote_count',
+    userHasUpvoted: 'user_has_upvoted'
 }
 </pre>
 <label class="example">EXAMPLE</label>  
@@ -918,6 +1148,99 @@ $('#comments-container').comments({
 </td>
 </tr>
 
+
+<tr>
+<td><code>uploadAttachments</code></td>
+<td>
+<p>
+A callback <code>function</code> that is used to upload attachments to the server. The first parameter of the callback is <code>commentArray</code> including all the attachments as comment models where <code>file</code> field contains the file to be uploaded. The server should return the url for the uploaded file in <code>fileURL</code> field. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server. The success callback takes an array of successfull uploads as a parameter.
+</p>
+<label>DEFAULT</label>  
+<pre class="prettyprint linemus">
+function(commentArray, success, error) {
+    success(commentArray);
+}
+</pre>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    uploadAttachments: function(commentArray, success, error) {
+        var responses = 0;
+        var successfulUploads = [];
+
+        var serverResponded = function() {
+            responses++;
+
+            // Check if all requests have finished
+            if(responses == commentArray.length) {
+                
+                // Case: all failed
+                if(successfulUploads.length == 0) {
+                    error();
+
+                // Case: some succeeded
+                } else {
+                    success(successfulUploads)
+                }
+            }
+        }
+
+        $(commentArray).each(function(index, commentJSON) {
+
+            // Create form data
+            var formData = new FormData();
+            $(Object.keys(commentJSON)).each(function(index, key) {
+                var value = commentJSON[key];
+                if(value) formData.append(key, value);
+            });
+
+            $.ajax({
+                url: '/api/comments/',
+                type: 'POST',
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function(commentJSON) {
+                    successfulUploads.push(commentJSON);
+                    serverResponded();
+                },
+                error: function(data) {
+                    serverResponded();
+                },
+            });
+        });
+    }
+});
+</pre>
+</td>
+</tr>
+
+
+<tr>
+<td><code>hashtagClicked</code></td>
+<td>
+<p>
+A callback <code>function</code> that is called after user has clicked a hashtag
+</p>
+<label>DEFAULT</label>  
+<pre class="prettyprint linemus">
+function(hashtag) {
+    location.hash = 'tags/' + hashtag
+}
+</pre>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    hashtagClicked: function(hashtag) {
+        location.href = '#tags/' + hashtag
+    }
+});
+</pre>
+</td>
+</tr>
+
+
 <tr><th colspan="2">Formatters</th></tr>
 
 <tr>
@@ -967,6 +1290,25 @@ $('#comments-container').comments({
 </tr>
 
 <tr><th colspan="2">Miscellaneous</th></tr>
+
+
+<tr>
+<td><code>defaultNavigationSortKey</code></td>
+<td>
+<p>
+A <code>string</code> value determing the default sorting. Possible values are <code>newest</code>, <code>oldest</code>, <code>popularity</code> and <code>attachments</code>
+</p>
+<label>DEFAULT</label>  
+<code class="string">"newest"</code>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+$('#comments-container').comments({
+    defaultNavigationSortKey: 'popularity'
+});
+</pre>
+</td>
+</tr>
+
 
 <tr>
 <td><code>roundProfilePictures</code></td>
