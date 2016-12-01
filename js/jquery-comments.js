@@ -78,7 +78,7 @@
             // Other actions
             'click li.comment button.upvote' : 'upvoteComment',
             'click li.comment button.delete.enabled' : 'deleteComment',
-            'click li.comment .tag' : 'tagClicked',
+            'click li.comment .hashtag' : 'hashtagClicked',
 
             // Other
             'click li.comment ul.child-comments .toggle-all': 'toggleReplies',
@@ -143,7 +143,7 @@
                 enableUpvoting: true,     
                 enableDeleting: true,     
                 enableAttachments: false,     
-                enableTags: false,     
+                enableHashtags: false,     
                 enableDeletingCommentWithReplies: false,      
                 enableNavigation: true,       
                 postCommentOnEnter: false,        
@@ -184,7 +184,7 @@
                 putComment: function(commentJSON, success, error) {success(commentJSON)},     
                 deleteComment: function(commentJSON, success, error) {success()},     
                 upvoteComment: function(commentJSON, success, error) {success(commentJSON)},      
-                tagClicked: function(tag) {location.hash = 'tags/' + tag},      
+                hashtagClicked: function(hashtag) {},      
                 uploadAttachments: function(commentArray, success, error) {success(commentArray)},        
                 refresh: function() {},       
                 timeFormatter: function(time) {return new Date(time).toLocaleDateString()}
@@ -930,10 +930,10 @@
             this.options.deleteComment(commentJSON, success, error);
         },
 
-        tagClicked: function(ev) {
+        hashtagClicked: function(ev) {
             var el = $(ev.currentTarget);
-            var tag = el.text().slice(1);
-            this.options.tagClicked(tag);
+            var hashtag = el.data('tag');
+            this.options.hashtagClicked(hashtag);
         },
 
         fileInputChanged: function(ev, files) {
@@ -1593,7 +1593,7 @@
             // Case: regular comment
             } else {
                 var html = this.linkify(this.escape(commentModel.content));
-                if(this.options.enableTags) html = this.highlightTags(html);
+                if(this.options.enableHashtags) html = this.highlightTags(html);
                 content.html(html);
             }
 
@@ -1934,7 +1934,7 @@
         },
 
         highlightTags: function(inputText) {
-            return inputText.replace(/(^|\s)(#[a-z\d-]+)/ig, '$1<a class="tag hashtag">$2</a>');
+            return inputText.replace(/(^|\s)#([a-zäöüß\d-_]+)/ig, '$1<a class="tag hashtag" data-tag="$2">#$2</a>');
         },
 
         linkify: function(inputText) {
