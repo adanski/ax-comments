@@ -179,6 +179,7 @@
                     userHasUpvoted: 'user_has_upvoted'        
                 },        
                 
+                getUsers: function(success, error) {success([])},       //TODO: async  
                 getComments: function(success, error) {success([])},      
                 postComment: function(commentJSON, success, error) {success(commentJSON)},        
                 putComment: function(commentJSON, success, error) {success(commentJSON)},     
@@ -1328,6 +1329,48 @@
                     textarea.prepend(replyToBadge);
                 }
             }
+
+            textarea.textcomplete([{
+                match: /(^|\s)@((\w|\s)*)$/,
+                search: function (term, callback) {
+                    term = term.replace('\u00a0', ' ');  // Convert non-breaking spaces to reguar spaces
+                    var users = self.options.getUsers();
+
+                    // TODO: sort
+                    callback($.map(users, function (user) {
+                        return user.fullname.toLowerCase().indexOf(term.toLowerCase()) != -1 ? user : null;
+                    }));
+                },
+                template: function(user) {
+                    var wrapper = $('<div/>');
+
+                    var profilePictureEl = $('<img/>', {
+                        src: user.profile_picture_url,
+                        'class': 'profile-picture round'
+                    });
+                    var detailsEl = $('<div/>', {
+                        'class': 'details',
+                    });
+                    var nameEl = $('<div/>', {
+                        'class': 'name',
+                    }).html(user.fullname);
+
+                    var emailEl = $('<div/>', {
+                        'class': 'email',
+                    }).html(user.email);
+
+                    detailsEl.append(nameEl).append(emailEl);
+                    wrapper.append(profilePictureEl).append(detailsEl);
+                    return wrapper.html();
+                },
+                replace: function (user) {
+                    return ' @' + user.fullname + ' ';
+                },
+            }], {
+                appendTo: '.' + this.$el[0].className,
+                dropdownClassName: 'dropdown',
+                maxCount: 5,
+            });
 
             return commentingField;
         },
