@@ -39,10 +39,11 @@ http://viima.github.io/jquery-comments/*/
 }
 
 .jquery-comments .tag {
+	font-size: 0.9em;
+	line-height: 1.2em;
 	background: #ddd;
 	border: 1px solid #ccc;
 	padding: 0.05em 0.4em;
-	font-size: 0.9em;
 	cursor: pointer;
 	font-weight: normal;
 	border-radius: 1em;
@@ -346,7 +347,7 @@ http://viima.github.io/jquery-comments/*/
 	position: absolute;
 	background: #FFF;
 	z-index: 99;
-	line-height: 1.3em;
+	line-height: 1.2em;
 
 	border: 1px solid #CCC;
 	box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
@@ -357,7 +358,8 @@ http://viima.github.io/jquery-comments/*/
 
 .jquery-comments ul.dropdown li {
 	display: block;
-	padding: 0.5rem;
+	clear: both;
+	padding: 0.5em 1em;
 	font-weight: normal;
 	cursor: pointer;
 }
@@ -368,12 +370,14 @@ http://viima.github.io/jquery-comments/*/
 
 .jquery-comments ul.dropdown li a {
 	display: block;
+	text-decoration: none;
+	color: inherit;
 }
 
 .jquery-comments ul.dropdown li .profile-picture {
 	float: left;
-	width: 2.6em;
-	height: 2.6em;
+	width: 2.4em;
+	height: 2.4em;
 	margin-right: 0.5em;
 }
 
@@ -393,6 +397,8 @@ http://viima.github.io/jquery-comments/*/
 
 .jquery-comments ul.dropdown li .details .email {
 	color: #AAA;
+	font-size: 0.95em;
+	margin-top: 0.1em;
 }
 
 .jquery-comments ul.navigation .navigation-wrapper.responsive ul.dropdown {
