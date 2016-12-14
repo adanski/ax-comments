@@ -179,7 +179,7 @@
                     userHasUpvoted: 'user_has_upvoted'        
                 },        
                 
-                getUsers: function(success, error) {success([])},       //TODO: async  
+                getUsers: function(success, error) {success([])},
                 getComments: function(success, error) {success([])},      
                 postComment: function(commentJSON, success, error) {success(commentJSON)},        
                 putComment: function(commentJSON, success, error) {success(commentJSON)},     
@@ -767,8 +767,8 @@
             var content = this.getTextareaContent(textarea);
             var saveButton = textarea.siblings('.control-row').find('.save');
 
-            // Update parent id if reply-to-badge was removed
-            if(!textarea.find('.reply-to-badge').length) {
+            // Update parent id if reply-to tag was removed
+            if(!textarea.find('.reply-to.tag').length) {
                 var commentId = textarea.attr('data-comment');
 
                 // Case: editing comment
@@ -1314,63 +1314,65 @@
                 // Set the parent id to the field if necessary
                 textarea.attr('data-parent', parentId);
 
-                // Append reply-to badge if necessary
+                // Append reply-to tag if necessary
                 var parentModel = this.commentsById[parentId];
                 if(parentModel.parent) {
                     textarea.html('&nbsp;');    // Needed to set the cursor to correct place
 
-                    // Creating the reply-to badge
-                    var replyToBadge = $('<input/>', {
-                        'class': 'reply-to-badge highlight-font-bold',
-                        type: 'button'
-                    });
+                    // Creating the reply-to tag
                     var replyToName = '@' + parentModel.fullname;
-                    replyToBadge.val(replyToName);
-                    textarea.prepend(replyToBadge);
+                    var replyToTag = this.createTagElement(replyToName, 'reply-to');
+                    textarea.prepend(replyToTag);
                 }
             }
 
-            textarea.textcomplete([{
-                match: /(^|\s)@((\w|\s)*)$/,
-                search: function (term, callback) {
-                    term = term.replace('\u00a0', ' ');  // Convert non-breaking spaces to reguar spaces
-                    var users = self.options.getUsers();
+            // Pinging users
+            if(this.options.enablePinging) {
+                textarea.textcomplete([{
+                    match: /(^|\s)@((\w|\s)*)$/,
+                    search: function (term, callback) {
+                        term = term.replace('\u00a0', ' ');  // Convert non-breaking spaces to reguar spaces
+                        var users = self.options.getUsers();
 
-                    // TODO: sort
-                    callback($.map(users, function (user) {
-                        return user.fullname.toLowerCase().indexOf(term.toLowerCase()) != -1 ? user : null;
-                    }));
-                },
-                template: function(user) {
-                    var wrapper = $('<div/>');
+                        callback($.map(users, function (user) {
+                            var lowercaseTerm = term.toLowerCase();
+                            var nameMatch = user.fullname.toLowerCase().indexOf(lowercaseTerm) != -1;
+                            return nameMatch ? user : null;
+                        }));
+                    },
+                    template: function(user) {
+                        var wrapper = $('<div/>');
 
-                    var profilePictureEl = $('<img/>', {
-                        src: user.profile_picture_url,
-                        'class': 'profile-picture round'
-                    });
-                    var detailsEl = $('<div/>', {
-                        'class': 'details',
-                    });
-                    var nameEl = $('<div/>', {
-                        'class': 'name',
-                    }).html(user.fullname);
+                        var profilePictureEl = $('<img/>', {
+                            src: user.profile_picture_url,
+                            'class': 'profile-picture round'
+                        });
+                        var detailsEl = $('<div/>', {
+                            'class': 'details',
+                        });
+                        var nameEl = $('<div/>', {
+                            'class': 'name',
+                        }).html(user.fullname);
 
-                    var emailEl = $('<div/>', {
-                        'class': 'email',
-                    }).html(user.email);
+                        var emailEl = $('<div/>', {
+                            'class': 'email',
+                        }).html(user.email);
 
-                    detailsEl.append(nameEl).append(emailEl);
-                    wrapper.append(profilePictureEl).append(detailsEl);
-                    return wrapper.html();
-                },
-                replace: function (user) {
-                    return ' @' + user.fullname + ' ';
-                },
-            }], {
-                appendTo: '.' + this.$el[0].className,
-                dropdownClassName: 'dropdown',
-                maxCount: 5,
-            });
+                        detailsEl.append(nameEl).append(emailEl);
+                        wrapper.append(profilePictureEl).append(detailsEl);
+                        return wrapper.html();
+                    },
+                    replace: function (user) {
+                        var tag = self.createTagElement('@' + user.fullname, 'ping');
+                        tag.attr('data-value', '@' + user.email);
+                        return ' ' + tag[0].outerHTML + ' ';
+                    },
+                }], {
+                    appendTo: '.' + this.$el[0].className,
+                    dropdownClassName: 'dropdown',
+                    maxCount: 5,
+                });
+            }
 
             return commentingField;
         },
@@ -1636,7 +1638,8 @@
             // Case: regular comment
             } else {
                 var html = this.linkify(this.escape(commentModel.content));
-                if(this.options.enableHashtags) html = this.highlightTags(html);
+                if(this.options.enableHashtags) html = this.highlightHashtags(html);
+                if(this.options.enablePinging) html = this.highlightPings(html);
                 content.html(html);
             }
 
@@ -1739,6 +1742,16 @@
             return upvoteEl;
         },
 
+        createTagElement: function(value, extraClasses) {
+            var tagEl = $('<input/>', {
+                'class': 'tag',
+                type: 'button'
+            });
+            if(extraClasses) tagEl.addClass(extraClasses);
+            tagEl.val(value);
+            return tagEl;
+        },
+
         reRenderComment: function(id) {
             var commentModel = this.commentsById[id];
             var commentElements = this.$el.find('li.comment[data-id="'+commentModel.id+'"]');
@@ -1818,6 +1831,15 @@
 
         // Utilities
         // =========
+
+        getUserByEmail: function(email) {
+            var users = this.options.getUsers().filter(function(user){return user.email == email});
+            if(users.length == 1) {
+                return users[0];
+            } else {
+                return null;
+            }
+        },
 
         getComments: function() {
             var self = this;
@@ -1930,7 +1952,14 @@
         },
 
         getTextareaContent: function(textarea) {
-            var ce = $('<pre/>').html(textarea.html());
+            var textareaClone = textarea.clone();
+
+            // Replace tags with text values
+            textareaClone.find('.tag').replaceWith(function(){
+                return $(this).attr('data-value');
+            });
+
+            var ce = $('<pre/>').html(textareaClone.html());
             ce.find('div, p, br').replaceWith(function() { return '\n' + this.innerHTML; });
 
             // Trim leading spaces
@@ -1976,8 +2005,32 @@
             return $('<pre/>').text(inputText).html();
         },
 
-        highlightTags: function(inputText) {
-            return inputText.replace(/(^|\s)#([a-zäöüß\d-_]+)/ig, '$1<a class="tag hashtag" data-tag="$2">#$2</a>');
+        highlightHashtags: function(text) {
+            var self = this;
+            var regex = /(^|\s)#([a-zäöüß\d-_]+)/gim;
+
+            var __createTag = function(tag) {
+                var tag = self.createTagElement('#' + tag, 'hashtag');
+                return tag[0].outerHTML;
+            }
+            return text.replace(regex, function($0, $1, $2){
+                return $1 + __createTag($2);
+            });
+        },
+
+        highlightPings: function(text) {
+            var self = this;
+            var regex = /(^|\s)@(([a-zA-Z0-9\-\_\.])+@[a-zA-Z\_]+?(\.[a-zA-Z]{2,6})+)/gim;
+
+            var __createTag = function(email) {
+                var user = self.getUserByEmail(email);
+                var value = user ? user.fullname : email;
+                var tag = self.createTagElement('@' + value, 'ping');
+                return tag[0].outerHTML;
+            }
+            return text.replace(regex, function($0, $1, $2){
+                return $1 + __createTag($2);
+            });
         },
 
         linkify: function(inputText) {
