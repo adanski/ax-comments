@@ -40,9 +40,9 @@
 
         $el: null,
         commentsById: {},
+        usersById: {},
         dataFetched: false,
         currentSortKey: '',
-        users: {},
         options: {},
         events: {
             // Close dropdowns
@@ -110,6 +110,7 @@
                 // User        
                 profilePictureURL: '',        
                 currentUserIsAdmin: false,        
+                currentUserId: null,        
                 
                 // Font awesome icon overrides        
                 spinnerIconURL: '',       
@@ -170,9 +171,11 @@
                     created: 'created',       
                     modified: 'modified',     
                     content: 'content',       
+                    pings: 'pings',       
                     file: 'file',     
                     fileURL: 'file_url',      
                     fileMimeType: 'file_mime_type',       
+                    creator: 'creator',     
                     fullname: 'fullname',     
                     profileURL: 'profile_url',        
                     profilePictureURL: 'profile_picture_url',     
@@ -266,19 +269,7 @@
             var self = this;
 
             this.commentsById = {};
-            this.users = {
-                byId: {},
-                pingedUsersRegex: '',
-                get: function(id) {
-                    return this.byId[id];
-                },
-                getAll: function() {
-                    var self = this;
-                    return Object.keys(this.byId).map(function(id){
-                        return self.byId[id];
-                    });
-                },
-            };
+            this.usersById = {};
 
             this.$el.empty();
             this.createHTML();
@@ -316,11 +307,8 @@
             if(this.options.enablePinging) {
                 var usersFetched = function(userArray) {
                     $(userArray).each(function(index, user) {
-                        self.users.byId[user.email] = user;
+                        self.usersById[user.id] = user;
                     });
-
-                    var fullnames = userArray.map(function(user){return user.fullname});
-                    self.users.pingedUsersRegex = new RegExp('(^|\\s)@(' + fullnames.join('|') + ')');
 
                     dataFetched();
                 }
@@ -915,6 +903,7 @@
             $.extend(commentJSON, {
                 parent: textarea.attr('data-parent') || null,
                 content: this.getTextareaContent(textarea),
+                pings: this.getPings(textarea),
                 modified: new Date().getTime()
             });
 
@@ -973,14 +962,14 @@
 
         hashtagClicked: function(ev) {
             var el = $(ev.currentTarget);
-            var hashtag = el.attr('data-value').slice(1);
-            this.options.hashtagClicked(hashtag);
+            var value = el.attr('data-value');
+            this.options.hashtagClicked(value);
         },
 
         pingClicked: function(ev) {
             var el = $(ev.currentTarget);
-            var email = el.attr('data-value').slice(1);
-            this.options.pingClicked(email);
+            var value = el.attr('data-value');
+            this.options.pingClicked(value);
         },
 
         fileInputChanged: function(ev, files) {
@@ -1072,7 +1061,7 @@
             textarea.attr('data-comment', commentModel.id);
 
             // Escaping HTML
-            textarea.append(this.getTextareaContentAsEscapedHTML(commentModel.content));
+            textarea.append(this.getFormattedCommentContent(commentModel, true));
 
             // Move cursor to end
             this.moveCursorToEnd(textarea);
@@ -1367,7 +1356,7 @@
 
                     // Creating the reply-to tag
                     var replyToName = '@' + parentModel.fullname;
-                    var replyToTag = this.createTagElement(replyToName, 'reply-to');
+                    var replyToTag = this.createTagElement(replyToName, 'reply-to', parentModel.creator);
                     textarea.prepend(replyToTag);
                 }
             }
@@ -1378,7 +1367,7 @@
                     match: /(^|\s)@((\w|\s)*)$/,
                     search: function (term, callback) {
                         term = term.replace('\u00a0', ' ');  // Convert non-breaking spaces to reguar spaces
-                        var users = self.users.getAll();
+                        var users = self.getUsers().filter(function(user){return user.id != self.options.currentUserId});
 
                         callback($.map(users, function (user) {
                             var lowercaseTerm = term.toLowerCase();
@@ -1409,7 +1398,7 @@
                         return wrapper.html();
                     },
                     replace: function (user) {
-                        var tag = self.createTagElement('@' + user.fullname, 'ping', '@' + user.email);
+                        var tag = self.createTagElement('@' + user.fullname, 'ping', user.id);
                         return ' ' + tag[0].outerHTML + ' ';
                     },
                 }], {
@@ -1682,10 +1671,7 @@
 
             // Case: regular comment
             } else {
-                var html = this.escape(commentModel.content);
-                html = this.linkify(html);
-                html = this.highlightTags(html);
-                content.html(html);
+                content.html(this.getFormattedCommentContent(commentModel));
             }
 
             // Edited timestamp
@@ -1794,7 +1780,7 @@
             });
             if(extraClasses) tagEl.addClass(extraClasses);
             tagEl.val(text);
-            tagEl.attr('data-value', value ? value : text);
+            tagEl.attr('data-value', value);
             return tagEl;
         },
 
@@ -1883,6 +1869,11 @@
             return Object.keys(this.commentsById).map(function(id){return self.commentsById[id]});
         },
 
+        getUsers: function() {
+            var self = this;
+            return Object.keys(this.usersById).map(function(id){return self.usersById[id]});
+        },
+
         getChildComments: function(parentId) {
             return this.getComments().filter(function(comment){return comment.parent == parentId});
         },
@@ -1908,6 +1899,7 @@
                 created: time,
                 modified: time,
                 content: this.getTextareaContent(textarea),
+                pings: this.getPings(textarea),
                 fullname: this.options.textFormatter(this.options.youText),
                 profilePictureURL: this.options.profilePictureURL,
                 createdByCurrentUser: true,
@@ -1988,15 +1980,18 @@
             textarea.empty().trigger('input');
         },
 
-        getTextareaContent: function(textarea) {
+        getTextareaContent: function(textarea, humanReadable) {
             var textareaClone = textarea.clone();
 
             // Remove reply-to tag
             textareaClone.find('.reply-to.tag').remove();
 
             // Replace tags with text values
-            textareaClone.find('.tag').replaceWith(function(){
-                return $(this).attr('data-value');
+            textareaClone.find('.tag.hashtag').replaceWith(function(){
+                return '#' + humanReadable ? $(this).val() : $(this).attr('data-value');
+            });
+            textareaClone.find('.tag.ping').replaceWith(function(){
+                return '@' + humanReadable ? $(this).val() : $(this).attr('data-value');
             });
 
             var ce = $('<pre/>').html(textareaClone.html());
@@ -2007,11 +2002,16 @@
             return text;
         },
 
-        getTextareaContentAsEscapedHTML: function(html) {
-            // Escaping HTML except the new lines
-            var escaped = this.escape(html);
-            escaped = this.highlightTags(escaped);
-            return escaped.replace(/(?:\n)/g, '<br>');
+        getFormattedCommentContent: function(commentModel, replaceNewLines) {
+            var html = this.escape(commentModel.content);
+            html = this.linkify(html);
+            html = this.highlightTags(commentModel, html);
+            if(replaceNewLines) html = html.replace(/(?:\n)/g, '<br>');
+            return html;
+        },
+
+        getPings: function(textarea) {
+            return $.map(textarea.find('.ping'), function(el){return parseInt($(el).attr('data-value'))});
         },
 
         moveCursorToEnd: function(el) {
@@ -2056,54 +2056,48 @@
             }
         },
 
-        highlightTags: function(text) {
-            if(this.options.enableHashtags) text = this.highlightHashtags(text);
-            if(this.options.enablePinging) text = this.highlightPings(text);
-            return text;
+        highlightTags: function(commentModel, html) {
+            if(this.options.enableHashtags) html = this.highlightHashtags(commentModel, html);
+            if(this.options.enablePinging) html = this.highlightPings(commentModel, html);
+            return html;
         },
 
-        highlightHashtags: function(text) {
+        highlightHashtags: function(commentModel, html) {
             var self = this;
 
-            if(text.indexOf('#') != -1) {            
-                var regex = /(^|\s)#([a-zäöüß\d-_]+)/gim;
+            if(html.indexOf('#') != -1) {
 
                 var __createTag = function(tag) {
-                    var tag = self.createTagElement('#' + tag, 'hashtag', '#' + tag);
+                    var tag = self.createTagElement('#' + tag, 'hashtag', tag);
                     return tag[0].outerHTML;
                 }
-                text = text.replace(regex, function($0, $1, $2){
+
+                var regex = /(^|\s)#([a-zäöüß\d-_]+)/gim;
+                html = html.replace(regex, function($0, $1, $2){
                     return $1 + __createTag($2);
                 });
             }
-            return text;
+            return html;
         },
 
-        highlightPings: function(text) {
+        highlightPings: function(commentModel, html) {
             var self = this;
 
-            if(text.indexOf('@') != -1) {            
-                var regex = /(^|\s)@(([a-zA-Z0-9\-\_\.]+)@[a-zA-Z\_]+?(\.[a-zA-Z]{2,6})+)/gim;
+            if(html.indexOf('@') != -1) {
 
-                var __createTag = function(email) {
-                    var user = self.users.get(email);
-                    var value = user ? user.fullname : email;
-                    var tag = self.createTagElement('@' + value, 'ping', '@' + email);
+                var __createTag = function(user) {
+                    var tag = self.createTagElement('@' + user.fullname, 'ping', user.id);
                     return tag[0].outerHTML;
                 }
-                
-                // Highlight pings in format @<email>
-                text = text.replace(regex, function($0, $1, $2){
-                    return $1 + __createTag($2);
+
+                $(commentModel.pings).each(function(index, id) {
+                    var user = self.usersById[id];
+                    var pingText = '@' + user.fullname;
+                    html = html.replace(pingText, __createTag(user))
                 });
 
-                // Highlight pings in format @<fullname>
-                text = text.replace(self.users.pingedUsersRegex, function($0, $1, $2){
-                    return $1 + __createTag($2);
-                });
             }
-            return text;
-
+            return html;
         },
 
         linkify: function(inputText) {
