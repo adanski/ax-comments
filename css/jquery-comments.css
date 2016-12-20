@@ -200,11 +200,6 @@ http://viima.github.io/jquery-comments/*/
 	padding-right: 2em;
 }
 
-.jquery-comments .textarea-wrapper .textarea * {
-	margin: 0;
-	padding: 0;
-}
-
 .jquery-comments:not(.mobile) .scrollable .textarea-wrapper .textarea {
 	padding-right: calc(2em + 15px);	/* Because of scrollbar */
 }
@@ -359,6 +354,7 @@ http://viima.github.io/jquery-comments/*/
 
 .jquery-comments ul.dropdown li {
 	display: block;
+	white-space: nowrap;
 	clear: both;
 	padding: 0.5em 1em;
 	font-weight: normal;
@@ -383,20 +379,14 @@ http://viima.github.io/jquery-comments/*/
 }
 
 .jquery-comments ul.dropdown li .details {
-    overflow: hidden;
+	display: inline-block;
 }
 
-.jquery-comments ul.dropdown li .details > * {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.jquery-comments ul.dropdown li .details .name {
+.jquery-comments ul.dropdown li .name {
 	font-weight: bold;
 }
 
-.jquery-comments ul.dropdown li .details .email {
+.jquery-comments ul.dropdown li .email {
 	color: #AAA;
 	font-size: 0.95em;
 	margin-top: 0.1em;

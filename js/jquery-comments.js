@@ -99,10 +99,10 @@
             'dragover .droppable-overlay' : 'handleDragOverForOverlay',
             'drop .droppable-overlay' : 'handleDrop',
 
-            // Dropdown
-            'click .dropdown': 'stopPropagation',
-            'mousedown .dropdown': 'stopPropagation',
-            'touchstart .dropdown': 'stopPropagation',
+            // Prevent propagating the click event into buttons under the autocomplete dropdown
+            'click .dropdown.autocomplete': 'stopPropagation',
+            'mousedown .dropdown.autocomplete': 'stopPropagation',
+            'touchstart .dropdown.autocomplete': 'stopPropagation',
         },
 
 
@@ -197,7 +197,7 @@
                 deleteComment: function(commentJSON, success, error) {success()},     
                 upvoteComment: function(commentJSON, success, error) {success(commentJSON)},      
                 hashtagClicked: function(hashtag) {},      
-                pingClicked: function(email) {},      
+                pingClicked: function(userId) {},      
                 uploadAttachments: function(commentArray, success, error) {success(commentArray)},        
                 refresh: function() {},       
                 timeFormatter: function(time) {return new Date(time).toLocaleDateString()}
@@ -1432,7 +1432,7 @@
                     },
                 }], {
                     appendTo: '.jquery-comments',
-                    dropdownClassName: 'dropdown',
+                    dropdownClassName: 'dropdown autocomplete',
                     maxCount: 5,
                 });
             }
@@ -2017,12 +2017,10 @@
 
             // Replace tags with text values
             textareaClone.find('.tag.hashtag').replaceWith(function(){
-                var value = humanReadable ? $(this).val() : $(this).attr('data-value');
-                return '#' + value;
+                return humanReadable ? $(this).val() : '#' + $(this).attr('data-value');
             });
             textareaClone.find('.tag.ping').replaceWith(function(){
-                var value = humanReadable ? $(this).val() : $(this).attr('data-value');
-                return '@' + value;
+                return humanReadable ? $(this).val() : '@' + $(this).attr('data-value');
             });
 
             var ce = $('<pre/>').html(textareaClone.html());
