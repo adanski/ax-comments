@@ -1,6 +1,6 @@
-//     jquery-comments.js 1.1.3
+//     jquery-comments.js 1.2.0
 
-//     (c) 2016 Joona Tykkyläinen, Viima Solutions Oy
+//     (c) 2017 Joona Tykkyläinen, Viima Solutions Oy
 //     jquery-comments may be freely distributed under the MIT license.
 //     For all details and documentation:
 //     http://viima.github.io/jquery-comments/
@@ -179,7 +179,7 @@
                     content: 'content',       
                     file: 'file',     
                     fileURL: 'file_url',      
-                    fileMimeType: 'file_mime_type',       
+                    fileMimeType: 'file_mime_type',
                     pings: 'pings',       
                     creator: 'creator',     
                     fullname: 'fullname',     
@@ -1831,7 +1831,8 @@
         createTagElement: function(text, extraClasses, value) {
             var tagEl = $('<input/>', {
                 'class': 'tag',
-                type: 'button'
+                'type': 'button',
+                'data-role': 'none',
             });
             if(extraClasses) tagEl.addClass(extraClasses);
             tagEl.val(text);
