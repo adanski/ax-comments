@@ -16,6 +16,7 @@
       })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
     
       ga('create', 'UA-41980270-4', 'auto');
+      ga('set', 'anonymizeIp', true);
       ga('send', 'pageview');
 
       // Create sidebar dynamically
@@ -165,7 +166,7 @@
             <p><strong>2) Initialize the library</strong></p>
 
 <pre><code>$('#comments-container').comments({
-    profilePictureURL: 'https://app.viima.com/static/media/user_profiles/user-icon.png',
+    profilePictureURL: 'https://viima-app.s3.amazonaws.com/media/public/defaults/user-icon.png',
     getComments: function(success, error) {
         var commentsArray = [{
             id: 1,
@@ -833,9 +834,18 @@ A <code>boolean</code> value determing whether pinging users is enabled. Enablin
 <br>
 <ul>
 <li>The feature is depended on a javascript library called <a href="https://github.com/yuku-t/jquery-textcomplete">jquery-textcomplete</a></li>
-<li>You need to provide the list of users who can be pinged using the <code>getUsers</code> callback function</li>
+<li>You need to implement the <code>searchUsers</code> callback function which returns a list of all users matching the ping</li>
 <li>jquery-comments assumes that the pings are sent to the server in format <code>@&lt;user_id&gt;</code>, for example <code>@145</code></li>
-<li>jquery-comments assumes that the pings are returned from the server in format <code>@&lt;user_fullname&gt;</code>, for example <code>@Bryan Connery</code> together with array of pinged user ids in same order they appear in the comment</li>
+<li>jquery-comments assumes that the pings are returned from the server in format <code>@&lt;user_fullname&gt;</code>, for example <code>@Bryan Connery</code> together with a dictionary of pinged users and respective full names<br/>
+<label class="example">EXAMPLE</label>  
+<pre class="prettyprint linemus">
+{
+  content: "What do you think @Bryan Connery?",
+  pings: {254: "Bryan Connery"},
+  ...
+}
+</pre>
+</ul>
 </ul>
 
 <i>Switching the ping format is required in order to keep the link between the user model and the ping so that the ping won't get broken in case the user changes her name for example. On the other hand, we expect the server to return the ping in user friendly format so that the API will always return comments in a format that can be displayed without processing.</i>
@@ -948,6 +958,7 @@ creator                 // Required if pinging is enabled
 fullname                // Required
 profileURL              // Optional
 profilePictureURL       // Optional
+isNew                   // Optional
 createdByAdmin          // Optional
 createdByCurrentUser    // Required if editing is enabled
 upvoteCount             // Required if upvoting is enabled
@@ -969,6 +980,7 @@ fieldMappings: {
     fullname: 'fullname',
     profileURL: 'profile_url',
     profilePictureURL: 'profile_picture_url',
+    isNew: 'is_new',
     createdByAdmin: 'created_by_admin',
     createdByCurrentUser: 'created_by_current_user',
     upvoteCount: 'upvote_count',
@@ -1046,24 +1058,24 @@ $('#comments-container').comments({
 </tr>
 
 <tr>
-<td><code>getUsers</code></td>
+<td><code>searchUsers</code></td>
 <td>
 <p>
-A callback <code>function</code> that is used to fetch the user array from the server. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server. The success callback takes the user array as a parameter.
+A callback <code>function</code> that is used for searching users when pinging. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server. The success callback takes the user array as a parameter.
 </p>
 <label>DEFAULT</label>  
 <pre class="prettyprint linemus">
-function(success, error) {
+function(term, success, error) {
     success([]);
 }
 </pre>
 <label class="example">EXAMPLE</label>  
 <pre class="prettyprint linemus">
 $('#comments-container').comments({
-    getUsers: function(success, error) {
+    searchUsers: function(term, success, error) {
         $.ajax({
             type: 'get',
-            url: '/api/users/',
+            url: '/api/users/?search=' + term,
             success: function(userArray) {
                 success(userArray)
             },
@@ -1487,8 +1499,11 @@ $('#comments-container').comments({
 </tr>
 
 </table>
-
-
+	    <h3>
+            <a id="backend" class="anchor" href="#backend" aria-hidden="true"><span class="octicon octicon-link"></span></a>Backend/API implementation</h3>
+	    <p>This project doesn't take any stance on how you implement your backend and APIs for providing the library with the information it needs. However, as there have been many requests for it, you can find the documentation of the comment related endpoints for our REST API below as a reference.</p>
+	    <p><img src="https://github.com/Viima/jquery-comments/blob/master/comment-api-example.png?raw=true" alt="Comments REST API documentation" title="Comments REST API documentation"></p>
+	
             <h3>
             <a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h3>
 
