@@ -54,11 +54,38 @@ http://viima.github.io/jquery-comments/*/
 }
 
 .jquery-comments .attachments .tag {
+	padding: 0.05em 0.5em;
+	line-height: 1.3em;
+
+	margin-top: 0.3em;
 	margin-right: 0.5em;
+}
+
+.jquery-comments .attachments .tag.deletable {
+	padding-right: 0;
+}
+
+.jquery-comments .attachments .tag i:first-child {
+	margin-right: 0.4em;
+	color: #555;
+}
+
+.jquery-comments .attachments .tag i.delete {
+	display: inline;
+	padding: 2px 5px 2px 8px;
+	font-size: 14px;
+	color: #888;
+}
+
+.jquery-comments .attachments .tag:hover i.delete {
+	color: black;
 }
 
 .jquery-comments .tag:hover {
 	text-decoration: none;
+}
+
+.jquery-comments .tag:not(.deletable):hover {
 	background-color: #d8edf8;
 	border-color: #2793e6;
 }
@@ -234,8 +261,8 @@ http://viima.github.io/jquery-comments/*/
 	padding-right: calc(2em + 15px);	/* Because of scrollbar */
 }
 
-.jquery-comments .textarea-wrapper .control-row > .attachments .tag {
-	margin-top: .6em;
+.jquery-comments .textarea-wrapper .control-row > .attachments {
+	padding-top: .3em;
 }
 
 .jquery-comments .textarea-wrapper .control-row > .button {
@@ -557,6 +584,10 @@ http://viima.github.io/jquery-comments/*/
 }
 
 /* Attachments */
+.jquery-comments ul.main li.comment .wrapper .attachments .tags:not(:empty) {
+	margin-bottom: 0.5em;
+}
+
 .jquery-comments ul.main li.comment .wrapper .attachments .previews .preview {
 	display: inline-block;
 }
@@ -568,7 +599,6 @@ http://viima.github.io/jquery-comments/*/
 	height: auto;
 	margin-top: .25em;
 	margin-right: .25em;
-	margin-bottom: .25em;
 }
 
 /* Actions */

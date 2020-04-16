@@ -75,6 +75,7 @@
             'click .commenting-field .send.enabled' : 'postComment',
             'click .commenting-field .update.enabled' : 'putComment',
             'click .commenting-field .delete.enabled' : 'deleteComment',
+            'click .commenting-field .attachments .attachment .delete' : 'preDeleteAttachment',
             'change .commenting-field .upload.enabled input[type="file"]' : 'fileInputChanged',
 
             // Other actions
@@ -583,6 +584,11 @@
             uploadButton.find('input').val('');
         },
 
+        preDeleteAttachment: function(ev) {
+            var attachmentEl = $(ev.currentTarget).parents('.attachment').first();
+            attachmentEl.remove();
+        },
+
         preSaveAttachments: function(files, commentingField) {
             var self = this;
             if(!commentingField) commentingField = this.$el.find('.commenting-field.main');
@@ -591,22 +597,19 @@
             var fileCount = files.length;
 
             if(fileCount) {
-                var textarea = commentingField.find('.textarea');
-
-                var commentArray = [];
+                var attachmentsContainer = commentingField.find('.control-row .attachments');
                 $(files).each(function(index, file) {
 
-                    // Create comment JSON
-                    var commentJSON = self.createCommentJSON(textarea);
-                    commentJSON.id += '-' + index;
-                    commentJSON.content = '';
-                    commentJSON.file = file;
-                    commentJSON.fileURL = 'C:/fakepath/' + file.name;
-                    commentJSON.fileMimeType = file.type;
+                    // Create temporary attachment model
+                    var attachment = {
+                        url: 'C:/fakepath/' + file.name,
+                        mime_type: file.type,
+                        file: file
+                    }
 
-                    // Reverse mapping
-                    commentJSON = self.applyExternalMappings(commentJSON);
-                    commentArray.push(commentJSON);
+                    // Add attachment tag to the container
+                    var attachmentTag = self.createAttachmentTagElement(attachment, true);
+                    attachmentsContainer.append(attachmentTag);
                 });
             }
 
@@ -1430,11 +1433,11 @@
             });
 
             // Attachments
-            var attachmentsContainer = $('<span/>', {
+            var attachmentsContainer = $('<div/>', {
                 'class': 'attachments',
             });
             $(attachments).each(function(index, attachment) {
-                var attachmentTag = self.createAttachmentTagElement(attachment);
+                var attachmentTag = self.createAttachmentTagElement(attachment, true);
                 attachmentsContainer.append(attachmentTag);
             });
 
@@ -1867,7 +1870,7 @@
                     }
 
                     // Tag element
-                    var attachmentTag = self.createAttachmentTagElement(attachment);
+                    var attachmentTag = self.createAttachmentTagElement(attachment, false);
                     attachmentTags.append(attachmentTag);
                 });
             }
@@ -1965,7 +1968,7 @@
             return tagEl;
         },
 
-        createAttachmentTagElement: function(attachment) {
+        createAttachmentTagElement: function(attachment, deletable) {
 
             // File name
             var parts = attachment.url.split('/');
@@ -1985,7 +1988,18 @@
             // Tag element
             var attachmentTag = $('<span/>', {
                 'class': 'tag attachment'
-            }).append(attachmentIcon).append('&nbsp;').append(fileName);
+            }).append(attachmentIcon, fileName);
+
+            // Add delete button if deletable
+            if(deletable) {
+                attachmentTag.addClass('deletable');
+
+                // Append close button
+                var closeButton = $('<i/>', {
+                    'class': 'fa fa-times delete'
+                });
+                attachmentTag.append(closeButton);
+            }
 
             return attachmentTag;
         },
