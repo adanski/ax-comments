@@ -585,8 +585,12 @@
         },
 
         preDeleteAttachment: function(ev) {
+            var commentingField = $(ev.currentTarget).parents('.commenting-field').first()
             var attachmentEl = $(ev.currentTarget).parents('.attachment').first();
             attachmentEl.remove();
+
+            // Check if save button needs to be enabled
+            this.toggleSaveButton(commentingField);
         },
 
         preSaveAttachments: function(files, commentingField) {
@@ -611,6 +615,9 @@
                     var attachmentTag = self.createAttachmentTagElement(attachment, true);
                     attachmentsContainer.append(attachmentTag);
                 });
+
+                // Check if save button needs to be enabled
+                this.toggleSaveButton(commentingField);
             }
 
             // Clear the input field
@@ -881,6 +888,7 @@
                 commentingField.removeClass('commenting-field-scrollable');
             }
 
+            // Check if save button needs to be enabled
             this.toggleSaveButton(commentingField);
         },
 
@@ -888,25 +896,39 @@
             var textarea = commentingField.find('.textarea');
             var saveButton = textarea.siblings('.control-row').find('.save');
 
-            // Check if content or parent has changed if editing
-            var contentOrParentChangedIfEditing = true;
             var content = this.getTextareaContent(textarea, true);
+            var attachments = this.getAttachmentsFromCommentingField(commentingField);
+            var enabled;
+
+            // Case: existing comment
             if(commentModel = this.commentsById[textarea.attr('data-comment')]) {
+
+                // Case: parent changed
                 var contentChanged = content != commentModel.content;
                 var parentFromModel;
                 if(commentModel.parent) {
                     parentFromModel = commentModel.parent.toString();
                 }
+
+                // Case: parent changed
                 var parentChanged = textarea.attr('data-parent') != parentFromModel;
-                contentOrParentChangedIfEditing = contentChanged || parentChanged;
+
+                // Case: attachments changed
+                var attachmentsChanged = false;
+                if(this.options.enableAttachments) {
+                    var savedAttachmentIds = commentModel.attachments.map(function(attachment){return attachment.id});
+                    var currentAttachmentIds = attachments.map(function(attachment){return attachment.id});
+                    attachmentsChanged = !this.areArraysEqual(savedAttachmentIds, currentAttachmentIds);
+                }
+
+                enabled = contentChanged || parentChanged || attachmentsChanged;
+
+            // Case: new comment
+            } else {
+                enabled = Boolean(content.length) || Boolean(attachments.length);
             }
 
-            // Check whether save button needs to be enabled
-            if(content.length && contentOrParentChangedIfEditing) {
-                saveButton.addClass('enabled');
-            } else {
-                saveButton.removeClass('enabled');
-            }
+            saveButton.toggleClass('enabled', enabled);
         },
 
         removeCommentingField: function(ev) {
@@ -1393,74 +1415,74 @@
                 'class': 'close inline-button'
             }).append($('<span class="left"/>')).append($('<span class="right"/>'));
 
-            // Save button text
-            if(existingCommentId) {
-                var saveButtonText = this.options.textFormatter(this.options.saveText);
+            // Save button
+            var saveButtonClass = existingCommentId ? 'update' : 'send';
+            var saveButtonText = existingCommentId ? this.options.textFormatter(this.options.saveText) : this.options.textFormatter(this.options.sendText);
+            var saveButton = $('<span/>', {
+                'class': saveButtonClass + ' save button highlight-background',
+                'text': saveButtonText
+            });
+            controlRow.append(saveButton);
+
+            // Delete button
+            if(existingCommentId && this.isAllowedToDelete(existingCommentId)) {
 
                 // Delete button
                 var deleteButton = $('<span/>', {
-                    'class': 'delete button',
+                    'class': 'delete button enabled',
                     text: this.options.textFormatter(this.options.deleteText)
                 }).css('background-color', this.options.deleteButtonColor);
                 controlRow.append(deleteButton);
-
-                // Enable the delete button only if the user is allowed to delete
-                if(this.isAllowedToDelete(existingCommentId)) deleteButton.addClass('enabled')
-
-            } else {
-                var saveButtonText = this.options.textFormatter(this.options.sendText);
-
-                // Add upload button if attachments are enabled
-                if(this.options.enableAttachments) {
-                    var uploadButton = $('<span/>', {
-                        'class': 'enabled upload button'
-                    });
-                    var uploadIcon = $('<i/>', {
-                        'class': 'fa fa-paperclip'
-                    });
-                    var fileInput = $('<input/>', {
-                        type: 'file',
-                        'data-role': 'none' // Prevent jquery-mobile for adding classes
-                    });
-                    // Multi file upload might not work with backend as the the file names
-                    // may be the same causing duplicates
-                    if(!$.browser.mobile) fileInput.attr('multiple', 'multiple');
-
-                    if(this.options.uploadIconURL.length) {
-                        uploadIcon.css('background-image', 'url("'+this.options.uploadIconURL+'")');
-                        uploadIcon.addClass('image');
-                    }
-                    uploadButton.append(uploadIcon).append(fileInput);
-
-                    // Main upload button
-                    controlRow.append(uploadButton.clone());
-
-                    // Inline upload button for main commenting field
-                    if(isMain) {
-                        textareaWrapper.append(uploadButton.clone().addClass('inline-button'));
-                    }
-                }
             }
 
-            // Save button
-            var saveButtonClass = existingCommentId ? 'update' : 'send';
-            var saveButton = $('<span/>', {
-                'class': saveButtonClass + ' save button highlight-background',
-                text: saveButtonText
-            });
+            if(this.options.enableAttachments) {
 
-            // Attachments
-            var attachmentsContainer = $('<div/>', {
-                'class': 'attachments',
-            });
-            $(attachments).each(function(index, attachment) {
-                var attachmentTag = self.createAttachmentTagElement(attachment, true);
-                attachmentsContainer.append(attachmentTag);
-            });
+                // Upload buttons
+                // ==============
+
+                var uploadButton = $('<span/>', {
+                    'class': 'enabled upload button'
+                });
+                var uploadIcon = $('<i/>', {
+                    'class': 'fa fa-paperclip'
+                });
+                var fileInput = $('<input/>', {
+                    type: 'file',
+                    'data-role': 'none' // Prevent jquery-mobile for adding classes
+                });
+                // Multi file upload might not work with backend as the the file names
+                // may be the same causing duplicates
+                if(!$.browser.mobile) fileInput.attr('multiple', 'multiple');
+
+                if(this.options.uploadIconURL.length) {
+                    uploadIcon.css('background-image', 'url("'+this.options.uploadIconURL+'")');
+                    uploadIcon.addClass('image');
+                }
+                uploadButton.append(uploadIcon).append(fileInput);
+
+                // Main upload button
+                controlRow.append(uploadButton.clone());
+
+                // Inline upload button for main commenting field
+                if(isMain) {
+                    textareaWrapper.append(uploadButton.clone().addClass('inline-button'));
+                }
+
+                // Attachments container
+                // =====================
+
+                var attachmentsContainer = $('<div/>', {
+                    'class': 'attachments',
+                });
+                $(attachments).each(function(index, attachment) {
+                    var attachmentTag = self.createAttachmentTagElement(attachment, true);
+                    attachmentsContainer.append(attachmentTag);
+                });
+                controlRow.append(attachmentsContainer);
+            }
+
 
             // Populate the element
-            controlRow.prepend(saveButton);
-            controlRow.append(attachmentsContainer);
             textareaWrapper.append(closeButton).append(textarea).append(controlRow);
             commentingField.append(profilePicture).append(textareaWrapper);
 
@@ -1843,7 +1865,7 @@
             });
             attachments.append(attachmentPreviews).append(attachmentTags);
 
-            if(commentModel.attachments && commentModel.attachments.length) {
+            if(this.options.enableAttachments && commentModel.attachments.length) {
                 $(commentModel.attachments).each(function(index, attachment) {
                     var format = undefined;
                     var type = undefined;
@@ -1994,6 +2016,7 @@
 
             // Bind data
             attachmentTag.data({
+                id: attachment.id,
                 url: attachment.url,
                 mime_type: attachment.mime_type,
                 file: attachment.file,
@@ -2277,7 +2300,7 @@
         getAttachmentsFromCommentingField: function(commentingField) {
             var attachments = commentingField.find('.attachments .attachment').map(function(){
                 return $(this).data();
-            });
+            }).toArray();
 
             return attachments;
         },
@@ -2419,6 +2442,25 @@
                 setTimeout(function() {
                     self.waitUntil(condition, callback);
                 }, 100);
+            }
+        },
+
+        areArraysEqual: function(array1, array2) {
+
+            // Case: arrays are different sized
+            if(array1.length != array2.length) {
+                return false;
+
+            // Case: arrays are equal sized
+            } else {
+                array1.sort();
+                array2.sort();
+
+                for(var i=0; i < array1.length; i++) {
+                    if(array1[i] != array2[i]) return false;
+                }
+
+                return true;
             }
         },
 
