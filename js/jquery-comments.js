@@ -606,7 +606,6 @@
 
                     // Create temporary attachment model
                     var attachment = {
-                        url: 'C:/fakepath/' + file.name,
                         mime_type: file.type,
                         file: file
                     }
@@ -1416,7 +1415,7 @@
             var saveButtonClass = existingCommentId ? 'update' : 'send';
             var saveButtonText = existingCommentId ? this.options.textFormatter(this.options.saveText) : this.options.textFormatter(this.options.sendText);
             var saveButton = $('<span/>', {
-                'class': saveButtonClass + ' save button highlight-background',
+                'class': saveButtonClass + ' save highlight-background',
                 'text': saveButtonText
             });
             controlRow.append(saveButton);
@@ -1426,7 +1425,7 @@
 
                 // Delete button
                 var deleteButton = $('<span/>', {
-                    'class': 'delete button enabled',
+                    'class': 'delete enabled',
                     text: this.options.textFormatter(this.options.deleteText)
                 }).css('background-color', this.options.deleteButtonColor);
                 controlRow.append(deleteButton);
@@ -1438,7 +1437,7 @@
                 // ==============
 
                 var uploadButton = $('<span/>', {
-                    'class': 'enabled upload button'
+                    'class': 'enabled upload'
                 });
                 var uploadIcon = $('<i/>', {
                     'class': 'fa fa-paperclip'
@@ -1882,21 +1881,21 @@
                         // Preview element
                         var preview = $('<a/>', {
                             'class': 'preview',
-                            href: attachment.url,
+                            href: attachment.file,
                             target: '_blank'
                         });
 
                         // Case: image preview
                         if(type == 'image') {
                             var image = $('<img/>', {
-                                src: attachment.url
+                                src: attachment.file
                             });
                             preview.html(image);
 
                         // Case: video preview
                         } else {
                             var video = $('<video/>', {
-                                src: attachment.url,
+                                src: attachment.file,
                                 type: attachment.mime_type,
                                 controls: 'controls'
                             });
@@ -2014,22 +2013,30 @@
 
             // Set href attribute if not deletable
             if(!deletable) {
-                attachmentTag.attr('href', attachment.url);
+                attachmentTag.attr('href', attachment.file);
             }
 
             // Bind data
             attachmentTag.data({
                 id: attachment.id,
-                url: attachment.url,
                 mime_type: attachment.mime_type,
                 file: attachment.file,
             });
 
             // File name
-            var parts = attachment.url.split('/');
-            var fileName = parts[parts.length - 1];
-            fileName = fileName.split('?')[0];
-            fileName = decodeURIComponent(fileName);
+            var fileName = '';
+
+            // Case: file is file object
+            if(attachment.file instanceof File) {
+                fileName = attachment.file.name;
+
+            // Case: file is URL
+            } else {
+                var parts = attachment.file.split('/');
+                var fileName = parts[parts.length - 1];
+                fileName = fileName.split('?')[0];
+                fileName = decodeURIComponent(fileName);
+            }
 
             // Attachment icon
             var attachmentIcon = $('<i/>', {
@@ -2147,7 +2154,7 @@
         },
 
         getAttachments: function() {
-            return this.getComments().filter(function(comment){return comment.fileURL != undefined});
+            return this.getComments().filter(function(comment){return comment.attachments.length > 0});
         },
 
         getOutermostParent: function(directParentId) {
