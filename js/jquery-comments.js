@@ -125,6 +125,7 @@
                 uploadIconURL: '',
                 attachmentIconURL: '',
                 noCommentsIconURL: '',
+                closeIconURL: '',
 
                 // Strings to be formatted (for example localization)
                 textareaPlaceholderText: 'Add a comment',
@@ -1377,9 +1378,8 @@
             this.adjustTextareaHeight(textarea, false);
 
             // Close button
-            var closeButton = $('<span/>', {
-                'class': 'close inline-button'
-            }).append($('<span class="left"/>')).append($('<span class="right"/>'));
+            var closeButton = this.createCloseButton();
+            closeButton.addClass('inline-button');
 
             // Save button
             var saveButtonClass = existingCommentId ? 'update' : 'send';
@@ -1705,6 +1705,24 @@
             return spinner;
         },
 
+        createCloseButton: function(className) {
+            var closeButton = $('<span/>', {
+                'class': className || 'close'
+            });
+
+            var icon = $('<i/>', {
+                'class': 'fa fa-times'
+            });
+            if(this.options.closeIconURL.length) {
+                icon.css('background-image', 'url("'+this.options.closeIconURL+'")');
+                icon.addClass('image');
+            }
+
+            closeButton.html(icon);
+
+            return closeButton;
+        },
+
         createCommentElement: function(commentModel) {
 
             // Comment container element
@@ -1854,6 +1872,7 @@
 
                     // Preview
                     if(type == 'image' || type == 'video') {
+                        var previewRow = $('<div/>');
 
                         // Preview element
                         var preview = $('<a/>', {
@@ -1861,6 +1880,7 @@
                             href: attachment.file,
                             target: '_blank'
                         });
+                        previewRow.html(preview);
 
                         // Case: image preview
                         if(type == 'image') {
@@ -1878,7 +1898,7 @@
                             });
                             preview.html(video);
                         }
-                        attachmentPreviews.append(preview);
+                        attachmentPreviews.append(previewRow);
                     }
 
                     // Tag element
@@ -2032,9 +2052,7 @@
                 attachmentTag.addClass('deletable');
 
                 // Append close button
-                var closeButton = $('<i/>', {
-                    'class': 'fa fa-times delete'
-                });
+                var closeButton = this.createCloseButton('delete');
                 attachmentTag.append(closeButton);
             }
 
