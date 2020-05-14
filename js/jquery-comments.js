@@ -1128,16 +1128,10 @@
 
                 // Move cursor to end
                 var textarea = replyField.find('.textarea');
-                this.moveCursorToEnd(textarea)
+                this.moveCursorToEnd(textarea);
 
-                // Make sure the reply field will be displayed
-                var scrollTop = this.options.scrollContainer.scrollTop();
-                var endOfReply = scrollTop + replyField.position().top + replyField.outerHeight();
-                var endOfScrollable = scrollTop + this.options.scrollContainer.outerHeight();
-                if(endOfReply > endOfScrollable) {
-                    var newScrollTop = scrollTop + (endOfReply - endOfScrollable);
-                    this.options.scrollContainer.scrollTop(newScrollTop);
-                }
+                // Ensure element stays visible
+                this.ensureElementStaysVisible(replyField);
             }
         },
 
@@ -1160,6 +1154,9 @@
 
             // Move cursor to end
             this.moveCursorToEnd(textarea);
+
+            // Ensure element stays visible
+            this.ensureElementStaysVisible(editField);
         },
 
         showDroppableOverlay: function(ev) {
@@ -2367,6 +2364,21 @@
 
             // Focus
             el.focus();
+        },
+
+        ensureElementStaysVisible: function(el) {
+            var maxScrollTop = el.position().top;
+            var minScrollTop = el.position().top + el.outerHeight() - this.options.scrollContainer.outerHeight();
+
+            // Case: element hidden above scoll area
+            if(this.options.scrollContainer.scrollTop() > maxScrollTop) {
+                this.options.scrollContainer.scrollTop(maxScrollTop);
+
+            // Case: element hidden below scoll area
+            } else if(this.options.scrollContainer.scrollTop() < minScrollTop) {
+                this.options.scrollContainer.scrollTop(minScrollTop);
+            }
+
         },
 
         escape: function(inputText) {
