@@ -187,7 +187,6 @@
                     pings: 'pings',
                     creator: 'creator',
                     fullname: 'fullname',
-                    profileURL: 'profile_url',
                     profilePictureURL: 'profile_picture_url',
                     isNew: 'is_new',
                     createdByAdmin: 'created_by_admin',
@@ -367,7 +366,7 @@
 
             // Create comments and attachments
             this.createComments();
-            this.createAttachments();
+            if(this.options.enableAttachments) this.createAttachments();
 
             // Remove spinner
             this.$el.find('> .spinner').remove();
@@ -406,9 +405,8 @@
 
             // Append main level comments
             this.sortComments(mainLevelComments, this.currentSortKey);
-            mainLevelComments.reverse();    // Reverse the order as they are prepended to DOM
             $(mainLevelComments).each(function(index, commentModel) {
-                self.addComment(commentModel, commentList, true);
+                self.addComment(commentModel, commentList);
             });
 
             // Append replies in chronological order
@@ -433,7 +431,6 @@
 
             var attachments = this.getAttachments();
             this.sortComments(attachments, 'newest');
-            attachments.reverse();    // Reverse the order as they are prepended to DOM
             $(attachments).each(function(index, commentModel) {
                 self.addAttachment(commentModel, attachmentList);
             });
@@ -442,7 +439,7 @@
             this.$el.find('[data-container="attachments"]').prepend(attachmentList);
         },
 
-        addComment: function(commentModel, commentList, forcePrepend) {
+        addComment: function(commentModel, commentList, prependComment) {
             commentList = commentList || this.$el.find('#comment-list');
             var commentEl = this.createCommentElement(commentModel);
 
@@ -471,7 +468,7 @@
 
             // Case: main level comment
             } else {
-                if(this.currentSortKey == 'newest' || forcePrepend) {
+                if(prependComment) {
                     commentList.prepend(commentEl);
                 } else {
                     commentList.append(commentEl);
@@ -527,12 +524,12 @@
         preSaveAttachments: function(files, commentingField) {
             var self = this;
 
-            if(!commentingField) commentingField = this.$el.find('.commenting-field.main');
-            var uploadButton = commentingField.find('.control-row .upload');
-            var isReply = !commentingField.hasClass('main');
-            var attachmentsContainer = commentingField.find('.control-row .attachments');
-
             if(files.length) {
+
+                if(!commentingField) commentingField = this.$el.find('.commenting-field.main');
+                var uploadButton = commentingField.find('.control-row .upload');
+                var isReply = !commentingField.hasClass('main');
+                var attachmentsContainer = commentingField.find('.control-row .attachments');
 
                 // Create attachment models
                 var attachments = $(files).map(function(index, file){
@@ -957,7 +954,11 @@
         createComment: function(commentJSON) {
             var commentModel = this.createCommentModel(commentJSON);
             this.addCommentToDataModel(commentModel);
-            this.addComment(commentModel);
+
+            // Add comment element
+            var commentList = this.$el.find('#comment-list');
+            var prependComment = this.currentSortKey == 'newest';
+            this.addComment(commentModel, commentList, prependComment);
 
             if(this.currentSortKey == 'attachments' && commentModel.hasAttachments()) {
                 this.addAttachment(commentModel);
@@ -1782,23 +1783,19 @@
                 'data-original': commentModel.created
             });
 
+            // Comment header element
+            var commentHeaderEl = $('<div/>', {
+                'class': 'comment-header',
+            });
+
             // Name element
-            var name = $('<span/>', {
+            var nameEl = $('<span/>', {
+                'class': 'name',
                 'data-user-id': commentModel.creator,
                 'text': commentModel.createdByCurrentUser ? this.options.textFormatter(this.options.youText) : commentModel.fullname
             });
+            commentHeaderEl.append(nameEl);
 
-            if(commentModel.profileURL) {
-                name = $('<a/>', {
-                    'href': commentModel.profileURL,
-                    'html': name
-                });
-            }
-
-            var nameEl = $('<div/>', {
-                'class': 'name',
-                'html': name
-            });
 
             // Highlight admin names
             if(commentModel.createdByAdmin) nameEl.addClass('highlight-font-bold');
@@ -1823,7 +1820,7 @@
                     }
 
                     replyTo.prepend(replyIcon);
-                    nameEl.append(replyTo);
+                    commentHeaderEl.append(replyTo);
                 }
             }
 
@@ -1833,7 +1830,7 @@
                     'class': 'new highlight-background',
                     text: this.options.textFormatter(this.options.newText)
                 });
-                nameEl.append(newTag);
+                commentHeaderEl.append(newTag);
             }
 
             // Wrapper
@@ -1981,7 +1978,7 @@
             wrapper.append(content);
             wrapper.append(attachments);
             wrapper.append(actions);
-            commentWrapper.append(profilePicture).append(time).append(nameEl).append(wrapper);
+            commentWrapper.append(profilePicture).append(time).append(commentHeaderEl).append(wrapper);
             return commentWrapper;
         },
 

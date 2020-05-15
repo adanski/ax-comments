@@ -514,31 +514,31 @@ http://viima.github.io/jquery-comments/*/
 	color: #666;
 }
 
-.jquery-comments ul.main li.comment .name {
+.jquery-comments ul.main li.comment .comment-header {
 	line-height: 1.4em;
-	font-weight: bold;
-	overflow: hidden;
 	word-break: break-word;
 }
 
-.jquery-comments ul.main li.comment .name a {
-	color: inherit;
+.jquery-comments ul.main li.comment .comment-header > * {
+	margin-right: .5rem;
 }
 
-.jquery-comments ul.main li.comment .name .reply-to {
+.jquery-comments ul.main li.comment .comment-header .name {
+	font-weight: bold;
+}
+
+.jquery-comments ul.main li.comment .comment-header .reply-to {
 	color: #999;
 	font-size: .8em;
 	font-weight: normal;
 	vertical-align: top;
 }
 
-.jquery-comments ul.main li.comment .name .reply-to i {
-	margin-left: .5em;
-	margin-right: .25em;
+.jquery-comments ul.main li.comment .comment-header .reply-to i {
+	margin-right: .25rem;
 }
 
-.jquery-comments ul.main li.comment .name .new {
-	margin-left: .5em;
+.jquery-comments ul.main li.comment .comment-header .new {
 	background: #2793e6;
 	font-size: 0.8em;
 	padding: 0.2em 0.6em;
