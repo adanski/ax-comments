@@ -198,7 +198,7 @@ attachmentIconURL: '',  // Only if attachments are enabled
 
 
 <h3><a id="example-data" class="anchor" href="#example-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example data</h3>
-<p>The library expects the comment (and attachment) data to be provided in the format demonstrated below. Please note that you can use <code>fieldMappings</code> to map the field names to match with your API.</p>
+<p>The library expects the comment (and attachment) data to be provided with the structure demonstrated below. Please note that you can use <code>fieldMappings</code> to map the field names to match with your API.</p>
 
 <pre><code>
 var commentModel = {
@@ -1256,66 +1256,33 @@ $('#comments-container').comments({
 
 
 <tr>
-<td><code>uploadAttachments</code></td>
+<td><code>validateAttachments</code></td>
 <td>
 <p>
-A callback <code>function</code> that is used to upload attachments to the server. The first parameter of the callback is <code>commentArray</code> including all the attachments as comment models where <code>file</code> field contains the file to be uploaded. The server should return the url for the uploaded file in <code>fileURL</code> field. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server. The success callback takes an array of successfull uploads as a parameter.
+A callback <code>function</code> that is used to validate attachments prior uploading them to server. The first parameter of the callback is <code>attachments</code> array including all the attachments to be uploaded (see the expexted data structure from <a href="#example-data">Example data</a>). The callback function takes an array of validated attachments as a parameter.
 </p>
 <label>DEFAULT</label>  
 <pre class="prettyprint linemus">
-function(commentArray, success, error) {
-  success(commentArray);
+function(attachments, callback) {
+  callback(attachments);
 }
 </pre>
 <label class="example">EXAMPLE</label>  
 <pre class="prettyprint linemus">
 $('#comments-container').comments({
-  uploadAttachments: function(commentArray, success, error) {
-    var responses = 0;
-    var successfulUploads = [];
+  validateAttachments: function(attachments, callback) {
+    var validAttachments = [];
 
-    var serverResponded = function() {
-      responses++;
+    $(attachments).each(function(index, attachment) {
+      var maxFileSizeMb = 10;
+      var fileSizeMb = attachment.file.size / 1000000;
 
-      // Check if all requests have finished
-      if(responses == commentArray.length) {
-        
-        // Case: all failed
-        if(successfulUploads.length == 0) {
-          error();
-
-        // Case: some succeeded
-        } else {
-          success(successfulUploads)
-        }
+      if(fileSizeMb <= maxFileSizeMb) {
+        validAttachments.push(attachment);
       }
-    }
-
-    $(commentArray).each(function(index, commentJSON) {
-
-      // Create form data
-      var formData = new FormData();
-      $(Object.keys(commentJSON)).each(function(index, key) {
-        var value = commentJSON[key];
-        if(value) formData.append(key, value);
-      });
-
-      $.ajax({
-        url: '/api/comments/',
-        type: 'POST',
-        data: formData,
-        cache: false,
-        contentType: false,
-        processData: false,
-        success: function(commentJSON) {
-          successfulUploads.push(commentJSON);
-          serverResponded();
-        },
-        error: function(data) {
-          serverResponded();
-        },
-      });
     });
+
+    callback(validAttachments);
   }
 });
 </pre>
@@ -1525,11 +1492,6 @@ $('#comments-container').comments({
 </tr>
 
 </table>
-	  <h3>
-      <a id="backend" class="anchor" href="#backend" aria-hidden="true"><span class="octicon octicon-link"></span></a>Backend/API implementation</h3>
-	  <p>This project doesn't take any stance on how you implement your backend and APIs for providing the library with the information it needs. However, as there have been many requests for it, you can find the documentation of the comment related endpoints for our REST API below as a reference.</p>
-	  <p><img src="https://github.com/Viima/jquery-comments/blob/master/comment-api-example.png?raw=true" alt="Comments REST API documentation" title="Comments REST API documentation"></p>
-	
       <h3>
       <a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h3>
 
@@ -1555,7 +1517,7 @@ $('#comments-container').comments({
       <h3>
       <a id="copyright-and-license" class="anchor" href="#copyright-and-license" aria-hidden="true"><span class="octicon octicon-link"></span></a>Copyright and license</h3>
 
-      <p>Code and documentation copyright 2017 <a href="https://www.viima.com/">Viima Solutions Oy</a>. Code released under <a href="https://github.com/Viima/jquery-comments/blob/master/LICENSE">the MIT license</a>.</p>
+      <p>Code and documentation copyright 2020 <a href="https://www.viima.com/">Viima Solutions Oy</a>. Code released under <a href="https://github.com/Viima/jquery-comments/blob/master/LICENSE">the MIT license</a>.</p>
 
           <footer class="site-footer">
           <span class="site-footer-owner"><a href="https://github.com/Viima/jquery-comments">jquery-comments</a> is maintained by <a href="https://github.com/Viima">Viima</a>.</span>
