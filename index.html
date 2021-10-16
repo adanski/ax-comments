@@ -2,15 +2,15 @@
 <html lang="en-us">
   <head>
   <meta charset="UTF-8">
-  <title>comments-web-component by Viima</title>
+  <title>comments-web-component by adanski</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
   <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
   <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   <link rel="stylesheet" type="text/css" href="stylesheets/custom.css" media="screen">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.slim.min.js"
-          integrity="sha512-6ORWJX/LrnSjBzwefdNUyLCMTIsGoNP6NftMy2UAm1JBm6PRZCO1d7OHBStWpVFZLO+RerTvqX/Z9mBFfCJZ4A=="
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.0/cash.min.js"
+          integrity="sha512-sgDgZX/GgfD7qSeMjPN/oE9EQgXZJW55FIjdexVT60QerG2gAWhR9QDQEGt3O90Dy9jVcwMWsoTMhLgldIiKXw=="
           crossorigin="anonymous"
           referrerpolicy="no-referrer">
   </script>
@@ -25,30 +25,29 @@
     ga('send', 'pageview');
 
     // Create sidebar dynamically
-    $(function() {
-    $('h3').each(function(index, el) {
-      el = $(el);
-      var id = 'link-' + index;
-      el.attr('id', id);
-      var listEl = $('<a/>').text(el.text());
-      listEl.attr('href', '#' + id);
-      $('.sidebar').append(listEl);
+    $(() => {
+        $('h3').each((index, el) => {
+            el = $(el);
+            const id = 'link-' + index;
+            el.attr('id', id);
+            const listEl = $('<a/>').text(el.text());
+            listEl.attr('href', '#' + id);
+            $('.sidebar').append(listEl);
 
-      if(el.next().is('table')) {
-        var table = el.next();
-        table.find('th').each(function(index, th) {
-          th = $(th);
-          var id2 = id + '-' + index;
-          th.attr('id', id2);
+            if (el.next().is('table')) {
+                const table = el.next();
+                table.find('th').each((index, th) => {
+                    th = $(th);
+                    const id2 = id + '-' + index;
+                    th.attr('id', id2);
 
-          var listEl2 = $('<a/>').html(th.text()).addClass('level-2');
-          listEl2.attr('href', '#' + id2);
-          $('.sidebar').append(listEl2);
+                    const listEl2 = $('<a/>').html(th.text()).addClass('level-2');
+                    listEl2.attr('href', '#' + id2);
+                    $('.sidebar').append(listEl2);
+                });
+            }
         });
-      }
     });
-    });
-
   </script>
 
   </head>
@@ -785,7 +784,7 @@ A <code>boolean</code> value determing whether pinging users is enabled. Enablin
 <label>N.B.</label>
 <br>
 <ul>
-<li>The feature is depended on a javascript library called <a href="https://github.com/yuku-t/jquery-textcomplete">jquery-textcomplete</a></li>
+<li>The feature is depended on a javascript library called <a href="https://github.com/yuku/textcomplete">jquery-textcomplete</a></li>
 <li>You need to implement the <code>searchUsers</code> callback function which returns a list of all users matching the ping</li>
 <li>comments-web-component assumes that the pings are sent to the server in format <code>@&lt;user_id&gt;</code>, for example <code>@145</code></li>
 <li>comments-web-component assumes that the pings are returned from the server in format <code>@&lt;user_fullname&gt;</code>, for example <code>@Bryan Connery</code> together with a dictionary of pinged users and respective full names<br/>
@@ -1452,9 +1451,9 @@ $('#comments-container').comments({
 <a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h3>
 
 <ul>
-<li><a href="https://github.com/jquery/jquery">jQuery</a> &gt;= 1.9.0</li>
+<li><a href="https://github.com/fabiospampinato/cash">Cash</a> &gt;= 8.1.0</li>
 <li><a href="https://github.com/FortAwesome/Font-Awesome">Font Awesome</a> (optional)</li>
-<li><a href="https://github.com/yuku-t/jquery-textcomplete">jquery-textcomplete</a> (optional)</li>
+<li><a href="https://github.com/yuku/textcomplete">jquery-textcomplete</a> (optional)</li>
 </ul>
 
 <h3>
@@ -1462,7 +1461,11 @@ $('#comments-container').comments({
 
 <ul>
 <li>
-<a href="https://www.linkedin.com/in/joonatykkylainen">Joona Tykkyläinen</a>, Viima Solutions Oy</li>
+    <a href="https://www.linkedin.com/in/joonatykkylainen">Joona Tykkyläinen</a>, Viima Solutions Oy
+</li>
+<li>
+    <a href="https://github.com/adanski">adanski</a>
+</li>
 </ul>
 
 <h3>
