@@ -1,0 +1,54 @@
+.sidebar {
+    float: left;
+    margin-right: 2rem;
+}
+
+.sidebar a{
+    display: block;
+    color: #23A6F0;
+    color: inherit;
+    font-size: .9em;
+    margin-bottom: .5em;
+}
+
+.sidebar a.level-2{
+    font-size: .8em;
+    padding-left: 2rem;
+}
+
+.content {
+    overflow: hidden;
+}
+
+.content table {
+    font-size: .9em;
+    text-align: left;
+}
+
+.content td {
+    vertical-align: top;
+}
+
+.content code {
+    color: #23A6F0;
+    background: none;
+}
+
+.content code.string {
+    font-style: italic;
+    color: inherit;
+}
+
+label {
+    font-size: .9em;
+    color: #999;
+}
+
+label.example {
+    display: block;
+    margin-top: 1rem;
+}
+
+pre {
+    white-space: pre-wrap;
+}

@@ -1,4 +1,4 @@
-var commentsArray = [
+const commentsArray = [
 {
    "id": 1,
    "parent": null,

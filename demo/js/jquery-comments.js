@@ -1,9 +1,9 @@
-/*!     jquery-comments.js 1.4.0
+/*!     comments-web-component.js 1.4.0
  *
  *     (c) 2017 Joona Tykkyläinen, Viima Solutions Oy
- *     jquery-comments may be freely distributed under the MIT license.
+ *     comments-web-component may be freely distributed under the MIT license.
  *     For all details and documentation:
- *     http://viima.github.io/jquery-comments/
+ *     http://adanski.github.io/comments-web-component/
  */
 
 (function (factory) {
