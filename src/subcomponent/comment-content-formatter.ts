@@ -1,4 +1,4 @@
-import {TagFactory} from './tag-factory.util';
+import {TagFactory} from './tag-factory';
 import {isNil, normalizeSpaces} from '../util';
 
 export class CommentContentFormatter {

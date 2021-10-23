@@ -1,8 +1,10 @@
-import {WebComponent} from './web-component.interface';
+import {WebComponent} from './web-component';
 
 export class CommentsComponent extends HTMLElement implements WebComponent {
     readonly shadowRoot!: ShadowRoot;
     private domRefFrame!: HTMLDivElement;
+
+    private _options!: Record<string, any>;
 
     constructor() {
         super();
@@ -11,6 +13,14 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
     static get observedAttributes(): string[] {
         return ['videoid', 'playlistid'];
+    }
+
+    get options(): Record<string, any> {
+        return this._options;
+    }
+
+    set options(newValue: Record<string, any>) {
+        this._options = newValue;
     }
 
     connectedCallback(): void {
@@ -47,12 +57,6 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         this.domRefPlayButton = this.shadowRoot.querySelector('.lty-playbtn')!;
     }
 
-    /**
-     * Lifecycle method that we use to listen for attribute changes to period
-     * @param {*} name
-     * @param {*} oldVal
-     * @param {*} newVal
-     */
     attributeChangedCallback(name: string, oldVal: any, newVal: any): void {
         switch (name) {
             case 'videoid':

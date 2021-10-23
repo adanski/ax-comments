@@ -3,11 +3,11 @@
  * See https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#using_the_lifecycle_callbacks
  */
 export interface WebComponent {
-    connectedCallback(): void;
+    connectedCallback?(): void;
 
-    disconnectedCallback(): void;
+    disconnectedCallback?(): void;
 
-    adoptedCallback(): void;
+    adoptedCallback?(): void;
 
-    attributeChangedCallback(name: string, oldValue: any, newValue: any): void;
+    attributeChangedCallback?(name: string, oldValue: any, newValue: any): void;
 }

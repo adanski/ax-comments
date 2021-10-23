@@ -1,5 +1,5 @@
 import $ from 'cash-dom';
-import {CloseButtonFactory} from './close-button-factory.util';
+import {CloseButtonFactory} from './close-button-factory';
 
 export class TagFactory {
     private readonly closeButtonFactory: CloseButtonFactory = new CloseButtonFactory(this.options);

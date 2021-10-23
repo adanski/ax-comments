@@ -1,5 +1,5 @@
 // FIXME: inspect all event handlers
-import {CommentsEventHandler} from './comments-event-handler.interface';
+import {CommentsEventHandler} from './comments-event-handler';
 
 export const EVENTS: Record<string, string> = {
     // Close dropdowns

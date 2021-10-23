@@ -1,8 +1,8 @@
-import {ProfilePictureFactory} from './profile-picture-factory.util';
-import {CommentContentFormatter} from './comment-content-formatter.util';
+import {ProfilePictureFactory} from './profile-picture-factory';
+import {CommentContentFormatter} from './comment-content-formatter';
 import * as sanitize from 'sanitize-html';
-import {TagFactory} from './tag-factory.util';
-import {UpvoteFactory} from './upvote-factory.util';
+import {TagFactory} from './tag-factory';
+import {UpvoteFactory} from './upvote-factory';
 
 export class CommentWrapperFactory {
 

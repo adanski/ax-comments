@@ -1,10 +1,10 @@
-import {ProfilePictureFactory} from './profile-picture-factory.util';
-import {CloseButtonFactory} from './close-button-factory.util';
+import {ProfilePictureFactory} from './profile-picture-factory';
+import {CloseButtonFactory} from './close-button-factory';
 import {ContenteditableEditor} from '@textcomplete/contenteditable';
 import {StrategyProps, Textcomplete} from '@textcomplete/core';
 import {TextcompleteOption} from '@textcomplete/core/src/Textcomplete';
-import {TagFactory} from './tag-factory.util';
-import {CommentContentFormatter} from './comment-content-formatter.util';
+import {TagFactory} from './tag-factory';
+import {CommentContentFormatter} from './comment-content-formatter';
 import {SubcomponentUtil} from './subcomponent-util';
 import $ from 'cash-dom';
 

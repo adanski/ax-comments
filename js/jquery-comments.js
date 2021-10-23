@@ -1195,36 +1195,6 @@
                 var upvotes = self.createUpvoteElement(commentModel);
                 $(commentEl).find('.upvote').first().replaceWith(upvotes);
             });
-        },
-
-        applyInternalMappings: function(commentJSON) {
-            // Inverting field mappings
-            var invertedMappings = {};
-            var mappings = this.options.fieldMappings;
-            for (var prop in mappings) {
-                if(mappings.hasOwnProperty(prop)) {
-                    invertedMappings[mappings[prop]] = prop;
-                }
-            }
-
-            return this.applyMappings(invertedMappings, commentJSON);
-        },
-
-        applyExternalMappings: function(commentJSON) {
-            var mappings = this.options.fieldMappings;
-            return this.applyMappings(mappings, commentJSON);
-        },
-
-        applyMappings: function(mappings, commentJSON) {
-            var result = {};
-
-            for(var key1 in commentJSON) {
-                if(key1 in mappings) {
-                    var key2 = mappings[key1];
-                    result[key2] = commentJSON[key1];
-                }
-            }
-            return result;
         }
 
     };

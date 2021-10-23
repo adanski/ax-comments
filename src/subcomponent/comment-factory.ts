@@ -1,4 +1,4 @@
-import {CommentWrapperFactory} from './comment-wrapper-factory.util';
+import {CommentWrapperFactory} from './comment-wrapper-factory';
 import $ from 'cash-dom';
 import {isNil} from '../util';
 

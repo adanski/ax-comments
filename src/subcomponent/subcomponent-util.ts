@@ -1,6 +1,6 @@
 import {isNil, normalizeSpaces} from '../util';
 import $ from 'cash-dom';
-import {SpinnerFactory} from './spinner-factory.util';
+import {SpinnerFactory} from './spinner-factory';
 
 export class SubcomponentUtil {
     private readonly spinnerFactory: SpinnerFactory = new SpinnerFactory(this.options);
