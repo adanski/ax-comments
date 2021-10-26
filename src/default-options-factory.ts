@@ -34,7 +34,6 @@ export function getDefaultOptions(scrollContainer: HTMLElement): Record<string, 
         noCommentsText: 'No comments',
         noAttachmentsText: 'No attachments',
         attachmentDropText: 'Drop files here',
-        textFormatter: (text: string) => text,
 
         // Functionalities
         enableReplying: true,
@@ -90,6 +89,7 @@ export function getDefaultOptions(scrollContainer: HTMLElement): Record<string, 
         hashtagClicked: (hashtag: string) => {},
         pingClicked: (userId: string) => {},
         refresh: () => {},
+        textFormatter: (text: string) => text,
         timeFormatter: (time: number | string | Date) => new Date(time).toLocaleDateString()
     };
 
