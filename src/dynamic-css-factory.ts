@@ -1,4 +1,6 @@
-export function createCssDeclarations(options: Record<string, any>): HTMLStyleElement {
+import {CommentsOptions} from './comments-options';
+
+export function createCssDeclarations(options: CommentsOptions): HTMLStyleElement {
     let css: string = '';
 
     // Remove previous css-declarations

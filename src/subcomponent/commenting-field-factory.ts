@@ -1,24 +1,33 @@
+import $ from 'cash-dom';
 import {ProfilePictureFactory} from './profile-picture-factory';
 import {CloseButtonFactory} from './close-button-factory';
 import {ContenteditableEditor} from '@textcomplete/contenteditable';
 import {StrategyProps, Textcomplete} from '@textcomplete/core';
 import {TextcompleteOption} from '@textcomplete/core/src/Textcomplete';
 import {TagFactory} from './tag-factory';
-import {CommentContentFormatter} from './comment-content-formatter';
 import {SubcomponentUtil} from './subcomponent-util';
-import $ from 'cash-dom';
+import {CommentsOptions} from '../comments-options';
+import {normalizeSpaces} from '../util';
+import {CommentsById} from '../comments-by-id';
+import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider';
 
 export class CommentingFieldFactory {
-    private readonly profilePictureFactory: ProfilePictureFactory = new ProfilePictureFactory(this.options);
-    private readonly closeButtonFactory: CloseButtonFactory = new CloseButtonFactory(this.options);
-    private readonly tagFactory: TagFactory = new TagFactory(this.options);
-    private readonly commentContentFormatter: CommentContentFormatter = new CommentContentFormatter(this.options);
-    private readonly subcomponentUtil: SubcomponentUtil = new SubcomponentUtil(this.options, this.commentsById);
 
-    constructor(
-        private readonly options: Record<string, any>,
-        private readonly commentsById: Record<string, Record<string, any>>
-    ) {}
+    private readonly options: CommentsOptions;
+    private readonly commentsById: CommentsById;
+    private readonly profilePictureFactory: ProfilePictureFactory;
+    private readonly closeButtonFactory: CloseButtonFactory;
+    private readonly tagFactory: TagFactory;
+    private readonly subcomponentUtil: SubcomponentUtil;
+
+    constructor(private readonly container: HTMLDivElement) {
+        this.options = OptionsProvider.get(container)!;
+        this.commentsById = CommentsProvider.get(container)!;
+        this.profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
+        this.closeButtonFactory = ServiceProvider.get(container, CloseButtonFactory);
+        this.tagFactory = ServiceProvider.get(container, TagFactory);
+        this.subcomponentUtil = ServiceProvider.get(container, SubcomponentUtil);
+    }
 
     createCommentingFieldElement(parentId: string, existingCommentId: string, isMain: boolean): CommentingFieldElement {
         let profilePictureURL: string;
@@ -167,7 +176,7 @@ export class CommentingFieldFactory {
                 match: /(^|\s)@([^@]*)$/i,
                 index: 2,
                 search: (term, callback) => {
-                    term = this.commentContentFormatter.normalizeSpaces(term);
+                    term = normalizeSpaces(term);
 
                     // Return empty array on error
                     const error = () => {

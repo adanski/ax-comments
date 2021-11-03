@@ -1,42 +1,62 @@
 import {WebComponent} from './web-component';
-import {isMobileBrowser} from './util';
+import {areArraysEqual, isMobileBrowser, isNil} from './util';
 import {getDefaultOptions} from './default-options-factory';
 import {CommentTransformer} from './comment-transformer';
+import {EVENT_HANDLERS_MAP} from './events';
+import {CommentsOptions} from './comments-options';
+import {CommentsById} from './comments-by-id';
+import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider';
+import {DefaultElementEventsHandler, ElementEventsHandler} from './element-events-handler';
+import {CommentSorter} from './comment-sorter';
 
 export class CommentsComponent extends HTMLElement implements WebComponent {
     readonly shadowRoot!: ShadowRoot;
     private container!: HTMLDivElement;
 
-    private readonly _options: Record<string, any> = {};
+    private readonly _options: CommentsOptions = {};
+    private readonly _commentsById: CommentsById = {};
 
-    private commentTransformer: CommentTransformer = new CommentTransformer(this._options);
+    private readonly commentTransformer: CommentTransformer;
+    private readonly commentSorter: CommentSorter;
 
-    private readonly commentsById: Record<string, Record<string, any>> = {};
-    dataFetched: false,
-    currentSortKey: '',
-    events: {
-        AZI
-    },
+    private dataFetched: boolean = false;
+    private currentSortKey: 'popularity' | 'oldest' | 'newest'| 'attachments' = 'newest';
 
     constructor() {
         super();
         this.initShadowDom();
+        CommentsProvider.set(this.container, this._commentsById);
+        this.commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
+        this.commentSorter = ServiceProvider.get(this.container, CommentSorter);
     }
 
     static get observedAttributes(): string[] {
         return ['videoid', 'playlistid'];
     }
 
-    get options(): Record<string, any> {
+    get options(): CommentsOptions {
         return this._options;
     }
 
-    set options(newValue: Record<string, any>) {
+    set options(newValue: CommentsOptions) {
         if (!Object.keys(this._options).length) {
-            this.initComponent(newValue);
+            Object.assign(this._options, getDefaultOptions(this.container), newValue);
+            OptionsProvider.set(this.container, this._options);
+            this.initComponent();
         } else {
             console.warn('[CommentsComponent] Options cannot be changed after initialization');
         }
+    }
+
+    private get commentsById(): CommentsById {
+        return this._commentsById;
+    }
+
+    private set commentsById(newValue: CommentsById) {
+        Object.keys(this.commentsById).forEach(id => {
+            delete this.commentsById[id];
+        });
+        Object.assign(this._commentsById, newValue);
     }
 
     /*connectedCallback(): void {
@@ -58,10 +78,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         this.container = this.shadowRoot.querySelector<HTMLDivElement>('#comments-container')!;
     }
 
-    private initComponent(options: Record<string, any>): void {
-        // Init options
-        Object.assign(this._options, getDefaultOptions(this.container), options);
-
+    private initComponent(): void {
         this.undelegateEvents();
         this.delegateEvents();
 
@@ -85,35 +102,30 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private delegateEvents(): void {
-        this.bindEvents(false);
+        this.toggleEventHandlers('addEventListener');
     }
 
     private undelegateEvents(): void {
-        this.bindEvents(true);
+        this.toggleEventHandlers('removeEventListener');
     }
 
-    private bindEvents(unbind: boolean) {
-        const bindFunction = unbind ? 'off' : 'on';
-        for (var key in this.events) {
-            const eventName = key.split(' ')[0];
-            const selector = key.split(' ').slice(1).join(' ');
-            const methodNames = this.events[key].split(' ');
+    private toggleEventHandlers(bindFunction: 'addEventListener' | 'removeEventListener') {
+        const elementEventsHandler: ElementEventsHandler = ServiceProvider.get(this.container, DefaultElementEventsHandler);
 
-            for (var index in methodNames) {
-                if (methodNames.hasOwnProperty(index)) {
-                    const method = this[methodNames[index]];
+        EVENT_HANDLERS_MAP.forEach((handlerNames, event) => {
+            handlerNames.forEach(handlerName => {
+                const method: (e: Event) => void = <(e: Event) => void>elementEventsHandler[handlerName].bind(elementEventsHandler);
 
-                    // Keep the context
-                    method = method.bind(this);
-
-                    if (selector == '') {
-                        this.$el[bindFunction](eventName, method);
-                    } else {
-                        this.$el[bindFunction](eventName, selector, method);
-                    }
+                if (isNil(event.selector)) {
+                    this.container[bindFunction](event.type, method);
+                } else {
+                    this.container.querySelectorAll<HTMLElement>(event.selector!)
+                        .forEach(element => {
+                            element[bindFunction](event.type, method);
+                        });
                 }
-            }
-        }
+            });
+        });
     }
 
     private fetchDataAndRender(): void {
@@ -132,7 +144,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
             // Sort comments by date (oldest first so that they can be appended to the data model
             // without caring dependencies)
-            this.sortComments(commentModels, 'oldest');
+            this.commentSorter.sortComments(commentModels, 'oldest');
 
             commentModels.forEach(commentModel => {
                 this.addCommentToDataModel(commentModel);
@@ -184,10 +196,6 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         }
     }
 
-    private updateCommentModel(commentModel: Record<string, any>): void {
-        Object.assign(this.commentsById[commentModel.id], commentModel);
-    }
-
     private render(): void {
         // Prevent re-rendering if data hasn't been fetched
         if (!this.dataFetched) {
@@ -209,27 +217,24 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private showActiveContainer(): void {
-        const activeNavigationEl = this.$el.find('.navigation li[data-container-name].active');
-        const containerName = activeNavigationEl.data('container-name');
-        const containerEl = this.$el.find('[data-container="' + containerName + '"]');
+        const activeNavigationEl = this.container.querySelector('.navigation li[data-container-name].active')!;
+        const containerName = $(activeNavigationEl).data('container-name');
+        const containerEl = this.container.querySelector('[data-container="' + containerName + '"]')!;
         containerEl.siblings('[data-container]').hide();
         containerEl.show();
     }
 
     private createComments() {
-        const self = this;
-
         // Create the list element before appending to DOM in order to reach better performance
-        this.$el.find('#comment-list').remove();
-        const commentList = $('<ul/>', {
-            id: 'comment-list',
-            'class': 'main'
-        });
+        this.container.querySelector('#comment-list')!.remove();
+        const commentList: HTMLUListElement = document.createElement('ul');
+        commentList.id = 'comment-list';
+        commentList.classList.add('main');
 
-        // Divide commments into main level comments and replies
-        const mainLevelComments = [];
-        const replies = [];
-        $(this.getComments()).each(function (index, commentModel) {
+        // Divide comments into main level comments and replies
+        const mainLevelComments: Record<string, any>[] = [];
+        const replies: Record<string, any>[] = [];
+        this.getComments().forEach(commentModel => {
             if (commentModel.parent == null) {
                 mainLevelComments.push(commentModel);
             } else {
@@ -238,55 +243,52 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         });
 
         // Append main level comments
-        this.sortComments(mainLevelComments, this.currentSortKey);
-        $(mainLevelComments).each(function (index, commentModel) {
-            self.addComment(commentModel, commentList);
+        this.commentSorter.sortComments(mainLevelComments, this.currentSortKey);
+        mainLevelComments.forEach(commentModel => {
+            this.addComment(commentModel, commentList);
         });
 
         // Append replies in chronological order
-        this.sortComments(replies, 'oldest');
-        $(replies).each(function (index, commentModel) {
-            self.addComment(commentModel, commentList);
+        this.commentSorter.sortComments(replies, 'oldest');
+        replies.forEach(commentModel => {
+            this.addComment(commentModel, commentList);
         });
 
-        // Appned list to DOM
-        this.$el.find('[data-container="comments"]').prepend(commentList);
+        // Append list to DOM
+        this.container.querySelector('[data-container="comments"]')!.prepend(commentList);
     }
 
-    private createAttachments() {
-        const self = this;
-
+    private createAttachments(): void {
         // Create the list element before appending to DOM in order to reach better performance
-        this.$el.find('#attachment-list').remove();
-        const attachmentList = $('<ul/>', {
-            id: 'attachment-list',
-            'class': 'main'
-        });
+        this.container.querySelector('#attachment-list')!.remove();
+        const attachmentList: HTMLUListElement = document.createElement('ul');
+        attachmentList.id = 'attachment-list';
+        attachmentList.classList.add('main');
 
         const attachments = this.getAttachments();
-        this.sortComments(attachments, 'newest');
-        $(attachments).each(function (index, commentModel) {
-            self.addAttachment(commentModel, attachmentList);
+        this.commentSorter.sortComments(attachments, 'newest');
+        attachments.forEach(commentModel => {
+            this.addAttachment(commentModel, attachmentList);
         });
 
-        // Appned list to DOM
-        this.$el.find('[data-container="attachments"]').prepend(attachmentList);
+        // Append list to DOM
+        this.container.querySelector('[data-container="attachments"]')!.prepend(attachmentList);
     }
 
-    private addComment(commentModel, commentList, prependComment) {
-        commentList = commentList || this.$el.find('#comment-list');
-        const commentEl = this.createCommentElement(commentModel);
+    private addComment(commentModel: Record<string, any>, commentList: HTMLElement = this.container.querySelector('#comment-list')!, prependComment: boolean = false): void {
+        const commentEl: HTMLElement = this.createCommentElement(commentModel);
 
-        // Case: reply
-        if (commentModel.parent) {
-            const directParentEl = commentList.find('.comment[data-id="' + commentModel.parent + '"]');
+        if (commentModel.parent) { // Case: reply
+            const directParentEl: HTMLElement = commentList.querySelector('.comment[data-id="' + commentModel.parent + '"]')!;
 
             // Re-render action bar of direct parent element
             this.reRenderCommentActionBar(commentModel.parent);
 
             // Force replies into one level only
-            const outerMostParent = directParentEl.parents('.comment').last();
-            if (outerMostParent.length == 0) outerMostParent = directParentEl;
+            let outerMostParent = directParentEl.parents('.comment').last();
+            if (outerMostParent.length === 0) {
+                outerMostParent = directParentEl;
+            }
 
             // Append element to DOM
             const childCommentsEl = outerMostParent.find('.child-comments');
@@ -297,11 +299,9 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
                 childCommentsEl.append(commentEl);
             }
 
-// Update toggle all -button
+            // Update toggle all -button
             this.updateToggleAllButton(outerMostParent);
-
-// Case: main level comment
-        } else {
+        } else { // Case: main level comment
             if (prependComment) {
                 commentList.prepend(commentEl);
             } else {
@@ -310,422 +310,103 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         }
     }
 
-    private addAttachment(commentModel, commentList) {
-        commentList = commentList || this.$el.find('#attachment-list');
+    private addAttachment(commentModel: Record<string, any>, commentList: HTMLElement = this.container.querySelector('#attachment-list')!): void {
         const commentEl = this.createCommentElement(commentModel);
         commentList.prepend(commentEl);
     }
 
-    private removeComment(commentId) {
-        const self = this;
-        const commentModel = this.commentsById[commentId];
+    private updateToggleAllButton(parentEl: HTMLElement): void {
+        // Don't hide replies if maxRepliesVisible is null or undefined
+        if (isNil(this.options.maxRepliesVisible)) {
+            return;
+        }
 
-        // Remove child comments recursively
-        const childComments = this.getChildComments(commentModel.id);
-        $(childComments).each(function (index, childComment) {
-            self.removeComment(childComment.id);
+        const childCommentsEl: HTMLElement = parentEl.querySelector('.child-comments')!;
+        const childComments: HTMLElement[] = [...childCommentsEl.querySelectorAll<HTMLElement>('.comment:not(.hidden)')];
+        let toggleAllButton: HTMLElement | null = childCommentsEl.querySelector('li.toggle-all');
+        childComments.forEach(childComment => {
+            childComment.classList.remove('togglable-reply');
         });
 
-        // Update the child array of outermost parent
-        if (commentModel.parent) {
-            const outermostParent = this.getOutermostParent(commentModel.parent);
-            const indexToRemove = outermostParent.childs.indexOf(commentModel.id);
-            outermostParent.childs.splice(indexToRemove, 1);
-        }
-
-// Remove the comment from data model
-        delete this.commentsById[commentId];
-
-        const commentElements = this.$el.find('li.comment[data-id="' + commentId + '"]');
-        const parentEl = commentElements.parents('li.comment').last();
-
-// Remove the element
-        commentElements.remove();
-
-// Update the toggle all button
-        this.updateToggleAllButton(parentEl);
-    }
-
-    private preDeleteAttachment(ev) {
-        const commentingField = $(ev.currentTarget).parents('.commenting-field').first();
-        const attachmentEl = $(ev.currentTarget).parents('.attachment').first();
-        attachmentEl.remove();
-
-        // Check if save button needs to be enabled
-        this.toggleSaveButton(commentingField);
-    }
-
-    private preSaveAttachments(files, commentingField) {
-        const self = this;
-
-        if (files.length) {
-
-            // Elements
-            if (!commentingField) commentingField = this.$el.find('.commenting-field.main');
-            const uploadButton = commentingField.find('.control-row .upload');
-            const isReply = !commentingField.hasClass('main');
-            const attachmentsContainer = commentingField.find('.control-row .attachments');
-
-            // Create attachment models
-            const attachments = $(files).map(function (index, file) {
-                return {
-                    mime_type: file.type,
-                    file: file
-                };
-            });
-
-            // Filter out already added attachments
-            const existingAttachments = this.getAttachmentsFromCommentingField(commentingField);
-            attachments = attachments.filter(function (index, attachment) {
-                const duplicate = false;
-
-                // Check if the attacment name and size matches with already added attachment
-                $(existingAttachments).each(function (index, existingAttachment) {
-                    if (attachment.file.name == existingAttachment.file.name && attachment.file.size == existingAttachment.file.size) {
-                        duplicate = true;
-                    }
-                });
-
-                return !duplicate;
-            });
-
-            // Ensure that the main commenting field is shown if attachments were added to that
-            if (commentingField.hasClass('main')) {
-                commentingField.find('.textarea').trigger('click');
-            }
-
-// Set button state to loading
-            this.setButtonState(uploadButton, false, true);
-
-// Validate attachments
-            this.options.validateAttachments(attachments, function (validatedAttachments) {
-
-                if (validatedAttachments.length) {
-
-                    // Create attachment tags
-                    $(validatedAttachments).each(function (index, attachment) {
-                        const attachmentTag = self.createAttachmentTagElement(attachment, true);
-                        attachmentsContainer.append(attachmentTag);
-                    });
-
-                    // Check if save button needs to be enabled
-                    self.toggleSaveButton(commentingField);
-                }
-
-                // Reset button state
-                self.setButtonState(uploadButton, true, false);
-            });
-        }
-
-// Clear the input field
-        uploadButton.find('input').val('');
-    }
-
-    private updateToggleAllButton(parentEl) {
-        // Don't hide replies if maxRepliesVisible is null or undefined
-        if (this.options.maxRepliesVisible == null) return;
-
-        const childCommentsEl = parentEl.find('.child-comments');
-        const childComments = childCommentsEl.find('.comment').not('.hidden');
-        const toggleAllButton = childCommentsEl.find('li.toggle-all');
-        childComments.removeClass('togglable-reply');
-
+        let togglableReplies: HTMLElement[];
         // Select replies to be hidden
         if (this.options.maxRepliesVisible === 0) {
-            const togglableReplies = childComments;
+            togglableReplies = childComments;
         } else {
-            const togglableReplies = childComments.slice(0, -this.options.maxRepliesVisible);
+            togglableReplies = childComments.slice(0, -this.options.maxRepliesVisible);
         }
 
-// Add identifying class for hidden replies so they can be toggled
-        togglableReplies.addClass('togglable-reply');
+        const allRepliesExpanded: boolean = toggleAllButton?.querySelector('span.text')!.textContent === this.options.textFormatter(this.options.hideRepliesText);
 
-// Show all replies if replies are expanded
-        if (toggleAllButton.find('span.text').text() == this.options.textFormatter(this.options.hideRepliesText)) {
-            togglableReplies.addClass('visible');
+        // Add identifying class for hidden replies so they can be toggled
+        for (let i = 0; i < togglableReplies.length; i++) {
+            togglableReplies[i].classList.add('togglable-reply');
+
+            // Show all replies if replies are expanded
+            if (allRepliesExpanded) {
+                togglableReplies[i].classList.add('visible');
+            }
         }
 
-// Make sure that toggle all button is present
-        if (childComments.length > this.options.maxRepliesVisible) {
-
+        if (childComments.length > this.options.maxRepliesVisible) { // Make sure that toggle all button is present
             // Append button to toggle all replies if necessary
-            if (!toggleAllButton.length) {
-
-                toggleAllButton = $('<li/>', {
-                    'class': 'toggle-all highlight-font-bold'
-                });
-                const toggleAllButtonText = $('<span/>', {
-                    'class': 'text'
-                });
-                const caret = $('<span/>', {
-                    'class': 'caret'
-                });
+            if (isNil(toggleAllButton)) {
+                toggleAllButton = document.createElement('li');
+                toggleAllButton.classList.add('toggle-all', 'highlight-font-bold');
+                const toggleAllButtonText: HTMLSpanElement = document.createElement('span');
+                toggleAllButtonText.classList.add('text');
+                const caret: HTMLSpanElement = document.createElement('span');
+                caret.classList.add('caret');
 
                 // Append toggle button to DOM
-                toggleAllButton.append(toggleAllButtonText).append(caret);
+                toggleAllButton.append(toggleAllButtonText, caret);
                 childCommentsEl.prepend(toggleAllButton);
             }
 
             // Update the text of toggle all -button
             this.setToggleAllButtonText(toggleAllButton, false);
 
-            // Make sure that toggle all button is not present
-        } else {
-            toggleAllButton.remove();
+        } else { // Make sure that toggle all button is not present
+            toggleAllButton?.remove();
         }
     }
 
-    private updateToggleAllButtons() {
-        const self = this;
-        const commentList = this.$el.find('#comment-list');
-
-        // Fold comments, find first level children and update toggle buttons
-        commentList.find('.comment').removeClass('visible');
-        commentList.children('.comment').each(function (index, el) {
-            self.updateToggleAllButton($(el));
-        });
-    }
-
-    private sortComments(comments: Record<string, any>[], sortKey: 'popularity' | 'oldest' | 'newest'): void {
-        const self = this;
-
-        // Sort by popularity
-        if (sortKey === 'popularity') {
-            comments.sort(function (commentA, commentB) {
-                const pointsOfA = commentA.childs.length;
-                const pointsOfB = commentB.childs.length;
-
-                if (self.options.enableUpvoting) {
-                    pointsOfA += commentA.upvoteCount;
-                    pointsOfB += commentB.upvoteCount;
-                }
-
-                if (pointsOfB != pointsOfA) {
-                    return pointsOfB - pointsOfA;
-
-                } else {
-                    // Return newer if popularity is the same
-                    const createdA = new Date(commentA.created).getTime();
-                    const createdB = new Date(commentB.created).getTime();
-                    return createdB - createdA;
-                }
-            });
-
-            // Sort by date
-        } else {
-            comments.sort(function (commentA, commentB) {
-                const createdA = new Date(commentA.created).getTime();
-                const createdB = new Date(commentB.created).getTime();
-                if (sortKey == 'oldest') {
-                    return createdA - createdB;
-                } else {
-                    return createdB - createdA;
-                }
-            });
-        }
-    }
-
-    private sortAndReArrangeComments(sortKey) {
-        const commentList = this.$el.find('#comment-list');
-
-        // Get main level comments
-        const mainLevelComments = this.getComments().filter(function (commentModel) {
-            return !commentModel.parent;
-        });
-        this.sortComments(mainLevelComments, sortKey);
-
-        // Rearrange the main level comments
-        $(mainLevelComments).each(function (index, commentModel) {
-            const commentEl = commentList.find('> li.comment[data-id=' + commentModel.id + ']');
-            commentList.append(commentEl);
-        });
-    }
-
-    private showActiveSort() {
-        const activeElements = this.$el.find('.navigation li[data-sort-key="' + this.currentSortKey + '"]');
+    private showActiveSort(): void {
+        const activeElements: NodeListOf<HTMLElement> = this.container.querySelectorAll(`.navigation li[data-sort-key="${this.currentSortKey}"]`);
 
         // Indicate active sort
-        this.$el.find('.navigation li').removeClass('active');
+        this.container.find('.navigation li').removeClass('active');
         activeElements.addClass('active');
 
         // Update title for dropdown
-        const titleEl = this.$el.find('.navigation .title');
+        const titleEl = this.container.find('.navigation .title');
         if (this.currentSortKey != 'attachments') {
             titleEl.addClass('active');
             titleEl.find('header').html(activeElements.first().html());
         } else {
-            const defaultDropdownEl = this.$el.find('.navigation ul.dropdown').children().first();
+            const defaultDropdownEl = this.container.find('.navigation ul.dropdown').children().first();
             titleEl.find('header').html(defaultDropdownEl.html());
         }
 
-// Show active container
+        // Show active container
         this.showActiveContainer();
     }
 
-    private closeDropdowns() {
-        this.$el.find('.dropdown').hide();
-    }
-
-    private preSavePastedAttachments(ev) {
-        const clipboardData = ev.originalEvent.clipboardData;
-        const files = clipboardData.files;
-
-        // Browsers only support pasting one file
-        if (files && files.length == 1) {
-
-            // Select correct commenting field
-            const commentingField;
-            const parentCommentingField = $(ev.target).parents('.commenting-field').first();
-            if (parentCommentingField.length) {
-                commentingField = parentCommentingField;
-            }
-
-            this.preSaveAttachments(files, commentingField);
-            ev.preventDefault();
-        }
-    }
-
-    private saveOnKeydown(ev) {
-        // Save comment on cmd/ctrl + enter
-        if (ev.keyCode == 13) {
-            const metaKey = ev.metaKey || ev.ctrlKey;
-            if (this.options.postCommentOnEnter || metaKey) {
-                const el = $(ev.currentTarget);
-                el.siblings('.control-row').find('.save').trigger('click');
-                ev.stopPropagation();
-                ev.preventDefault();
-            }
-        }
-    }
-
-    private saveEditableContent(ev) {
-        const el = $(ev.currentTarget);
-        el.data('before', el.html());
-    }
-
-    private checkEditableContentForChange(ev) {
-        const el = $(ev.currentTarget);
-
-        // Fix jquery-textcomplete on IE, empty text nodes will break up the autocomplete feature
-        $(el[0].childNodes).each(function () {
-            if (this.nodeType == Node.TEXT_NODE && this.length == 0 && this.removeNode) this.removeNode();
-        });
-
-        if (el.data('before') != el.html()) {
-            el.data('before', el.html());
-            el.trigger('change');
-        }
-    }
-
-    private navigationElementClicked(ev) {
-        const navigationEl = $(ev.currentTarget);
-        const sortKey = navigationEl.data().sortKey;
-
-        // Sort the comments if necessary
-        if (sortKey == 'attachments') {
-            this.createAttachments();
-        } else {
-            this.sortAndReArrangeComments(sortKey);
-        }
-
-// Save the current sort key
-        this.currentSortKey = sortKey;
-        this.showActiveSort();
-    }
-
-    private toggleNavigationDropdown(ev) {
-        // Prevent closing immediately
-        ev.stopPropagation();
-
-        const dropdown = $(ev.currentTarget).find('~ .dropdown');
-        dropdown.toggle();
-    }
-
-    private showMainCommentingField(ev) {
-        const mainTextarea = $(ev.currentTarget);
-        mainTextarea.siblings('.control-row').show();
-        mainTextarea.parent().find('.close').show();
-        mainTextarea.parent().find('.upload.inline-button').hide();
-        mainTextarea.focus();
-    }
-
-    private hideMainCommentingField(ev) {
-        const closeButton = $(ev.currentTarget);
-        const commentingField = this.$el.find('.commenting-field.main');
-        const mainTextarea = commentingField.find('.textarea');
-        const mainControlRow = commentingField.find('.control-row');
-
-        // Clear text area
-        this.clearTextarea(mainTextarea);
-
-        // Clear attachments
-        commentingField.find('.attachments').empty();
-
-        // Toggle save button
-        this.toggleSaveButton(commentingField);
-
-        // Adjust height
-        this.adjustTextareaHeight(mainTextarea, false);
-
-        mainControlRow.hide();
-        closeButton.hide();
-        mainTextarea.parent().find('.upload.inline-button').show();
-        mainTextarea.blur();
-    }
-
-    private increaseTextareaHeight(ev) {
-        const textarea = $(ev.currentTarget);
-        this.adjustTextareaHeight(textarea, true);
-    }
-
-    private textareaContentChanged(ev) {
-        const textarea = $(ev.currentTarget);
-
-        // Update parent id if reply-to tag was removed
-        if (!textarea.find('.reply-to.tag').length) {
-            const commentId = textarea.attr('data-comment');
-
-            // Case: editing comment
-            if (commentId) {
-                const parentComments = textarea.parents('li.comment');
-                if (parentComments.length > 1) {
-                    const parentId = parentComments.last().data('id');
-                    textarea.attr('data-parent', parentId);
-                }
-
-                // Case: new comment
-            } else {
-                const parentId = textarea.parents('li.comment').last().data('id');
-                textarea.attr('data-parent', parentId);
-            }
-        }
-
-// Move close button if scrollbar is visible
-        const commentingField = textarea.parents('.commenting-field').first();
-        if (textarea[0].scrollHeight > textarea.outerHeight()) {
-            commentingField.addClass('commenting-field-scrollable');
-        } else {
-            commentingField.removeClass('commenting-field-scrollable');
-        }
-
-// Check if save button needs to be enabled
-        this.toggleSaveButton(commentingField);
-    }
-
-    private toggleSaveButton(commentingField) {
+    private toggleSaveButton(commentingField): void {
         const textarea = commentingField.find('.textarea');
         const saveButton = textarea.siblings('.control-row').find('.save');
 
         const content = this.getTextareaContent(textarea, true);
         const attachments = this.getAttachmentsFromCommentingField(commentingField);
-        const enabled;
+        let enabled;
 
         // Case: existing comment
-        if (commentModel = this.commentsById[textarea.attr('data-comment')]) {
+        const commentModel = this.commentsById[textarea.attr('data-comment')];
+        if (commentModel) {
 
             // Case: parent changed
             const contentChanged = content != commentModel.content;
-            const parentFromModel;
+            let parentFromModel;
             if (commentModel.parent) {
                 parentFromModel = commentModel.parent.toString();
             }
@@ -734,15 +415,11 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
             const parentChanged = textarea.attr('data-parent') != parentFromModel;
 
             // Case: attachments changed
-            const attachmentsChanged = false;
+            let attachmentsChanged = false;
             if (this.options.enableAttachments) {
-                const savedAttachmentIds = commentModel.attachments.map(function (attachment) {
-                    return attachment.id;
-                });
-                const currentAttachmentIds = attachments.map(function (attachment) {
-                    return attachment.id;
-                });
-                attachmentsChanged = !this.areArraysEqual(savedAttachmentIds, currentAttachmentIds);
+                const savedAttachmentIds = commentModel.attachments.map(attachment => attachment.id);
+                const currentAttachmentIds = attachments.map(attachment => attachment.id);
+                attachmentsChanged = !areArraysEqual(savedAttachmentIds, currentAttachmentIds);
             }
 
             enabled = contentChanged || parentChanged || attachmentsChanged;
@@ -755,52 +432,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         saveButton.toggleClass('enabled', enabled);
     }
 
-    private removeCommentingField(ev) {
-        const closeButton = $(ev.currentTarget);
-
-        // Remove edit class from comment if user was editing the comment
-        const textarea = closeButton.siblings('.textarea');
-        if (textarea.attr('data-comment')) {
-            closeButton.parents('li.comment').first().removeClass('edit');
-        }
-
-// Remove the field
-        const commentingField = closeButton.parents('.commenting-field').first();
-        commentingField.remove();
-    }
-
-    private postComment(ev) {
-        const self = this;
-        const sendButton = $(ev.currentTarget);
-        const commentingField = sendButton.parents('.commenting-field').first();
-
-        // Set button state to loading
-        this.setButtonState(sendButton, false, true);
-
-        // Create comment JSON
-        const commentJSON = this.createCommentJSON(commentingField);
-
-        // Reverse mapping
-        commentJSON = this.applyExternalMappings(commentJSON);
-
-        const success = function (commentJSON) {
-            self.createComment(commentJSON);
-            commentingField.find('.close').trigger('click');
-
-            // Reset button state
-            self.setButtonState(sendButton, false, false);
-        };
-
-        const error = function () {
-
-            // Reset button state
-            self.setButtonState(sendButton, true, false);
-        };
-
-        this.options.postComment(commentJSON, success, error);
-    }
-
-    private createComment(commentJSON) {
+    private createComment(commentJSON: Record<string, any>): void {
         const commentModel = this.createCommentModel(commentJSON);
         this.addCommentToDataModel(commentModel);
 
@@ -809,406 +441,103 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         const prependComment = this.currentSortKey == 'newest';
         this.addComment(commentModel, commentList, prependComment);
 
-        if (this.currentSortKey == 'attachments' && commentModel.hasAttachments()) {
+        if (this.currentSortKey === 'attachments' && commentModel.hasAttachments()) {
             this.addAttachment(commentModel);
         }
     }
 
-    private putComment(ev) {
-        const self = this;
-        const saveButton = $(ev.currentTarget);
-        const commentingField = saveButton.parents('.commenting-field').first();
-        const textarea = commentingField.find('.textarea');
-
-        // Set button state to loading
-        this.setButtonState(saveButton, false, true);
-
-        // Use a clone of the existing model and update the model after succesfull update
-        const commentJSON = $.extend({}, this.commentsById[textarea.attr('data-comment')]);
-        $.extend(commentJSON, {
-            parent: textarea.attr('data-parent') || null,
-            content: this.getTextareaContent(textarea),
-            pings: this.getPings(textarea),
-            modified: new Date().getTime(),
-            attachments: this.getAttachmentsFromCommentingField(commentingField)
-        });
-
-// Reverse mapping
-        commentJSON = this.applyExternalMappings(commentJSON);
-
-        const success = function (commentJSON) {
-            // The outermost parent can not be changed by editing the comment so the childs array
-            // of parent does not require an update
-
-            const commentModel = self.createCommentModel(commentJSON);
-
-            // Delete childs array from new comment model since it doesn't need an update
-            delete commentModel['childs'];
-            self.updateCommentModel(commentModel);
-
-            // Close the editing field
-            commentingField.find('.close').trigger('click');
-
-            // Re-render the comment
-            self.reRenderComment(commentModel.id);
-
-            // Reset button state
-            self.setButtonState(saveButton, false, false);
-        };
-
-        const error = function () {
-
-            // Reset button state
-            self.setButtonState(saveButton, true, false);
-        };
-
-        this.options.putComment(commentJSON, success, error);
-    }
-
-    private deleteComment(ev) {
-        const self = this;
-        const deleteButton = $(ev.currentTarget);
-        const commentEl = deleteButton.parents('.comment').first();
-        const commentJSON = $.extend({}, this.commentsById[commentEl.attr('data-id')]);
-        const commentId = commentJSON.id;
-        const parentId = commentJSON.parent;
-
-        // Set button state to loading
-        this.setButtonState(deleteButton, false, true);
-
-        // Reverse mapping
-        commentJSON = this.applyExternalMappings(commentJSON);
-
-        const success = function () {
-            self.removeComment(commentId);
-            if (parentId) self.reRenderCommentActionBar(parentId);
-
-            // Reset button state
-            self.setButtonState(deleteButton, false, false);
-        };
-
-        const error = function () {
-
-            // Reset button state
-            self.setButtonState(deleteButton, true, false);
-        };
-
-        this.options.deleteComment(commentJSON, success, error);
-    }
-
-    private hashtagClicked(ev) {
-        const el = $(ev.currentTarget);
-        const value = el.attr('data-value');
-        this.options.hashtagClicked(value);
-    }
-
-    private pingClicked(ev) {
-        const el = $(ev.currentTarget);
-        const value = el.attr('data-value');
-        this.options.pingClicked(value);
-    }
-
-    private fileInputChanged(ev, files) {
-        const files = ev.currentTarget.files;
-        const commentingField = $(ev.currentTarget).parents('.commenting-field').first();
-        this.preSaveAttachments(files, commentingField);
-    }
-
-    private upvoteComment(ev) {
-        const self = this;
-        const commentEl = $(ev.currentTarget).parents('li.comment').first();
-        const commentModel = commentEl.data().model;
-
-        // Check whether user upvoted the comment or revoked the upvote
-        const previousUpvoteCount = commentModel.upvoteCount;
-        const newUpvoteCount;
-        if (commentModel.userHasUpvoted) {
-            newUpvoteCount = previousUpvoteCount - 1;
-        } else {
-            newUpvoteCount = previousUpvoteCount + 1;
-        }
-
-// Show changes immediately
-        commentModel.userHasUpvoted = !commentModel.userHasUpvoted;
-        commentModel.upvoteCount = newUpvoteCount;
-        this.reRenderUpvotes(commentModel.id);
-
-// Reverse mapping
-        const commentJSON = $.extend({}, commentModel);
-        commentJSON = this.applyExternalMappings(commentJSON);
-
-        const success = function (commentJSON) {
-            const commentModel = self.createCommentModel(commentJSON);
-            self.updateCommentModel(commentModel);
-            self.reRenderUpvotes(commentModel.id);
-        };
-
-        const error = function () {
-
-            // Revert changes
-            commentModel.userHasUpvoted = !commentModel.userHasUpvoted;
-            commentModel.upvoteCount = previousUpvoteCount;
-            self.reRenderUpvotes(commentModel.id);
-        };
-
-        this.options.upvoteComment(commentJSON, success, error);
-    }
-
-    private toggleReplies(ev) {
-        const el = $(ev.currentTarget);
-        el.siblings('.togglable-reply').toggleClass('visible');
-        this.setToggleAllButtonText(el, true);
-    }
-
-    private replyButtonClicked(ev) {
-        const replyButton = $(ev.currentTarget);
-        const outermostParent = replyButton.parents('li.comment').last();
-        const parentId = replyButton.parents('.comment').first().data().id;
-
-
-        // Remove existing field
-        const replyField = outermostParent.find('.child-comments > .commenting-field');
-        if (replyField.length) replyField.remove();
-        const previousParentId = replyField.find('.textarea').attr('data-parent');
-
-        // Create the reply field (do not re-create)
-        if (previousParentId != parentId) {
-            replyField = this.createCommentingFieldElement(parentId);
-            outermostParent.find('.child-comments').append(replyField);
-
-            // Move cursor to end
-            const textarea = replyField.find('.textarea');
-            this.moveCursorToEnd(textarea);
-
-            // Ensure element stays visible
-            this.ensureElementStaysVisible(replyField);
-        }
-    }
-
-    private editButtonClicked(ev) {
-        const editButton = $(ev.currentTarget);
-        const commentEl = editButton.parents('li.comment').first();
-        const commentModel = commentEl.data().model;
-        commentEl.addClass('edit');
-
-        // Create the editing field
-        const editField = this.createCommentingFieldElement(commentModel.parent, commentModel.id);
-        commentEl.find('.comment-wrapper').first().append(editField);
-
-        // Append original content
-        const textarea = editField.find('.textarea');
-        textarea.attr('data-comment', commentModel.id);
-
-        // Escaping HTML
-        textarea.append(this.getFormattedCommentContent(commentModel, true));
-
-        // Move cursor to end
-        this.moveCursorToEnd(textarea);
-
-        // Ensure element stays visible
-        this.ensureElementStaysVisible(editField);
-    }
-
-    private showDroppableOverlay(ev) {
-        if (this.options.enableAttachments) {
-            this.$el.find('.droppable-overlay').css('top', this.$el[0].scrollTop);
-            this.$el.find('.droppable-overlay').show();
-            this.$el.addClass('drag-ongoing');
-        }
-    }
-
-    private handleDragEnter(ev) {
-        const count = $(ev.currentTarget).data('dnd-count') || 0;
-        count++;
-        $(ev.currentTarget).data('dnd-count', count);
-        $(ev.currentTarget).addClass('drag-over');
-    }
-
-    private handleDragLeave(ev, callback) {
-        const count = $(ev.currentTarget).data('dnd-count');
-        count--;
-        $(ev.currentTarget).data('dnd-count', count);
-
-        if (count == 0) {
-            $(ev.currentTarget).removeClass('drag-over');
-            if (callback) callback();
-        }
-    }
-
-    private handleDragLeaveForOverlay(ev) {
-        const self = this;
-        this.handleDragLeave(ev, function () {
-            self.hideDroppableOverlay();
-        });
-    }
-
-    private handleDragLeaveForDroppable(ev) {
-        this.handleDragLeave(ev);
-    }
-
-    private handleDragOverForOverlay(ev) {
-        ev.stopPropagation();
-        ev.preventDefault();
-        ev.originalEvent.dataTransfer.dropEffect = 'copy';
-    }
-
-    private hideDroppableOverlay() {
-        this.$el.find('.droppable-overlay').hide();
-        this.$el.removeClass('drag-ongoing');
-    }
-
-    private handleDrop(ev) {
-        ev.preventDefault();
-
-        // Reset DND counts
-        $(ev.target).trigger('dragleave');
-
-        // Hide the overlay and upload the files
-        this.hideDroppableOverlay();
-        this.preSaveAttachments(ev.originalEvent.dataTransfer.files);
-    }
-
-    private stopPropagation(ev) {
-        ev.stopPropagation();
-    }
-
-    private createHTML() {
-        const self = this;
-
+    private createHTML(): void {
         // Commenting field
         const mainCommentingField = this.createMainCommentingFieldElement();
-        this.$el.append(mainCommentingField);
+        this.container.append(mainCommentingField);
 
         // Hide control row and close button
-        const mainControlRow = mainCommentingField.find('.control-row');
-        mainControlRow.hide();
-        mainCommentingField.find('.close').hide();
+        const mainControlRow: HTMLElement = mainCommentingField.querySelector('.control-row')!;
+        mainControlRow.style.display = 'none';
+        mainCommentingField.querySelector<HTMLElement>('.close')!.style.display = 'none';
 
         // Navigation bar
         if (this.options.enableNavigation) {
-            this.$el.append(this.createNavigationElement());
+            this.container.append(this.createNavigationElement());
             this.showActiveSort();
         }
 
-// Loading spinner
+        // Loading spinner
         const spinner = this.createSpinner();
-        this.$el.append(spinner);
+        this.container.append(spinner);
 
-// Comments container
-        const commentsContainer = $('<div/>', {
-            'class': 'data-container',
-            'data-container': 'comments'
-        });
-        this.$el.append(commentsContainer);
+        // Comments container
+        const commentsContainer = document.createElement('div');
+        commentsContainer.classList.add('data-container');
+        commentsContainer.setAttribute('data-container', 'comments');
+        this.container.append(commentsContainer);
 
-// "No comments" placeholder
-        const noComments = $('<div/>', {
-            'class': 'no-comments no-data',
-            text: this.options.textFormatter(this.options.noCommentsText)
-        });
-        const noCommentsIcon = $('<i/>', {
-            'class': 'fa fa-comments fa-2x'
-        });
+        // "No comments" placeholder
+        const noComments = document.createElement('div');
+        noComments.classList.add('no-comments', 'no-data');
+        noComments.textContent = this.options.textFormatter(this.options.noCommentsText);
+        const noCommentsIcon = document.createElement('i');
+        noCommentsIcon.classList.add('fa', 'fa-comments', 'fa-2x');
         if (this.options.noCommentsIconURL.length) {
-            noCommentsIcon.css('background-image', 'url("' + this.options.noCommentsIconURL + '")');
-            noCommentsIcon.addClass('image');
+            noCommentsIcon.style.backgroundImage = `url("${this.options.noCommentsIconURL}")`;
+            noCommentsIcon.classList.add('image');
         }
-        noComments.prepend($('<br/>')).prepend(noCommentsIcon);
+        noComments.prepend(document.createElement('br'), noCommentsIcon);
         commentsContainer.append(noComments);
 
-// Attachments
+        // Attachments
         if (this.options.enableAttachments) {
-
             // Attachments container
-            const attachmentsContainer = $('<div/>', {
-                'class': 'data-container',
-                'data-container': 'attachments'
-            });
-            this.$el.append(attachmentsContainer);
+            const attachmentsContainer = document.createElement('div');
+            attachmentsContainer.classList.add('data-container');
+            attachmentsContainer.setAttribute('data-container', 'attachments');
+            this.container.append(attachmentsContainer);
 
             // "No attachments" placeholder
-            const noAttachments = $('<div/>', {
-                'class': 'no-attachments no-data',
-                text: this.options.textFormatter(this.options.noAttachmentsText)
-            });
-            const noAttachmentsIcon = $('<i/>', {
-                'class': 'fa fa-paperclip fa-2x'
-            });
+            const noAttachments = document.createElement('div');
+            noAttachments.classList.add('no-attachments', 'no-data');
+            noAttachments.textContent = this.options.textFormatter(this.options.noAttachmentsText);
+            const noAttachmentsIcon: HTMLElement = document.createElement('i');
+            noAttachmentsIcon.classList.add('fa', 'fa-paperclip', 'fa-2x');
             if (this.options.attachmentIconURL.length) {
-                noAttachmentsIcon.css('background-image', 'url("' + this.options.attachmentIconURL + '")');
-                noAttachmentsIcon.addClass('image');
+                noAttachmentsIcon.style.backgroundImage = `url("${this.options.attachmentIconURL}")`;
+                noAttachmentsIcon.classList.add('image');
             }
-            noAttachments.prepend($('<br/>')).prepend(noAttachmentsIcon);
+            noAttachments.prepend(document.createElement('br'), noAttachmentsIcon);
             attachmentsContainer.append(noAttachments);
 
-
             // Drag & dropping attachments
-            const droppableOverlay = $('<div/>', {
-                'class': 'droppable-overlay'
-            });
+            const droppableOverlay: HTMLDivElement = document.createElement('div');
+            droppableOverlay.classList.add('droppable-overlay');
 
-            const droppableContainer = $('<div/>', {
-                'class': 'droppable-container'
-            });
+            const droppableContainer: HTMLDivElement = document.createElement('div');
+            droppableContainer.classList.add('droppable-container');
 
-            const droppable = $('<div/>', {
-                'class': 'droppable'
-            });
+            const droppable: HTMLDivElement = document.createElement('div');
+            droppable.classList.add('droppable');
 
-            const uploadIcon = $('<i/>', {
-                'class': 'fa fa-paperclip fa-4x'
-            });
+            const uploadIcon: HTMLElement = document.createElement('i');
+            uploadIcon.classList.add('fa', 'fa-paperclip', 'fa-4x');
+
             if (this.options.uploadIconURL.length) {
-                uploadIcon.css('background-image', 'url("' + this.options.uploadIconURL + '")');
-                uploadIcon.addClass('image');
+                uploadIcon.style.backgroundImage = `url("${this.options.uploadIconURL}")`;
+                uploadIcon.classList.add('image');
             }
 
-            const dropAttachmentText = $('<div/>', {
-                text: this.options.textFormatter(this.options.attachmentDropText)
-            });
+            const dropAttachmentText: HTMLDivElement = document.createElement('div');
+            dropAttachmentText.textContent = this.options.textFormatter(this.options.attachmentDropText);
             droppable.append(uploadIcon);
             droppable.append(dropAttachmentText);
+            droppableContainer.append(droppable);
 
-            droppableOverlay.html(droppableContainer.html(droppable)).hide();
-            this.$el.append(droppableOverlay);
+            droppableOverlay.append(droppableContainer);
+            droppableOverlay.style.display = 'none';
+            this.container.append(droppableOverlay);
         }
     }
 
-    private createMainCommentingFieldElement() {
+    private createMainCommentingFieldElement(): HTMLElement {
         return this.createCommentingFieldElement(undefined, undefined, true);
-    }
-
-    private reRenderComment(id) {
-        const commentModel = this.commentsById[id];
-        const commentElements = this.$el.find('li.comment[data-id="' + commentModel.id + '"]');
-
-        const self = this;
-        commentElements.each(function (index, commentEl) {
-            const commentWrapper = self.createCommentWrapperElement(commentModel);
-            $(commentEl).find('.comment-wrapper').first().replaceWith(commentWrapper);
-        });
-    }
-
-    private reRenderCommentActionBar(id) {
-        const commentModel = this.commentsById[id];
-        const commentElements = this.$el.find('li.comment[data-id="' + commentModel.id + '"]');
-
-        const self = this;
-        commentElements.each(function (index, commentEl) {
-            const commentWrapper = self.createCommentWrapperElement(commentModel);
-            $(commentEl).find('.actions').first().replaceWith(commentWrapper.find('.actions'));
-        });
-    }
-
-    private reRenderUpvotes(id) {
-        const commentModel = this.commentsById[id];
-        const commentElements = this.$el.find('li.comment[data-id="' + commentModel.id + '"]');
-
-        const self = this;
-        commentElements.each(function (index, commentEl) {
-            const upvotes = self.createUpvoteElement(commentModel);
-            $(commentEl).find('.upvote').first().replaceWith(upvotes);
-        });
     }
 
 }

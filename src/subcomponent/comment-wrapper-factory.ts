@@ -3,18 +3,27 @@ import {CommentContentFormatter} from './comment-content-formatter';
 import * as sanitize from 'sanitize-html';
 import {TagFactory} from './tag-factory';
 import {UpvoteFactory} from './upvote-factory';
+import {CommentsOptions} from '../comments-options';
+import {CommentsById} from '../comments-by-id';
+import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider';
 
 export class CommentWrapperFactory {
 
-    private readonly profilePictureFactory: ProfilePictureFactory = new ProfilePictureFactory(this.options);
-    private readonly tagFactory: TagFactory = new TagFactory(this.options);
-    private readonly upvoteFactory: UpvoteFactory = new UpvoteFactory(this.options);
-    private readonly commentContentFormatter: CommentContentFormatter = new CommentContentFormatter(this.options);
+    private readonly options: CommentsOptions;
+    private readonly commentsById: CommentsById;
+    private readonly profilePictureFactory: ProfilePictureFactory;
+    private readonly tagFactory: TagFactory;
+    private readonly upvoteFactory: UpvoteFactory;
+    private readonly commentContentFormatter: CommentContentFormatter;
 
-    constructor(
-        private readonly options: Record<string, any>,
-        private readonly commentsById: Record<string, Record<string, any>>
-    ) {}
+    constructor(private readonly container: HTMLDivElement) {
+        this.options = OptionsProvider.get(container)!;
+        this.commentsById = CommentsProvider.get(container)!;
+        this.profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
+        this.tagFactory = ServiceProvider.get(container, TagFactory);
+        this.upvoteFactory = ServiceProvider.get(container, UpvoteFactory);
+        this.commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
+    }
 
     createCommentWrapperElement(commentModel: Record<string, any>): HTMLElement {
         const commentWrapper: HTMLDivElement = document.createElement('div');

@@ -1,4 +1,6 @@
-export function getDefaultOptions(scrollContainer: HTMLElement): Record<string, any> {
+import {CommentsOptions} from './comments-options';
+
+export function getDefaultOptions(scrollContainer: HTMLElement): CommentsOptions {
     return {
 
         // User

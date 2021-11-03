@@ -1,7 +1,13 @@
+import {CommentsOptions} from '../comments-options';
+import {OptionsProvider} from '../provider';
+
 export class CloseButtonFactory {
-    constructor(
-        private readonly options: Record<string, any>
-    ) {}
+
+    private readonly options: CommentsOptions;
+
+    constructor(private readonly container: HTMLDivElement) {
+        this.options = OptionsProvider.get(container)!;
+    }
 
     createCloseButton(className?: string): HTMLElement {
         const closeButton: HTMLSpanElement = document.createElement('span');

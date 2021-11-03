@@ -1,14 +1,20 @@
-import {isNil, normalizeSpaces} from '../util';
 import $ from 'cash-dom';
+import {isNil, normalizeSpaces} from '../util';
 import {SpinnerFactory} from './spinner-factory';
+import {CommentsOptions} from '../comments-options';
+import {CommentsById} from '../comments-by-id';
+import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider';
 
 export class SubcomponentUtil {
-    private readonly spinnerFactory: SpinnerFactory = new SpinnerFactory(this.options);
 
-    constructor(
-        private readonly options: Record<string, any>,
-        private readonly commentsById: Record<string, Record<string, any>>
-    ) {
+    private readonly options: CommentsOptions;
+    private readonly commentsById: CommentsById;
+    private readonly spinnerFactory: SpinnerFactory;
+
+    constructor(private readonly container: HTMLDivElement) {
+        this.options = OptionsProvider.get(container)!;
+        this.commentsById = CommentsProvider.get(container)!;
+        this.spinnerFactory = ServiceProvider.get(container, SpinnerFactory);
     }
 
     getComments(): Record<string, any>[] {
@@ -196,23 +202,23 @@ export class SubcomponentUtil {
         return attachments;
     }
 
-    moveCursorToEnd(el: HTMLElement) {
+    moveCursorToEnd(element: HTMLElement): void {
         // Trigger input to adjust size
-        el.dispatchEvent(new Event('input'));
+        element.dispatchEvent(new Event('input'));
 
         // Scroll to bottom
-        el.scrollTop = el.scrollHeight;
+        element.scrollTop = element.scrollHeight;
 
         // Move cursor to end
         const range: Range = document.createRange();
-        range.selectNodeContents(el);
+        range.selectNodeContents(element);
         range.collapse(false);
         const sel: Selection = getSelection() as Selection;
         sel.removeAllRanges();
         sel.addRange(range);
 
         // Focus
-        el.focus();
+        element.focus();
     }
 
     ensureElementStaysVisible(el: HTMLElement): void {

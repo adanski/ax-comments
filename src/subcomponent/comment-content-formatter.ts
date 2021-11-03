@@ -1,13 +1,17 @@
 import {TagFactory} from './tag-factory';
 import {isNil, normalizeSpaces} from '../util';
+import {CommentsOptions} from '../comments-options';
+import {OptionsProvider, ServiceProvider} from '../provider';
 
 export class CommentContentFormatter {
 
-    private readonly tagFactory: TagFactory = new TagFactory(this.options);
+    private readonly options: CommentsOptions;
+    private readonly tagFactory: TagFactory;
 
-    constructor(
-        private readonly options: Record<string, any>
-    ) {}
+    constructor(private readonly container: HTMLDivElement) {
+        this.options = OptionsProvider.get(container)!;
+        this.tagFactory = ServiceProvider.get(container, TagFactory);
+    }
 
     getFormattedCommentContent(commentModel: Record<string, any>, replaceNewLines?: boolean): string {
         let html: string = this.escape(commentModel.content);

@@ -1,12 +1,17 @@
 import $ from 'cash-dom';
 import {CloseButtonFactory} from './close-button-factory';
+import {CommentsOptions} from '../comments-options';
+import {OptionsProvider, ServiceProvider} from '../provider';
 
 export class TagFactory {
-    private readonly closeButtonFactory: CloseButtonFactory = new CloseButtonFactory(this.options);
 
-    constructor(
-        private readonly options: Record<string, any>
-    ) {}
+    private readonly options: CommentsOptions;
+    private readonly closeButtonFactory: CloseButtonFactory;
+
+    constructor(private readonly container: HTMLDivElement) {
+        this.options = OptionsProvider.get(container)!;
+        this.closeButtonFactory = ServiceProvider.get(container, CloseButtonFactory);
+    }
 
     createTagElement(text: string, extraClasses: string, value: string, extraAttributes?: Record<string, any>): HTMLElement {
         const tagEl: HTMLInputElement = document.createElement('input');
