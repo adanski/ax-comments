@@ -1,4 +1,4 @@
-var commentsArray = [
+const commentsArray = [
 {
    "id": 1,
    "parent": null,
@@ -182,9 +182,9 @@ var commentsArray = [
    "user_has_upvoted": false,
    "is_new": false
 }
-]
+];
 
-var usersArray = [
+const usersArray = [
    {
       id: 1,
       fullname: "Current User",
@@ -227,4 +227,4 @@ var usersArray = [
       email: "bryan.connery@viima.com",
       profile_picture_url: "https://viima-app.s3.amazonaws.com/media/public/defaults/user-icon.png"
    }
-]
+];

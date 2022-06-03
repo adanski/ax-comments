@@ -1,16 +1,16 @@
 import $ from 'cash-dom';
-import {CloseButtonFactory} from './close-button-factory';
+import {ButtonService} from './button-service';
 import {CommentsOptions} from '../comments-options';
 import {OptionsProvider, ServiceProvider} from '../provider';
 
 export class TagFactory {
 
     private readonly options: CommentsOptions;
-    private readonly closeButtonFactory: CloseButtonFactory;
+    private readonly buttonService: ButtonService;
 
     constructor(private readonly container: HTMLDivElement) {
         this.options = OptionsProvider.get(container)!;
-        this.closeButtonFactory = ServiceProvider.get(container, CloseButtonFactory);
+        this.buttonService = ServiceProvider.get(container, ButtonService);
     }
 
     createTagElement(text: string, extraClasses: string, value: string, extraAttributes?: Record<string, any>): HTMLElement {
@@ -78,7 +78,7 @@ export class TagFactory {
             attachmentTag.classList.add('deletable');
 
             // Append close button
-            const closeButton: HTMLElement = this.closeButtonFactory.createCloseButton('delete');
+            const closeButton: HTMLElement = this.buttonService.createCloseButton('delete');
             attachmentTag.append(closeButton);
         }
 

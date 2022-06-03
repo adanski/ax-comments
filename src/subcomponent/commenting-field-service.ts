@@ -1,32 +1,35 @@
 import $ from 'cash-dom';
 import {ProfilePictureFactory} from './profile-picture-factory';
-import {CloseButtonFactory} from './close-button-factory';
+import {ButtonService} from './button-service';
 import {ContenteditableEditor} from '@textcomplete/contenteditable';
 import {StrategyProps, Textcomplete} from '@textcomplete/core';
 import {TextcompleteOption} from '@textcomplete/core/src/Textcomplete';
 import {TagFactory} from './tag-factory';
-import {SubcomponentUtil} from './subcomponent-util';
+import {TextareaService} from './textarea-service';
 import {CommentsOptions} from '../comments-options';
 import {normalizeSpaces} from '../util';
 import {CommentsById} from '../comments-by-id';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider';
+import {CommentUtil} from '../comment-util';
 
-export class CommentingFieldFactory {
+export class CommentingFieldService {
 
     private readonly options: CommentsOptions;
     private readonly commentsById: CommentsById;
     private readonly profilePictureFactory: ProfilePictureFactory;
-    private readonly closeButtonFactory: CloseButtonFactory;
+    private readonly buttonService: ButtonService;
     private readonly tagFactory: TagFactory;
-    private readonly subcomponentUtil: SubcomponentUtil;
+    private readonly textareaService: TextareaService;
+    private readonly commentUtil: CommentUtil;
 
     constructor(private readonly container: HTMLDivElement) {
         this.options = OptionsProvider.get(container)!;
         this.commentsById = CommentsProvider.get(container)!;
         this.profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
-        this.closeButtonFactory = ServiceProvider.get(container, CloseButtonFactory);
+        this.buttonService = ServiceProvider.get(container, ButtonService);
         this.tagFactory = ServiceProvider.get(container, TagFactory);
-        this.subcomponentUtil = ServiceProvider.get(container, SubcomponentUtil);
+        this.textareaService = ServiceProvider.get(container, TextareaService);
+        this.commentUtil = ServiceProvider.get(container, CommentUtil);
     }
 
     createCommentingFieldElement(parentId: string, existingCommentId: string, isMain: boolean): CommentingFieldElement {
@@ -69,16 +72,10 @@ export class CommentingFieldFactory {
         controlRow.classList.add('control-row');
 
         // Textarea
-        const textarea: HTMLDivElement = document.createElement('div');
-        textarea.classList.add('textarea');
-        textarea.setAttribute('data-placeholder', this.options.textFormatter(this.options.textareaPlaceholderText));
-        textarea.setAttribute('contenteditable', 'true');
-
-        // Setting the initial height for the textarea
-        this.subcomponentUtil.adjustTextareaHeight(textarea, false);
+        const textarea: HTMLDivElement = this.textareaService.createTextarea();
 
         // Close button
-        const closeButton: HTMLElement = this.closeButtonFactory.createCloseButton();
+        const closeButton: HTMLElement = this.buttonService.createCloseButton();
         closeButton.classList.add('inline-button');
 
         // Save button
@@ -239,7 +236,7 @@ export class CommentingFieldFactory {
 
         let isAllowedToDelete = true;
         if (!this.options.enableDeletingCommentWithReplies) {
-            const comments: Record<string, any>[] = this.subcomponentUtil.getComments();
+            const comments: Record<string, any>[] = this.commentUtil.getComments();
             for (let i = 0; i < comments.length; i++) {
                 if (comments[i].parent === commentId) {
                     isAllowedToDelete = false;
@@ -248,6 +245,37 @@ export class CommentingFieldFactory {
             }
         }
         return isAllowedToDelete;
+    }
+
+    createCommentJSON(commentingField: HTMLElement): Record<string, any> {
+        const textarea: HTMLElement = commentingField.querySelector('.textarea') as HTMLElement;
+        const time: string = new Date().toISOString();
+
+        const commentJSON = {
+            id: 'c' + (this.commentUtil.getComments().length + 1),   // Temporary id
+            parent: textarea.getAttribute('data-parent') || null,
+            created: time,
+            modified: time,
+            content: this.textareaService.getTextareaContent(textarea),
+            pings: this.textareaService.getPings(textarea),
+            fullname: this.options.textFormatter(this.options.youText),
+            profilePictureURL: this.options.profilePictureURL,
+            createdByCurrentUser: true,
+            upvoteCount: 0,
+            userHasUpvoted: false,
+            attachments: this.getAttachmentsFromCommentingField(commentingField)
+        };
+        return commentJSON;
+    }
+
+    getAttachmentsFromCommentingField(commentingField: HTMLElement): any[] {
+        const attachmentElements: NodeListOf<HTMLAnchorElement> = commentingField.querySelectorAll('.attachments .attachment');
+        const attachments: any[] = [];
+        for (let i = 0; i < attachmentElements.length; i++) {
+            attachments[i] = $(attachmentElements[i]).data();
+        }
+
+        return attachments;
     }
 }
 

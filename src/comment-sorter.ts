@@ -9,7 +9,7 @@ export class CommentSorter {
         this.options = OptionsProvider.get(container)!;
     }
 
-    sortComments(comments: Record<string, any>[], sortKey: 'popularity' | 'oldest' | 'newest'): void {
+    sortComments(comments: Record<string, any>[], sortKey: 'popularity' | 'oldest' | 'newest' | 'attachments'): void {
         if (sortKey === 'popularity') { // Sort by popularity
             comments.sort((commentA, commentB) => {
                 let pointsOfA = commentA.childs.length;

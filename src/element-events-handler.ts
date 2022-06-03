@@ -1,7 +1,8 @@
 import {CommentsById} from './comments-by-id';
 import {CommentsOptions} from './comments-options';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider';
-import {SubcomponentUtil} from './subcomponent/subcomponent-util';
+import {TextareaService} from './subcomponent/textarea-service';
+import {CommentUtil} from './comment-util';
 
 export interface ElementEventsHandler {
     closeDropdowns(e: UIEvent): void;
@@ -40,12 +41,14 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     private readonly options: CommentsOptions;
     private readonly commentsById: CommentsById;
-    private readonly subcomponentUtil: SubcomponentUtil;
+    private readonly subcomponentUtil: TextareaService;
+    private readonly commentUtil: CommentUtil;
 
     constructor(private readonly container: HTMLDivElement) {
         this.options = OptionsProvider.get(container)!;
         this.commentsById = CommentsProvider.get(container)!;
-        this.subcomponentUtil = ServiceProvider.get(container, SubcomponentUtil);
+        this.subcomponentUtil = ServiceProvider.get(container, TextareaService);
+        this.commentUtil = ServiceProvider.get(container, CommentUtil);
     }
 
     closeDropdowns(): void {
@@ -102,7 +105,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
             // Ensure that the main commenting field is shown if attachments were added to that
             if (commentingField.classList.contains('main')) {
-                commentingField.querySelector('.textarea')!.dispatchEvent(new Event('click'));
+                commentingField.querySelector('.textarea')!.dispatchEvent(new MouseEvent('click'));
             }
 
             // Set button state to loading
@@ -403,32 +406,10 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     }
 
     private removeComment(commentId: string): void {
-        const commentModel = this.commentsById[commentId];
-
-        // Remove child comments recursively
-        const childComments: Record<string, any>[] = this.getChildComments(commentModel.id);
-        childComments.forEach(childComment => {
-            this.removeComment(childComment.id);
+        this.commentUtil.removeComment(commentId, parentEl => {
+            // Update the toggle all button
+            this.updateToggleAllButton(parentEl);
         });
-
-        // Update the child array of outermost parent
-        if (commentModel.parent) {
-            const outermostParent = this.getOutermostParent(commentModel.parent);
-            const indexToRemove = outermostParent.childs.indexOf(commentModel.id);
-            outermostParent.childs.splice(indexToRemove, 1);
-        }
-
-        // Remove the comment from data model
-        delete this.commentsById[commentId];
-
-        const commentElement: HTMLElement = this.container.querySelector(`li.comment[data-id="${commentId}"]`)!;
-        const parentEl = commentElement.parents('li.comment').last();
-
-        // Remove the element
-        commentElement.remove();
-
-        // Update the toggle all button
-        this.updateToggleAllButton(parentEl);
     }
 
     private reRenderCommentActionBar(id: string): void {
@@ -547,6 +528,38 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         }
     }
 
+    private moveCursorToEnd(element: HTMLElement): void {
+        // Trigger input to adjust size
+        element.dispatchEvent(new InputEvent('input'));
+
+        // Scroll to bottom
+        element.scrollTop = element.scrollHeight;
+
+        // Move cursor to end
+        const range: Range = document.createRange();
+        range.selectNodeContents(element);
+        range.collapse(false);
+        const sel: Selection = getSelection() as Selection;
+        sel.removeAllRanges();
+        sel.addRange(range);
+
+        // Focus
+        element.focus();
+    }
+
+    private ensureElementStaysVisible(el: HTMLElement): void {
+        const scrollContainer: HTMLElement = this.options.scrollContainer;
+        const maxScrollTop: number = el.offsetTop;
+        const minScrollTop: number = el.offsetTop + el.offsetHeight - scrollContainer.offsetHeight;
+
+        if (scrollContainer.scrollTop > maxScrollTop) { // Case: element hidden above scoll area
+            scrollContainer.scrollTop = maxScrollTop;
+        } else if (scrollContainer.scrollTop < minScrollTop) { // Case: element hidden below scoll area
+            scrollContainer.scrollTop = minScrollTop;
+        }
+
+    }
+
     editButtonClicked(e: MouseEvent): void {
         const editButton = $(e.currentTarget);
         const commentEl = editButton.parents('li.comment').first();
@@ -573,16 +586,20 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     showDroppableOverlay(e: UIEvent): void {
         if (this.options.enableAttachments) {
-            this.container.find('.droppable-overlay').css('top', this.container.scrollTop);
-            this.container.find('.droppable-overlay').show();
-            this.container.addClass('drag-ongoing');
+            this.container.querySelectorAll<HTMLElement>('.droppable-overlay')
+                .forEach(element => {
+                    element.style.top = this.container.scrollTop + 'px';
+                    element.style.display = 'block';
+                });
+            this.container.classList.add('drag-ongoing');
         }
     }
 
     handleDragEnter(e: DragEvent): void {
-        let count = $(e.currentTarget).data('dnd-count') || 0;
-        $(e.currentTarget).data('dnd-count', ++count);
-        (e.currentTarget as HTMLElement).classList.add('drag-over');
+        const currentTarget: HTMLElement = e.currentTarget as HTMLElement;
+        let count: number = Number(currentTarget.getAttribute('data-dnd-count')) || 0;
+        currentTarget.setAttribute('data-dnd-count', `${++count}`);
+        currentTarget.classList.add('drag-over');
     }
 
     handleDragLeaveForOverlay(e: DragEvent): void {
@@ -592,8 +609,9 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     }
 
     private handleDragLeave(e: DragEvent, onDragLeft?: Function): void {
-        let count = $(e.currentTarget).data('dnd-count');
-        $(e.currentTarget).data('dnd-count', --count);
+        const currentTarget: HTMLElement = e.currentTarget as HTMLElement;
+        let count: number = Number(currentTarget.getAttribute('data-dnd-count'));
+        currentTarget.setAttribute('data-dnd-count', `${--count}`);
 
         if (count === 0) {
             (e.currentTarget as HTMLElement).classList.remove('drag-over');
@@ -602,7 +620,8 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     }
 
     private hideDroppableOverlay(): void {
-        this.container.querySelector<HTMLElement>('.droppable-overlay')!.style.display = 'none';
+        this.container.querySelectorAll<HTMLElement>('.droppable-overlay')
+            .forEach(element => element.style.display = 'none');
         this.container.classList.remove('drag-ongoing');
     }
 
@@ -620,7 +639,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         e.preventDefault();
 
         // Reset DND counts
-        $(e.target).trigger('dragleave');
+        e.target!.dispatchEvent(new DragEvent('dragleave'));
 
         // Hide the overlay and upload the files
         this.hideDroppableOverlay();

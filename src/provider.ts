@@ -32,6 +32,19 @@ export class CommentsProvider {
     }
 }
 
+export class DataProvider {
+
+    private static readonly DATA: WeakMap<HTMLElement, object> = new WeakMap();
+
+    static set(element: HTMLElement, data: object): void {
+        this.DATA.set(element, data);
+    }
+
+    static get<T extends object>(element: HTMLElement): T | undefined {
+        return this.DATA.get(element) as T;
+    }
+}
+
 export class ServiceProvider {
 
     private static readonly SERVICES: WeakMap<HTMLElement, object[]> = new WeakMap();
@@ -40,7 +53,7 @@ export class ServiceProvider {
         if (this.SERVICES.has(container)) {
             const instances: object[] = this.SERVICES.get(container)!;
             for (let i = 0; i < instances.length; i++) {
-                if (instances[i].constructor === ctor) {
+                if (instances[i] instanceof ctor) {
                     return instances[i] as T;
                 }
             }

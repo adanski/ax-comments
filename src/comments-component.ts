@@ -8,6 +8,9 @@ import {CommentsById} from './comments-by-id';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider';
 import {DefaultElementEventsHandler, ElementEventsHandler} from './element-events-handler';
 import {CommentSorter} from './comment-sorter';
+import {NavigationFactory} from './subcomponent/navigation-factory';
+import {SpinnerFactory} from './subcomponent/spinner-factory';
+import {CommentUtil} from './comment-util';
 
 export class CommentsComponent extends HTMLElement implements WebComponent {
     readonly shadowRoot!: ShadowRoot;
@@ -18,6 +21,9 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
     private readonly commentTransformer: CommentTransformer;
     private readonly commentSorter: CommentSorter;
+    private readonly commentUtil: CommentUtil;
+    private readonly navigationFactory: NavigationFactory;
+    private readonly spinnerFactory: SpinnerFactory;
 
     private dataFetched: boolean = false;
     private currentSortKey: 'popularity' | 'oldest' | 'newest'| 'attachments' = 'newest';
@@ -28,6 +34,9 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         CommentsProvider.set(this.container, this._commentsById);
         this.commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
         this.commentSorter = ServiceProvider.get(this.container, CommentSorter);
+        this.commentUtil = ServiceProvider.get(this.container, CommentUtil);
+        this.navigationFactory = ServiceProvider.get(this.container, NavigationFactory);
+        this.spinnerFactory = ServiceProvider.get(this.container, SpinnerFactory);
     }
 
     static get observedAttributes(): string[] {
@@ -68,6 +77,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
      */
     private initShadowDom(): void {
         this.attachShadow({mode: 'open'});
+        const styles: CSSStyleSheet = new CSSStyleSheet({baseURL});
         this.shadowRoot.innerHTML = `
             <style>
                 ${require('../css/jquery-comments.css')}
@@ -75,6 +85,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
             <div id="comments-container" class="jquery-comments">
             </div>
         `;
+        this.shadowRoot.styleSheets.
         this.container = this.shadowRoot.querySelector<HTMLDivElement>('#comments-container')!;
     }
 
@@ -160,7 +171,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
     private fetchNext(): void {
         // Loading indicator
-        const spinner = this.createSpinner();
+        const spinner = this.spinnerFactory.createSpinner();
         this.container.querySelector('ul#comment-list')!.append(spinner);
 
         const success: (commentModels: Record<string, any>[]) => void = commentModels => {
@@ -190,7 +201,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
             // Update child array of the parent (append childs to the array of outer most parent)
             if (commentModel.parent) {
-                const outermostParent = this.getOutermostParent(commentModel.parent);
+                const outermostParent = this.commentUtil.getOutermostParent(commentModel.parent);
                 outermostParent.childs.push(commentModel.id);
             }
         }
@@ -217,9 +228,9 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private showActiveContainer(): void {
-        const activeNavigationEl = this.container.querySelector('.navigation li[data-container-name].active')!;
-        const containerName = $(activeNavigationEl).data('container-name');
-        const containerEl = this.container.querySelector('[data-container="' + containerName + '"]')!;
+        const activeNavigationEl: HTMLElement = this.container.querySelector('.navigation li[data-container-name].active')!;
+        const containerName: string = activeNavigationEl.getAttribute('data-container-name')!;
+        const containerEl: HTMLElement = this.container.querySelector('[data-container="' + containerName + '"]')!;
         containerEl.siblings('[data-container]').hide();
         containerEl.show();
     }
@@ -234,7 +245,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         // Divide comments into main level comments and replies
         const mainLevelComments: Record<string, any>[] = [];
         const replies: Record<string, any>[] = [];
-        this.getComments().forEach(commentModel => {
+        this.commentUtil.getComments().forEach(commentModel => {
             if (commentModel.parent == null) {
                 mainLevelComments.push(commentModel);
             } else {
@@ -265,7 +276,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         attachmentList.id = 'attachment-list';
         attachmentList.classList.add('main');
 
-        const attachments = this.getAttachments();
+        const attachments = this.commentUtil.getAttachments();
         this.commentSorter.sortComments(attachments, 'newest');
         attachments.forEach(commentModel => {
             this.addAttachment(commentModel, attachmentList);
@@ -279,7 +290,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         const commentEl: HTMLElement = this.createCommentElement(commentModel);
 
         if (commentModel.parent) { // Case: reply
-            const directParentEl: HTMLElement = commentList.querySelector('.comment[data-id="' + commentModel.parent + '"]')!;
+            const directParentEl: HTMLElement = commentList.querySelector(`.comment[data-id="${commentModel.parent}"]`)!;
 
             // Re-render action bar of direct parent element
             this.reRenderCommentActionBar(commentModel.parent);
@@ -315,62 +326,6 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         commentList.prepend(commentEl);
     }
 
-    private updateToggleAllButton(parentEl: HTMLElement): void {
-        // Don't hide replies if maxRepliesVisible is null or undefined
-        if (isNil(this.options.maxRepliesVisible)) {
-            return;
-        }
-
-        const childCommentsEl: HTMLElement = parentEl.querySelector('.child-comments')!;
-        const childComments: HTMLElement[] = [...childCommentsEl.querySelectorAll<HTMLElement>('.comment:not(.hidden)')];
-        let toggleAllButton: HTMLElement | null = childCommentsEl.querySelector('li.toggle-all');
-        childComments.forEach(childComment => {
-            childComment.classList.remove('togglable-reply');
-        });
-
-        let togglableReplies: HTMLElement[];
-        // Select replies to be hidden
-        if (this.options.maxRepliesVisible === 0) {
-            togglableReplies = childComments;
-        } else {
-            togglableReplies = childComments.slice(0, -this.options.maxRepliesVisible);
-        }
-
-        const allRepliesExpanded: boolean = toggleAllButton?.querySelector('span.text')!.textContent === this.options.textFormatter(this.options.hideRepliesText);
-
-        // Add identifying class for hidden replies so they can be toggled
-        for (let i = 0; i < togglableReplies.length; i++) {
-            togglableReplies[i].classList.add('togglable-reply');
-
-            // Show all replies if replies are expanded
-            if (allRepliesExpanded) {
-                togglableReplies[i].classList.add('visible');
-            }
-        }
-
-        if (childComments.length > this.options.maxRepliesVisible) { // Make sure that toggle all button is present
-            // Append button to toggle all replies if necessary
-            if (isNil(toggleAllButton)) {
-                toggleAllButton = document.createElement('li');
-                toggleAllButton.classList.add('toggle-all', 'highlight-font-bold');
-                const toggleAllButtonText: HTMLSpanElement = document.createElement('span');
-                toggleAllButtonText.classList.add('text');
-                const caret: HTMLSpanElement = document.createElement('span');
-                caret.classList.add('caret');
-
-                // Append toggle button to DOM
-                toggleAllButton.append(toggleAllButtonText, caret);
-                childCommentsEl.prepend(toggleAllButton);
-            }
-
-            // Update the text of toggle all -button
-            this.setToggleAllButtonText(toggleAllButton, false);
-
-        } else { // Make sure that toggle all button is not present
-            toggleAllButton?.remove();
-        }
-    }
-
     private showActiveSort(): void {
         const activeElements: NodeListOf<HTMLElement> = this.container.querySelectorAll(`.navigation li[data-sort-key="${this.currentSortKey}"]`);
 
@@ -379,8 +334,8 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         activeElements.addClass('active');
 
         // Update title for dropdown
-        const titleEl = this.container.find('.navigation .title');
-        if (this.currentSortKey != 'attachments') {
+        const titleEl: HTMLElement = this.container.find('.navigation .title');
+        if (this.currentSortKey !== 'attachments') {
             titleEl.addClass('active');
             titleEl.find('header').html(activeElements.first().html());
         } else {
@@ -392,8 +347,8 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         this.showActiveContainer();
     }
 
-    private toggleSaveButton(commentingField): void {
-        const textarea = commentingField.find('.textarea');
+    private toggleSaveButton(commentingField: HTMLElement): void {
+        const textarea: HTMLElement = commentingField.find('.textarea');
         const saveButton = textarea.siblings('.control-row').find('.save');
 
         const content = this.getTextareaContent(textarea, true);
@@ -433,7 +388,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private createComment(commentJSON: Record<string, any>): void {
-        const commentModel = this.createCommentModel(commentJSON);
+        const commentModel: Record<string, any> = this.createCommentModel(commentJSON);
         this.addCommentToDataModel(commentModel);
 
         // Add comment element
@@ -458,12 +413,12 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
         // Navigation bar
         if (this.options.enableNavigation) {
-            this.container.append(this.createNavigationElement());
+            this.container.append(this.navigationFactory.createNavigationElement());
             this.showActiveSort();
         }
 
         // Loading spinner
-        const spinner = this.createSpinner();
+        const spinner = this.spinnerFactory.createSpinner();
         this.container.append(spinner);
 
         // Comments container

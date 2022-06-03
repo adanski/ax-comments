@@ -2,23 +2,19 @@ import {CommentWrapperFactory} from './comment-wrapper-factory';
 import $ from 'cash-dom';
 import {isNil} from '../util';
 import {CommentsOptions} from '../comments-options';
-import {CommentsById} from '../comments-by-id';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider';
+import {OptionsProvider, ServiceProvider} from '../provider';
 
 export class CommentFactory {
 
     private readonly options: CommentsOptions;
-    private readonly commentsById: CommentsById;
     private readonly commentWrapperFactory: CommentWrapperFactory;
 
     constructor(private readonly container: HTMLDivElement) {
         this.options = OptionsProvider.get(container)!;
-        this.commentsById = CommentsProvider.get(container)!;
         this.commentWrapperFactory = ServiceProvider.get(container, CommentWrapperFactory);
     }
 
     createCommentElement(commentModel: Record<string, any>): HTMLElement {
-
         // Comment container element
         const commentEl: HTMLLIElement = document.createElement('li');
         commentEl.classList.add('comment');
