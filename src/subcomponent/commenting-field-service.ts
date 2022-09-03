@@ -32,16 +32,16 @@ export class CommentingFieldService {
         this.commentUtil = ServiceProvider.get(container, CommentUtil);
     }
 
-    createCommentingFieldElement(parentId: string, existingCommentId: string, isMain: boolean): CommentingFieldElement {
+    createCommentingFieldElement(parentId: string | null, existingCommentId: string | null, isMain: boolean): CommentingFieldElement {
         let profilePictureURL: string;
         let userId: string;
         let attachments: Record<string, any>[];
 
         // Commenting field
-        const result: CommentingFieldElement = {} as CommentingFieldElement;
         const commentingField: HTMLDivElement = document.createElement('div');
-        result.field = commentingField;
-        result.destroy = () => {
+        const result: CommentingFieldElement = {
+            field: commentingField,
+            destroy: () => {}
         };
         commentingField.classList.add('commenting-field');
         if (isMain) {

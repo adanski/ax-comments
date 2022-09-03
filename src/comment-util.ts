@@ -3,6 +3,7 @@ import {CommentsById} from './comments-by-id';
 import {SpinnerFactory} from './subcomponent/spinner-factory';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider';
 import {isNil} from './util';
+import {findParentsBySelector} from './html-util';
 
 export class CommentUtil {
 
@@ -58,7 +59,8 @@ export class CommentUtil {
         delete this.commentsById[commentId];
 
         const commentElement: HTMLElement = this.container.querySelector(`li.comment[data-id="${commentId}"]`)!;
-        const parentEl = commentElement.parents('li.comment').last();
+        const commentParents = findParentsBySelector(commentElement, 'li.comment');
+        const parentEl: HTMLElement = findParentsBySelector(commentElement, 'li.comment').last()!;
 
         // Remove the element
         commentElement.remove();

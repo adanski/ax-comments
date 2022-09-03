@@ -3,6 +3,8 @@ import {CommentsOptions} from './comments-options';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider';
 import {TextareaService} from './subcomponent/textarea-service';
 import {CommentUtil} from './comment-util';
+import {findParentsBySelector} from './html-util';
+import {isNil} from './util';
 
 export interface ElementEventsHandler {
     closeDropdowns(e: UIEvent): void;
@@ -63,13 +65,12 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         if (files?.length === 1) {
 
             // Select correct commenting field
-            let commentingField;
-            const parentCommentingField = $(e.target).parents('.commenting-field').first();
-            if (parentCommentingField.length) {
-                commentingField = parentCommentingField;
+            const parentCommentingField: HTMLElement | null = findParentsBySelector(e.target as HTMLElement, '.commenting-field').first();
+            if (!isNil(parentCommentingField)) {
+                this.preSaveAttachments(files, parentCommentingField);
             }
 
-            this.preSaveAttachments(files, commentingField);
+
             e.preventDefault();
         }
     }
@@ -245,21 +246,21 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
             // Case: editing comment
             if (commentId) {
-                const parentComments = textarea.parents('li.comment');
+                const parentComments: HTMLElement[] = findParentsBySelector(textarea, 'li.comment');
                 if (parentComments.length > 1) {
-                    const parentId = parentComments.last().data('id');
+                    const parentId = parentComments[parentComments.length - 1].data('id');
                     textarea.attr('data-parent', parentId);
                 }
 
                 // Case: new comment
             } else {
-                const parentId = textarea.parents('li.comment').last().data('id');
+                const parentId = findParentsBySelector(textarea, 'li.comment').last().data('id');
                 textarea.attr('data-parent', parentId);
             }
         }
 
         // Move close button if scrollbar is visible
-        const commentingField = textarea.parents('.commenting-field').first();
+        const commentingField = findParentsBySelector(textarea, '.commenting-field').first();
         if (textarea[0].scrollHeight > textarea.outerHeight()) {
             commentingField.addClass('commenting-field-scrollable');
         } else {
@@ -276,17 +277,17 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         // Remove edit class from comment if user was editing the comment
         const textarea = closeButton.siblings('.textarea');
         if (textarea.attr('data-comment')) {
-            closeButton.parents('li.comment').first().removeClass('edit');
+            findParentsBySelector(closeButton, 'li.comment').first().removeClass('edit');
         }
 
         // Remove the field
-        const commentingField = closeButton.parents('.commenting-field').first();
+        const commentingField = findParentsBySelector(closeButton, '.commenting-field').first();
         commentingField.remove();
     }
 
     postComment(e: UIEvent): void {
         const sendButton = $(e.currentTarget);
-        const commentingField = sendButton.parents('.commenting-field').first();
+        const commentingField = findParentsBySelector(sendButton, '.commenting-field').first();
 
         // Set button state to loading
         this.setButtonState(sendButton, false, true);
@@ -315,7 +316,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     putComment(e: UIEvent): void {
         const saveButton = $(e.currentTarget);
-        const commentingField = saveButton.parents('.commenting-field').first();
+        const commentingField = findParentsBySelector(saveButton, '.commenting-field').first();
         const textarea = commentingField.find('.textarea');
 
         // Set button state to loading
@@ -378,8 +379,8 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     deleteComment(e: UIEvent): void {
         const deleteButton = $(e.currentTarget);
-        const commentEl = deleteButton.parents('.comment').first();
-        let commentJSON = $.extend({}, this.commentsById[commentEl.attr('data-id')]);
+        const commentEl = findParentsBySelector(deleteButton, '.comment').first();
+        let commentJSON = Object.assign({}, this.commentsById[commentEl.attr('data-id')]);
         const commentId = commentJSON.id;
         const parentId = commentJSON.parent;
 
@@ -423,8 +424,8 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     }
 
     preDeleteAttachment(e: UIEvent) {
-        const commentingField = $(e.currentTarget).parents('.commenting-field').first();
-        const attachmentEl = $(e.currentTarget).parents('.attachment').first();
+        const commentingField = findParentsBySelector(e.currentTarget as HTMLElement, '.commenting-field').first();
+        const attachmentEl = findParentsBySelector(e.currentTarget as HTMLElement, '.attachment').first();
         attachmentEl.remove();
 
         // Check if save button needs to be enabled
@@ -434,12 +435,12 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     fileInputChanged(e: Event): void {
         const input: HTMLInputElement = e.currentTarget as HTMLInputElement;
         const files = input.files!;
-        const commentingField = input.parents('.commenting-field').first();
+        const commentingField = findParentsBySelector(input, '.commenting-field').first();
         this.preSaveAttachments(files, commentingField);
     }
 
     upvoteComment(e: UIEvent): void {
-        const commentEl = $(e.currentTarget).parents('li.comment').first();
+        const commentEl = findParentsBySelector(e.currentTarget as HTMLElement, 'li.comment').first();
         const commentModel = commentEl.data().model;
 
         // Check whether user upvoted the comment or revoked the upvote
@@ -506,8 +507,8 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     replyButtonClicked(e: MouseEvent): void {
         const replyButton = $(e.currentTarget);
-        const outermostParent = replyButton.parents('li.comment').last();
-        const parentId = replyButton.parents('.comment').first().data().id;
+        const outermostParent = findParentsBySelector(replyButton, 'li.comment').last();
+        const parentId = findParentsBySelector(replyButton, '.comment').first().data().id;
 
         // Remove existing field
         let replyField = outermostParent.find('.child-comments > .commenting-field');
@@ -562,7 +563,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     editButtonClicked(e: MouseEvent): void {
         const editButton = $(e.currentTarget);
-        const commentEl = editButton.parents('li.comment').first();
+        const commentEl = findParentsBySelector(editButton, 'li.comment').first();
         const commentModel = commentEl.data().model;
         commentEl.addClass('edit');
 
@@ -571,8 +572,8 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         commentEl.find('.comment-wrapper').first().append(editField);
 
         // Append original content
-        const textarea = editField.find('.textarea');
-        textarea.attr('data-comment', commentModel.id);
+        const textarea: HTMLElement = editField.querySelector('.textarea');
+        textarea.setAttribute('data-comment', commentModel.id);
 
         // Escaping HTML
         textarea.append(this.getFormattedCommentContent(commentModel, true));

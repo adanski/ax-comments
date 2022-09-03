@@ -5,15 +5,26 @@
   "author": {
     "name": "Joona Tykkylainen"
   },
+  "contributors": [
+    {
+      "name": "Adrian Z."
+    }
+  ],
   "description": "Standalone web component for implementing an out-of-the-box commenting solution to any web application with an existing backend",
   "license": "MIT",
-  "main": "src/comments-component.ts",
-  "module": "src/comments-component.ts",
-  "types": "src/comments.component.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./src/comments-component.d.ts",
+        "default": "./src/comments-component.js"
+      }
+    }
+  },
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "minify": "uglifyjs js/jquery-comments.js --comments '/^!/' --output js/jquery-comments.min.js"
+    "minify": "terser src/jquery-comments.js --comments '/^!/' --output src/jquery-comments.min.js"
   },
   "files": [
     "src/comments.component.d.ts",
@@ -34,19 +45,20 @@
     "url": "https://github.com/Viima/jquery-comments.git"
   },
   "dependencies": {
-    "cash-dom": "^8.1.0",
-    "@textcomplete/core": "~0.1.10",
-    "@textcomplete/contenteditable": "~0.1.10",
-    "sanitize-html": "~2.5.2"
+    "cash-dom": "^8.1.1",
+    "@textcomplete/core": "~0.1.12",
+    "@textcomplete/contenteditable": "~0.1.12",
+    "sanitize-html": "~2.6.1"
   },
   "devDependencies": {
-    "@types/node": "~14.14.31",
-    "@types/jest": "~27.0.2",
-    "@types/sanitize-html": "~2.5.0",
-    "typescript": "~4.4.4",
-    "terser": "~5.9.0",
-    "jest": "~27.2.5",
-    "karma": "~6.3.6",
+    "@types/node": "~14.18.20",
+    "@types/jest": "~28.1.0",
+    "@types/sanitize-html": "~2.6.2",
+    "typescript": "~4.7.4",
+    "tslib": "~2.4.0",
+    "terser": "~5.14.2",
+    "jest": "~28.1.0",
+    "karma": "~6.3.20",
     "karma-chrome-launcher": "~3.1.0"
   }
 }

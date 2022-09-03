@@ -4,7 +4,7 @@
 jquery-comments may be freely distributed under the MIT license.
 For all details and documentation:
 http://viima.github.io/jquery-comments/*/
-
+const mainStyle: string = `
 .jquery-comments * {
 	box-sizing: border-box;
 	text-shadow: none;
@@ -558,8 +558,10 @@ http://viima.github.io/jquery-comments/*/
 .jquery-comments.mobile ul.main li.comment .child-comments li.comment .wrapper{
 	overflow: visible;
 }
+`;
 
 /* Content */
+const contentStyle: string = `
 .jquery-comments ul.main li.comment .wrapper .content {
 	white-space: pre-line;
 	word-break: break-word;
@@ -576,8 +578,10 @@ http://viima.github.io/jquery-comments/*/
 .jquery-comments ul.main li.comment .wrapper .content time.edited:before {
 	content: " - ";
 }
+`;
 
 /* Attachments */
+const attachmentsStyle: string = `
 .jquery-comments ul.main li.comment .wrapper .attachments .tags:not(:empty) {
 	margin-bottom: 0.5em;
 }
@@ -598,8 +602,10 @@ http://viima.github.io/jquery-comments/*/
 .jquery-comments ul.main li.comment .wrapper .attachments .previews .preview > *:focus {
 	outline: none;
 }
+`;
 
 /* Actions */
+const actionsStyle: string = `
 .jquery-comments.mobile ul.main li.comment .actions {
 	font-size: 1em;
 }
@@ -664,9 +670,10 @@ http://viima.github.io/jquery-comments/*/
 .jquery-comments ul#attachment-list li.comment .actions .separator {
 	display: none;
 }
-
+`;
 
 /* Child comments */
+const childCommentsStyle: string = `
 .jquery-comments ul.main li.comment .child-comments > *:before { /* Margin for second level content */
 	content: "";
 	height: 1px;
@@ -730,8 +737,10 @@ http://viima.github.io/jquery-comments/*/
 .jquery-comments ul.main li.comment.hidden {
 	display: none;
 }
+`;
 
 /* Editing comment */
+const editingCommentStyle: string = `
 .jquery-comments ul.main li.comment.edit > .comment-wrapper > *:not(.commenting-field) {
 	display: none;
 }
@@ -740,8 +749,10 @@ http://viima.github.io/jquery-comments/*/
 	padding-left: 0 !important;
 	padding-right: 0 !important;
 }
+`;
 
 /* Drag & drop attachments */
+const dragAndDropAttachmentsStyle: string = `
 .jquery-comments.drag-ongoing {
 	overflow-y: hidden !important;
 }
@@ -777,11 +788,27 @@ http://viima.github.io/jquery-comments/*/
 .jquery-comments .droppable-overlay .droppable-container .droppable i {
 	margin-bottom: 5px;
 }
+`;
 
 /* Read-only mode */
+const readOnlyStyle: string = `
 .jquery-comments.read-only .commenting-field {
 	display: none;
 }
 .jquery-comments.read-only .actions {
 	display: none;
 }
+`;
+
+export const STYLE_SHEET: CSSStyleSheet = (() => {
+	const styleSheet: CSSStyleSheet = new CSSStyleSheet();
+	(styleSheet as any).replaceSync(mainStyle
+		+ contentStyle
+		+ attachmentsStyle
+		+ actionsStyle
+		+ childCommentsStyle
+		+ editingCommentStyle
+		+ dragAndDropAttachmentsStyle
+		+ readOnlyStyle);
+	return styleSheet;
+})();

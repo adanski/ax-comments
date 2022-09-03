@@ -1,7 +1,6 @@
 import {isNil} from '../util';
 import {CommentsOptions} from '../comments-options';
-import {CommentsById} from '../comments-by-id';
-import {CommentsProvider, OptionsProvider} from '../provider';
+import {OptionsProvider} from '../provider';
 
 export class ToggleAllButtonService {
 

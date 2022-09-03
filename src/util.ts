@@ -1,5 +1,9 @@
-export function isNil(value: any): boolean {
+export function isNil(value: any): value is undefined | null {
     return value === undefined || value === null;
+}
+
+export function isStringEmpty(value: string | undefined | null): boolean {
+    return !isNil(value) && value!.trim().length !== 0;
 }
 
 // compares references only

@@ -1,10 +1,7 @@
 import {CommentsOptions} from './comments-options';
 
-export function createCssDeclarations(options: CommentsOptions): HTMLStyleElement {
+export function createCssDeclarations(options: CommentsOptions): CSSStyleSheet {
     let css: string = '';
-
-    // Remove previous css-declarations
-    //TODO: azi $('head style.jquery-comments-css').remove();
 
     // Navigation underline
     css += `.jquery-comments ul.navigation li.active:after {background: ${options.highlightColor} !important;}`;
@@ -22,14 +19,8 @@ export function createCssDeclarations(options: CommentsOptions): HTMLStyleElemen
     return createStyle(css);
 }
 
-function createStyle(css: string): HTMLStyleElement {
-    const styleEl: HTMLStyleElement = document.createElement('style'/*, {
-        type: 'text/css',
-        'class': 'jquery-comments-css',
-        text: css
-    }*/);
-
-    styleEl.innerText = css;
-
-    return styleEl;
+function createStyle(css: string): CSSStyleSheet {
+    const styleSheet: CSSStyleSheet = new CSSStyleSheet();
+    (styleSheet as any).replaceSync(css);
+    return styleSheet;
 }
