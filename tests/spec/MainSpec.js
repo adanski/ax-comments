@@ -141,7 +141,7 @@ describe('Basic features', function() {
 
 
     it('Should be able to toggle all replies', function() {
-        var toggleAll = $('#comment-list li.comment[data-id=1]').find('.child-comments li.toggle-all');
+        var toggleAll = $('#comment-list li.comment[data-id=1]').find('.child-comments ax-toggle-all-button.toggle-all');
         expect(toggleAll.length).toBe(1);
         expect(toggleAll.text()).toBe('View all 5 replies');
         expect($('#comment-list li.comment[data-id=1] li.comment:visible').length).toBe(2);
@@ -325,13 +325,13 @@ describe('Basic features', function() {
         });
 
         it('Should not show the reply field by default', function() {
-            var replyField = mostPopularComment.find('.commenting-field');
+            var replyField = mostPopularComment.find('ax-commenting-field');
             expect(replyField.length).toBe(0);
         });
 
         it('Should be able to reply', function() {
             mostPopularComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('.commenting-field');
+            var replyField = mostPopularComment.find('ax-commenting-field');
             expect(replyField.length).toBe(1);
             expect(replyField.find('.reply-to.tag').length).toBe(0);
 
@@ -361,7 +361,7 @@ describe('Basic features', function() {
                 // Check position
                 checkOrder(mostPopularComment.find('li.comment'), [6,7,8,9,10,idOfNewComment]);
 
-                var toggleAllText = mostPopularComment.find('li.toggle-all').text();
+                var toggleAllText = mostPopularComment.find('ax-toggle-all-button.toggle-all').text();
                 expect(toggleAllText).toBe('View all 6 replies');
                 expect(mostPopularComment.find('li.comment:visible').length).toBe(2);
             });
@@ -369,7 +369,7 @@ describe('Basic features', function() {
 
         it('Should be able to reply with attachments', function() {
             mostPopularComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('.commenting-field');
+            var replyField = mostPopularComment.find('ax-commenting-field');
 
             var replyText = 'This is a reply with attachments';
             replyField.find('.textarea').append(replyText).trigger('input');
@@ -399,18 +399,18 @@ describe('Basic features', function() {
 
         it('Should close the reply field when clicking the close icon', function() {
             mostPopularComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('.commenting-field');
+            var replyField = mostPopularComment.find('ax-commenting-field');
             expect(replyField.length).toBe(1);
             replyField.find('.close').click();
 
-            replyField = mostPopularComment.find('.commenting-field');
+            replyField = mostPopularComment.find('ax-commenting-field');
             expect(replyField.length).toBe(0);
         });
 
         it('Should be able to re-reply', function() {
             var childComment = mostPopularComment.find('.child-comments li.comment[data-id=9]');
             childComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('.commenting-field');
+            var replyField = mostPopularComment.find('ax-commenting-field');
             expect(replyField.find('.reply-to.tag').val()).toBe('@Bryan Connery');
 
             // Check that the field is last child
@@ -437,7 +437,7 @@ describe('Basic features', function() {
                 expect(commentEl.hasClass('by-current-user')).toBe(true);
                 checkCommentElementData(commentEl);
 
-                var toggleAllText = mostPopularComment.find('li.toggle-all').text();
+                var toggleAllText = mostPopularComment.find('ax-toggle-all-button.toggle-all').text();
                 expect(toggleAllText).toBe('View all 6 replies');
                 expect(mostPopularComment.find('li.comment:visible').length).toBe(2);
             });
@@ -448,7 +448,7 @@ describe('Basic features', function() {
             var childComment = mostPopularComment.find('.child-comments li.comment').first();
             childComment.find('.reply').first().click();
 
-            var replyField = mostPopularComment.find('.commenting-field');
+            var replyField = mostPopularComment.find('ax-commenting-field');
             expect(replyField.find('.reply-to.tag').val()).toBe('@Jack Hemsworth');
 
             var replyText = 'This is a re-reply\nwith a new line';
@@ -471,7 +471,7 @@ describe('Basic features', function() {
                 expect(commentEl.hasClass('by-current-user')).toBe(true);
                 checkCommentElementData(commentEl);
 
-                var toggleAllText = mostPopularComment.find('li.toggle-all').text();
+                var toggleAllText = mostPopularComment.find('ax-toggle-all-button.toggle-all').text();
                 expect(toggleAllText).toBe('Hide replies');
                 expect(mostPopularComment.find('li.comment:visible').length).toBe(6);
             });
@@ -480,7 +480,7 @@ describe('Basic features', function() {
         it('Should reply to original user when erasing the reply-to tag', function() {
             var childComment = mostPopularComment.find('.child-comments li.comment').last();
             childComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('.commenting-field');
+            var replyField = mostPopularComment.find('ax-commenting-field');
             var textarea = replyField.find('.textarea');
             expect(parseInt(textarea.attr('data-parent'))).toBe(childComment.data().model.id);
 
@@ -525,7 +525,7 @@ describe('Basic features', function() {
             expect(ownComment.hasClass('edit')).toBe(true);
 
             // Check that the edit field exists
-            var editField = ownComment.find('.commenting-field');
+            var editField = ownComment.find('ax-commenting-field');
             var textarea = editField.find('.textarea');
             expect(editField.is(':visible')).toBe(true);
 
@@ -561,7 +561,7 @@ describe('Basic features', function() {
             ownComment.find('.reply').last().click();
             var replyText = 'This is a re-reply';
 
-            var replyField = ownComment.find('.commenting-field');
+            var replyField = ownComment.find('ax-commenting-field');
             replyField.find('.textarea').append(replyText).trigger('input');
 
             // Create reply
@@ -585,7 +585,7 @@ describe('Basic features', function() {
                 var replyId = reply.data().model.id;
 
                 reply.find('.edit').click();
-                replyField = reply.find('.commenting-field');
+                replyField = reply.find('ax-commenting-field');
                 var textarea = replyField.find('.textarea');
                 var saveButton = replyField.find('.save');
 
@@ -616,7 +616,7 @@ describe('Basic features', function() {
 
         it('Should not let the user save the comment if it hasn\'t changed', function() {
             editButton.click();
-            var editField = ownComment.find('.commenting-field');
+            var editField = ownComment.find('ax-commenting-field');
             var saveButton = editField.find('.save');
             expect(saveButton.is(':visible')).toBe(true);
             expect(saveButton.hasClass('enabled')).toBe(false);
@@ -768,7 +768,7 @@ describe('Basic features', function() {
             editButton.click();
 
             // Delete attachment
-            var attachmentTag = ownComment.find('.commenting-field').find('.attachment').first();
+            var attachmentTag = ownComment.find('ax-commenting-field').find('.attachment').first();
             attachmentTag.find('.delete').trigger('click');
 
             // Save comment
@@ -943,7 +943,7 @@ describe('Basic features', function() {
         var ownCommentModelBefore = $.extend({},comments.commentsById[id]);
 
         editButton.click();
-        var editField = ownComment.find('.commenting-field');
+        var editField = ownComment.find('ax-commenting-field');
         var textarea = editField.find('.textarea');
 
         // Edit the comment

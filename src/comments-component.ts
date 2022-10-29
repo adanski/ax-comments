@@ -1,5 +1,5 @@
 import {WebComponent} from './web-component';
-import {areArraysEqual, isMobileBrowser, isNil, isStringEmpty} from './util';
+import {isMobileBrowser, isNil} from './util';
 import {getDefaultOptions} from './default-options-factory';
 import {CommentTransformer} from './comment-transformer.js';
 import {EVENT_HANDLERS_MAP} from './events';
@@ -11,78 +11,81 @@ import {CommentSorter} from './comment-sorter';
 import {NavigationFactory} from './subcomponent/navigation-factory';
 import {SpinnerFactory} from './subcomponent/spinner-factory';
 import {CommentUtil} from './comment-util';
-import {findParentsBySelector, findSiblingsBySelector} from './html-util';
+import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util';
 import {STYLE_SHEET} from '../css/jquery-comments';
 import {RegisterCustomElement} from './register-custom-element';
 import {createCssDeclarations} from './dynamic-css-factory';
-import {CommentFactory} from './subcomponent/comment-factory';
-import {CommentingFieldElement, CommentingFieldService} from './subcomponent/commenting-field-service';
-import {ToggleAllButtonService} from './subcomponent/toggle-all-button-service';
-import {TextareaService} from './subcomponent/textarea-service';
+import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element';
+import {CommentingFieldComponent} from './subcomponent/commenting-field-component';
+import {CommentComponent} from './subcomponent/comment-component';
 
 @RegisterCustomElement('ax-comments')
 export class CommentsComponent extends HTMLElement implements WebComponent {
     readonly shadowRoot!: ShadowRoot;
     private container!: HTMLDivElement;
 
-    private mainCommentingField!: CommentingFieldElement;
-
-    private readonly options: CommentsOptions = {};
-    private readonly _commentsById: CommentsById = {};
+    readonly #options: CommentsOptions = {};
+    readonly #commentsById: CommentsById = {};
 
     private readonly commentTransformer: CommentTransformer;
     private readonly commentSorter: CommentSorter;
     private readonly commentUtil: CommentUtil;
     private readonly navigationFactory: NavigationFactory;
     private readonly spinnerFactory: SpinnerFactory;
-    private readonly commentFactory: CommentFactory;
-    private readonly commentingFieldService: CommentingFieldService;
-    private readonly toggleAllButtonService: ToggleAllButtonService;
-    private readonly textareaService: TextareaService;
 
     private dataFetched: boolean = false;
     private currentSortKey: 'popularity' | 'oldest' | 'newest'| 'attachments' = 'newest';
 
-    constructor(options: CommentsOptions) {
+    constructor() {
         super();
         this.initShadowDom();
-        CommentsProvider.set(this.container, this._commentsById);
+        CommentsProvider.set(this.container, this.#commentsById);
         this.commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
         this.commentSorter = ServiceProvider.get(this.container, CommentSorter);
         this.commentUtil = ServiceProvider.get(this.container, CommentUtil);
         this.navigationFactory = ServiceProvider.get(this.container, NavigationFactory);
         this.spinnerFactory = ServiceProvider.get(this.container, SpinnerFactory);
-        this.commentFactory = ServiceProvider.get(this.container, CommentFactory);
-        this.commentingFieldService = ServiceProvider.get(this.container, CommentingFieldService);
-        this.toggleAllButtonService = ServiceProvider.get(this.container, ToggleAllButtonService);
-        this.textareaService = ServiceProvider.get(this.container, TextareaService);
-
-        Object.assign(this.options, getDefaultOptions(this.container), options);
-        Object.freeze(this.options);
-        OptionsProvider.set(this.container, this.options);
     }
 
     connectedCallback(): void {
+        if (!Object.keys(this.options).length) {
+            console.warn('[ax-comments] Options not set, component could not be initialized.');
+            return;
+        }
         this.initComponent();
     }
 
     disconnectedCallback(): void {
-        this.mainCommentingField.destroy();
+        //this.mainCommentingField.destroy();
     }
 
     /*static get observedAttributes(): string[] {
         return ['videoid', 'playlistid'];
     }*/
 
+    get options(): CommentsOptions {
+        return this.#options;
+    }
+
+    set options(options: CommentsOptions) {
+        if (Object.keys(this.#options).length) {
+            console.warn('[ax-comments] Options already set, component can not be reinitialized.');
+            return;
+        }
+        Object.assign(this.#options, getDefaultOptions(this.container), options);
+        Object.freeze(this.#options);
+        OptionsProvider.set(this.container, this.#options);
+    }
+
     private get commentsById(): CommentsById {
-        return this._commentsById;
+        return this.#commentsById;
     }
 
     private set commentsById(newValue: CommentsById) {
         Object.keys(this.commentsById).forEach(id => {
             delete this.commentsById[id];
         });
-        Object.assign(this._commentsById, newValue);
+        Object.assign(this.#commentsById, newValue);
     }
 
     /**
@@ -90,17 +93,11 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
      */
     private initShadowDom(): void {
         this.attachShadow({mode: 'open'});
-        const defaultStyle: CSSStyleSheet = STYLE_SHEET;
-        const userStyle: CSSStyleSheet | undefined = this.options.styles;
-        const allStyles: CSSStyleSheet[] = [defaultStyle];
-        if (userStyle) {
-            allStyles.push(userStyle);
-        }
         this.shadowRoot.innerHTML = `
             <div id="comments-container" class="jquery-comments">
             </div>
         `;
-        (this as any).adoptedStyleSheets = allStyles;
+        (this as any).adoptedStyleSheets = [STYLE_SHEET];
         this.container = this.shadowRoot.querySelector<HTMLDivElement>('#comments-container')!;
     }
 
@@ -120,8 +117,13 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         // Set initial sort key
         this.currentSortKey = this.options.defaultNavigationSortKey;
 
-        // Create CSS declarations for highlight color
-        (this as any).adoptedStyleSheets = [...(this as any).adoptedStyleSheets, createCssDeclarations(this.options)];
+        // Create user CSS declarations
+        const userStyle: CSSStyleSheet | undefined = this.options.styles;
+        const allStyles: CSSStyleSheet[] = [createCssDeclarations(this.options)];
+        if (userStyle) {
+            allStyles.push(userStyle);
+        }
+        (this as any).adoptedStyleSheets = (this as any).adoptedStyleSheets.concat(allStyles);
 
         // Fetching data and rendering
         this.fetchDataAndRender();
@@ -247,8 +249,8 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         const containerName: string = activeNavigationEl.getAttribute('data-container-name')!;
         const containerEl: HTMLElement = this.container.querySelector('[data-container="' + containerName + '"]')!;
         findSiblingsBySelector(containerEl, '[data-container]')
-            .forEach(containerSibling => containerSibling.style.display = 'none');
-        containerEl.style.display = 'block';
+            .forEach(hideElement);
+        showElement(containerEl);
     }
 
     private createComments() {
@@ -303,13 +305,15 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private addComment(commentModel: Record<string, any>, commentList: HTMLElement = this.container.querySelector('#comment-list')!, prependComment: boolean = false): void {
-        const commentEl: HTMLElement = this.commentFactory.createCommentElement(commentModel);
+        const commentEl: CommentComponent = document.createElement('ax-comment') as CommentComponent;
+        commentEl.commentModel = commentModel;
 
         if (commentModel.parent) { // Case: reply
             const directParentEl: HTMLElement = commentList.querySelector(`.comment[data-id="${commentModel.parent}"]`)!;
+            const directParentComment: CommentComponent = findParentsBySelector<CommentComponent>(directParentEl, 'ax-comment').first()!;
 
             // Re-render action bar of direct parent element
-            this.reRenderCommentActionBar(commentModel.parent);
+            directParentComment.reRenderCommentActionBar();
 
             // Force replies into one level only
             let outerMostParent: HTMLElement | null = findParentsBySelector(directParentEl, '.comment').last();
@@ -319,7 +323,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
             // Append element to DOM
             const childCommentsEl: HTMLElement = outerMostParent!.querySelector('.child-comments')!;
-            const commentingField: HTMLElement | null = childCommentsEl.querySelector('.commenting-field');
+            const commentingField: HTMLElement | null = childCommentsEl.querySelector('ax-commenting-field');
             if (!isNil(commentingField)) {
                 commentingField.before(commentEl);
             } else {
@@ -327,7 +331,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
             }
 
             // Update toggle all -button
-            this.toggleAllButtonService.updateToggleAllButton(outerMostParent);
+            ToggleAllButtonElement.updateToggleAllButton(outerMostParent, this.options);
         } else { // Case: main level comment
             if (prependComment) {
                 commentList.prepend(commentEl);
@@ -338,7 +342,8 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private addAttachment(commentModel: Record<string, any>, commentList: HTMLElement = this.container.querySelector('#attachment-list')!): void {
-        const commentEl = this.commentFactory.createCommentElement(commentModel);
+        const commentEl: CommentComponent = document.createElement('ax-comment') as CommentComponent;
+        commentEl.commentModel = commentModel;
         commentList.prepend(commentEl);
     }
 
@@ -365,47 +370,6 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         this.showActiveContainer();
     }
 
-    private toggleSaveButton(commentingField: HTMLElement): void {
-        const textarea: HTMLElement = commentingField.querySelector('.textarea')!;
-        const saveButton: HTMLElement = findSiblingsBySelector(textarea, '.control-row').querySelector('.save')!;
-
-        const content = this.textareaService.getTextareaContent(textarea, true);
-        const attachments = this.commentingFieldService.getAttachmentsFromCommentingField(commentingField);
-        let enabled: boolean;
-
-        // Case: existing comment
-        const commentModel = this.commentsById[textarea.getAttribute('data-comment')!];
-        if (commentModel) {
-
-            // Case: parent changed
-            const contentChanged = content != commentModel.content;
-            let parentFromModel: string = '';
-            if (commentModel.parent) {
-                parentFromModel = commentModel.parent.toString();
-            }
-
-            // Case: parent changed
-            const parentFromTextarea: string | null = textarea.getAttribute('data-parent');
-            const parentChanged: boolean = !isStringEmpty(parentFromTextarea) && parentFromTextarea !== parentFromModel;
-
-            // Case: attachments changed
-            let attachmentsChanged = false;
-            if (this.options.enableAttachments) {
-                const savedAttachmentIds = commentModel.attachments.map((attachment: any) => attachment.id);
-                const currentAttachmentIds = attachments.map((attachment: any) => attachment.id);
-                attachmentsChanged = !areArraysEqual(savedAttachmentIds, currentAttachmentIds);
-            }
-
-            enabled = contentChanged || parentChanged || attachmentsChanged;
-
-            // Case: new comment
-        } else {
-            enabled = !!content.length || !!attachments.length;
-        }
-
-        saveButton.classList.toggle('enabled', enabled);
-    }
-
     private createComment(commentJSON: Record<string, any>): void {
         const commentModel: Record<string, any> = this.createCommentModel(commentJSON);
         this.addCommentToDataModel(commentModel);
@@ -422,14 +386,13 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
     private createHTML(): void {
         // Commenting field
-        this.mainCommentingField = this.createMainCommentingFieldElement();
-        const mainCommentingField: HTMLElement = this.mainCommentingField.field;
+        const mainCommentingField: CommentingFieldComponent = this.createMainCommentingFieldElement();
         this.container.append(mainCommentingField);
 
         // Hide control row and close button
         const mainControlRow: HTMLElement = mainCommentingField.querySelector('.control-row')!;
-        mainControlRow.style.display = 'none';
-        mainCommentingField.querySelector<HTMLElement>('.close')!.style.display = 'none';
+        hideElement(mainControlRow);
+        hideElement(mainCommentingField.querySelector<HTMLElement>('.close')!);
 
         // Navigation bar
         if (this.options.enableNavigation) {
@@ -506,13 +469,15 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
             droppableContainer.append(droppable);
 
             droppableOverlay.append(droppableContainer);
-            droppableOverlay.style.display = 'none';
+            hideElement(droppableOverlay);
             this.container.append(droppableOverlay);
         }
     }
 
-    private createMainCommentingFieldElement(): CommentingFieldElement {
-        return this.commentingFieldService.createCommentingFieldElement(null, null, true);
+    private createMainCommentingFieldElement(): CommentingFieldComponent {
+        const commentingField: CommentingFieldComponent = document.createElement('ax-commenting-field') as CommentingFieldComponent;
+        commentingField.isMain = true;
+        return commentingField;
     }
 
 }

@@ -3,8 +3,21 @@ import {CommentsOptions} from './comments-options';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider';
 import {TextareaService} from './subcomponent/textarea-service';
 import {CommentUtil} from './comment-util';
-import {findParentsBySelector} from './html-util';
+import {
+    findParentsBySelector,
+    findSiblingsBySelector,
+    hideElement,
+    showElement,
+    toggleElementVisibility
+} from './html-util';
 import {isNil} from './util';
+import {CommentingFieldComponent} from './subcomponent/commenting-field-component';
+import {ButtonComponent} from './subcomponent/button-component';
+import {CommentTransformer} from './comment-transformer';
+import {CommentComponent} from './subcomponent/comment-component';
+import {CommentContentFormatter} from './subcomponent/comment-content-formatter';
+import {TagFactory} from './subcomponent/tag-factory';
+import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element';
 
 export interface ElementEventsHandler {
     closeDropdowns(e: UIEvent): void;
@@ -43,18 +56,25 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     private readonly options: CommentsOptions;
     private readonly commentsById: CommentsById;
-    private readonly subcomponentUtil: TextareaService;
+    private readonly textareaService: TextareaService;
     private readonly commentUtil: CommentUtil;
+    private readonly commentTransformer: CommentTransformer;
+    private readonly commentContentFormatter: CommentContentFormatter;
+    private readonly tagFactory: TagFactory;
 
     constructor(private readonly container: HTMLDivElement) {
         this.options = OptionsProvider.get(container)!;
         this.commentsById = CommentsProvider.get(container)!;
-        this.subcomponentUtil = ServiceProvider.get(container, TextareaService);
+        this.textareaService = ServiceProvider.get(container, TextareaService);
         this.commentUtil = ServiceProvider.get(container, CommentUtil);
+        this.commentTransformer = ServiceProvider.get(container, CommentTransformer);
+        this.commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
+        this.tagFactory = ServiceProvider.get(container, TagFactory);
     }
 
     closeDropdowns(): void {
-        this.container.find('.dropdown').hide();
+        this.container.querySelectorAll<HTMLElement>('.dropdown')
+            .forEach(hideElement);
     }
 
     preSavePastedAttachments(e: ClipboardEvent): void {
@@ -65,7 +85,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         if (files?.length === 1) {
 
             // Select correct commenting field
-            const parentCommentingField: HTMLElement | null = findParentsBySelector(e.target as HTMLElement, '.commenting-field').first();
+            const parentCommentingField: CommentingFieldComponent | null = findParentsBySelector<CommentingFieldComponent>(e.target as HTMLElement, 'ax-commenting-field').first();
             if (!isNil(parentCommentingField)) {
                 this.preSaveAttachments(files, parentCommentingField);
             }
@@ -75,9 +95,9 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         }
     }
 
-    private preSaveAttachments(files: FileList, commentingField: HTMLElement = this.container.querySelector('.commenting-field.main')!): void {
+    private preSaveAttachments(files: FileList, commentingField: CommentingFieldComponent = this.container.querySelector('ax-commenting-field.main')!): void {
         // Elements
-        const uploadButton: HTMLElement = commentingField.querySelector('.control-row .upload')!;
+        const uploadButton: ButtonComponent = commentingField.querySelector('.control-row .upload')!;
         const attachmentsContainer: HTMLElement = commentingField.querySelector('.control-row .attachments')!;
 
         if (files.length) {
@@ -88,7 +108,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
             }));
 
             // Filter out already added attachments
-            const existingAttachments: any[] = this.subcomponentUtil.getAttachmentsFromCommentingField(commentingField);
+            const existingAttachments: any[] = commentingField.getAttachmentsFromCommentingField();
             attachments = attachments.filter(attachment => {
                 let duplicate = false;
 
@@ -110,29 +130,29 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
             }
 
             // Set button state to loading
-            this.subcomponentUtil.setButtonState(uploadButton, false, true);
+            uploadButton.setButtonState(false, true);
 
             // Validate attachments
-            this.options.validateAttachments(attachments, validatedAttachments => {
+            this.options.validateAttachments(attachments, (validatedAttachments: any[]) => {
 
                 if (validatedAttachments.length) {
                     // Create attachment tags
                     validatedAttachments.forEach(attachment => {
-                        const attachmentTag = this.createAttachmentTagElement(attachment, true);
+                        const attachmentTag: HTMLAnchorElement = this.tagFactory.createAttachmentTagElement(attachment, true);
                         attachmentsContainer.append(attachmentTag);
                     });
 
                     // Check if save button needs to be enabled
-                    this.toggleSaveButton(commentingField);
+                    commentingField.toggleSaveButton();
                 }
 
                 // Reset button state
-                this.subcomponentUtil.setButtonState(uploadButton, true, false);
+                uploadButton.setButtonState(true, false);
             });
         }
 
         // Clear the input field
-        uploadButton.find('input').val('');
+        uploadButton.querySelector('input')!.value = '';
     }
 
     saveOnKeydown(e: KeyboardEvent): void {
@@ -140,8 +160,8 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         if (e.keyCode === 13) {
             const metaKey = e.metaKey || e.ctrlKey;
             if (this.options.postCommentOnEnter || metaKey) {
-                const el = $(e.currentTarget);
-                el.siblings('.control-row').find('.save').trigger('click');
+                const el: HTMLElement = e.currentTarget as HTMLElement;
+                findSiblingsBySelector(el, '.control-row').querySelector('.save')!.click();
                 e.stopPropagation();
                 e.preventDefault();
             }
@@ -149,22 +169,22 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     }
 
     saveEditableContent(e: Event): void {
-        const el = $(e.currentTarget);
-        el.data('before', el.html());
+        const el: HTMLElement = e.currentTarget as HTMLElement;
+        (el as any).contentBeforeChange = el.innerHTML;
     }
 
     checkEditableContentForChange(e: Event): void {
-        const el = $(e.currentTarget);
+        const el: HTMLElement = e.currentTarget as HTMLElement;
 
-        if (el.data('before') != el.html()) {
-            el.data('before', el.html());
-            el.trigger('change');
+        if ((el as any).contentBeforeChange !== el.innerHTML) {
+            (el as any).contentBeforeChange = el.innerHTML;
+            el.dispatchEvent(new Event('change', {bubbles: true}))
         }
     }
 
     navigationElementClicked(e: MouseEvent): void {
-        const navigationEl = $(e.currentTarget);
-        const sortKey = navigationEl.data().sortKey;
+        const navigationEl: HTMLElement = e.currentTarget as HTMLElement;
+        const sortKey: 'popularity' | 'oldest' | 'newest' | 'attachments' = navigationEl.getAttribute('data-sort-key') as any;
 
         // Sort the comments if necessary
         if (sortKey === 'attachments') {
@@ -178,7 +198,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         this.showActiveSort();
     }
 
-    private sortAndReArrangeComments(sortKey: 'popularity' | 'oldest' | 'newest'): void {
+    private sortAndReArrangeComments(sortKey: 'popularity' | 'oldest' | 'newest' | 'attachments'): void {
         const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
 
         // Get main level comments
@@ -196,168 +216,170 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         // Prevent closing immediately
         e.stopPropagation();
 
-        const dropdown = $(e.currentTarget).find('~ .dropdown');
-        dropdown.toggle();
+        const dropdown: HTMLElement = (e.currentTarget as HTMLElement).querySelector('~ .dropdown')!;
+        toggleElementVisibility(dropdown);
     }
 
     showMainCommentingField(e: UIEvent): void {
-        const mainTextarea = $(e.currentTarget);
-        mainTextarea.siblings('.control-row').show();
-        mainTextarea.parent().find('.close').show();
-        mainTextarea.parent().find('.upload.inline-button').hide();
+        const mainTextarea: HTMLElement = e.currentTarget as HTMLElement;
+        findSiblingsBySelector(mainTextarea, '.control-row')
+            .forEach(showElement)
+        showElement(mainTextarea.parentElement!.querySelector('.close')!);
+        hideElement(mainTextarea.parentElement!.querySelector('.upload.inline-button')!);
         mainTextarea.focus();
     }
 
     hideMainCommentingField(e: UIEvent): void {
-        const closeButton = $(e.currentTarget);
-        const commentingField = this.$el.find('.commenting-field.main');
-        const mainTextarea = commentingField.find('.textarea');
-        const mainControlRow = commentingField.find('.control-row');
+        const closeButton: HTMLElement = e.currentTarget as HTMLElement;
+        const commentingField: CommentingFieldComponent = this.container.querySelector('ax-commenting-field.main')!
+        const mainTextarea: HTMLElement = commentingField.querySelector('.textarea')!;
+        const mainControlRow: HTMLElement = commentingField.querySelector('.control-row')!;
 
         // Clear text area
-        this.clearTextarea(mainTextarea);
+        this.textareaService.clearTextarea(mainTextarea);
 
         // Clear attachments
-        commentingField.find('.attachments').empty();
+        commentingField.querySelector('.attachments')!.innerHTML = '';
 
         // Toggle save button
-        this.toggleSaveButton(commentingField);
+        commentingField.toggleSaveButton();
 
         // Adjust height
-        this.adjustTextareaHeight(mainTextarea, false);
+        this.textareaService.adjustTextareaHeight(mainTextarea, false);
 
-        mainControlRow.hide();
-        closeButton.hide();
-        mainTextarea.parent().find('.upload.inline-button').show();
+        hideElement(mainControlRow);
+        hideElement(closeButton);
+        showElement(mainTextarea.parentElement!.querySelector('.upload.inline-button')!);
         mainTextarea.blur();
     }
 
     increaseTextareaHeight(e: Event): void {
-        const textarea = $(e.currentTarget);
-        this.adjustTextareaHeight(textarea, true);
+        const textarea: HTMLElement = e.currentTarget as HTMLElement;
+        this.textareaService.adjustTextareaHeight(textarea, true);
     }
 
     textareaContentChanged(e: Event): void {
-        const textarea = $(e.currentTarget);
+        const textarea: HTMLElement = e.currentTarget as HTMLElement;
 
         // Update parent id if reply-to tag was removed
-        if (!textarea.find('.reply-to.tag').length) {
-            const commentId = textarea.attr('data-comment');
+        if (!textarea.querySelectorAll('.reply-to.tag').length) {
+            const commentId = textarea.getAttribute('data-comment');
 
             // Case: editing comment
             if (commentId) {
                 const parentComments: HTMLElement[] = findParentsBySelector(textarea, 'li.comment');
                 if (parentComments.length > 1) {
-                    const parentId = parentComments[parentComments.length - 1].data('id');
-                    textarea.attr('data-parent', parentId);
+                    const parentId: string = parentComments[parentComments.length - 1].getAttribute('data-id')!;
+                    textarea.setAttribute('data-parent', parentId);
                 }
 
                 // Case: new comment
             } else {
-                const parentId = findParentsBySelector(textarea, 'li.comment').last().data('id');
-                textarea.attr('data-parent', parentId);
+                const parentId: string = findParentsBySelector(textarea, 'li.comment').last()!.getAttribute('data-id')!;
+                textarea.setAttribute('data-parent', parentId);
             }
         }
 
         // Move close button if scrollbar is visible
-        const commentingField = findParentsBySelector(textarea, '.commenting-field').first();
-        if (textarea[0].scrollHeight > textarea.outerHeight()) {
-            commentingField.addClass('commenting-field-scrollable');
+        const commentingField: CommentingFieldComponent = findParentsBySelector<CommentingFieldComponent>(textarea, 'ax-commenting-field')
+            .first()!;
+        if (textarea.scrollHeight > textarea.getBoundingClientRect().height) {
+            commentingField.querySelector('.commenting-field')!.classList.add('commenting-field-scrollable');
         } else {
-            commentingField.removeClass('commenting-field-scrollable');
+            commentingField.querySelector('.commenting-field')!.classList.remove('commenting-field-scrollable');
         }
 
         // Check if save button needs to be enabled
-        this.toggleSaveButton(commentingField);
+        commentingField.toggleSaveButton();
     }
 
     removeCommentingField(e: UIEvent): void {
-        const closeButton = $(e.currentTarget);
+        const closeButton: HTMLElement = e.currentTarget as HTMLElement;
 
         // Remove edit class from comment if user was editing the comment
-        const textarea = closeButton.siblings('.textarea');
-        if (textarea.attr('data-comment')) {
-            findParentsBySelector(closeButton, 'li.comment').first().removeClass('edit');
+        const textarea: HTMLElement = findSiblingsBySelector(closeButton, '.textarea').first()!;
+        if (textarea.getAttribute('data-comment')) {
+            findParentsBySelector(closeButton, 'li.comment').first()!.classList.remove('edit');
         }
 
         // Remove the field
-        const commentingField = findParentsBySelector(closeButton, '.commenting-field').first();
+        const commentingField: CommentingFieldComponent = findParentsBySelector<CommentingFieldComponent>(closeButton, 'ax-commenting-field').first()!;
         commentingField.remove();
     }
 
     postComment(e: UIEvent): void {
-        const sendButton = $(e.currentTarget);
-        const commentingField = findParentsBySelector(sendButton, '.commenting-field').first();
+        const sendButton: ButtonComponent = e.currentTarget as ButtonComponent;
+        const commentingField: CommentingFieldComponent = findParentsBySelector<CommentingFieldComponent>(sendButton, 'ax-commenting-field').first()!;
 
         // Set button state to loading
-        this.setButtonState(sendButton, false, true);
+        sendButton.setButtonState(false, true);
 
         // Create comment JSON
-        const commentJSON = this.createCommentJSON(commentingField);
+        let commentJSON = commentingField.createCommentJSON();
 
         // Reverse mapping
-        commentJSON = this.applyExternalMappings(commentJSON);
+        commentJSON = this.commentTransformer.applyExternalMappings(commentJSON);
 
-        const success = commentJSON => {
+        const success: (commentJSON: Record<string, any>) => void = commentJSON => {
             this.createComment(commentJSON);
-            commentingField.find('.close').trigger('click');
+            commentingField.querySelector<HTMLElement>('.close')!.click();
 
             // Reset button state
-            this.setButtonState(sendButton, false, false);
+            sendButton.setButtonState(false, false);
         };
 
         const error = () => {
             // Reset button state
-            this.setButtonState(sendButton, true, false);
+            sendButton.setButtonState(true, false);
         };
 
         this.options.postComment(commentJSON, success, error);
     }
 
     putComment(e: UIEvent): void {
-        const saveButton = $(e.currentTarget);
-        const commentingField = findParentsBySelector(saveButton, '.commenting-field').first();
-        const textarea = commentingField.find('.textarea');
+        const saveButton: ButtonComponent = e.currentTarget as ButtonComponent;
+        const commentingField: CommentingFieldComponent = findParentsBySelector<CommentingFieldComponent>(saveButton, 'ax-commenting-field').first()!;
+        const textarea: HTMLElement = commentingField.querySelector('.textarea')!;
 
         // Set button state to loading
-        this.setButtonState(saveButton, false, true);
+        saveButton.setButtonState(false, true);
 
         // Use a clone of the existing model and update the model after succesfull update
-        let commentJSON = Object.assign({}, this.commentsById[textarea.attr('data-comment')]);
+        let commentJSON = Object.assign({}, this.commentsById[textarea.getAttribute('data-comment')!]);
         Object.assign(commentJSON, {
-            parent: textarea.attr('data-parent') || null,
-            content: this.getTextareaContent(textarea),
-            pings: this.getPings(textarea),
+            parent: textarea.getAttribute('data-parent'),
+            content: this.textareaService.getTextareaContent(textarea),
+            pings: this.textareaService.getPings(textarea),
             modified: new Date().getTime(),
-            attachments: this.getAttachmentsFromCommentingField(commentingField)
+            attachments: commentingField.getAttachmentsFromCommentingField()
         });
 
         // Reverse mapping
-        commentJSON = this.applyExternalMappings(commentJSON);
+        commentJSON = this.commentTransformer.applyExternalMappings(commentJSON);
 
-        const success = commentJSON => {
+        const success: (commentJSON: Record<string, any>) => void = commentJSON => {
             // The outermost parent can not be changed by editing the comment so the childs array
             // of parent does not require an update
 
             const commentModel = this.createCommentModel(commentJSON);
 
             // Delete childs array from new comment model since it doesn't need an update
-            delete commentModel['childs'];
+            delete commentModel.childs;
             this.updateCommentModel(commentModel);
 
             // Close the editing field
-            commentingField.find('.close').trigger('click');
+            commentingField.querySelector<HTMLElement>('.close')!.click();
 
             // Re-render the comment
             this.reRenderComment(commentModel.id);
 
             // Reset button state
-            this.setButtonState(saveButton, false, false);
+            saveButton.setButtonState(false, false);
         };
 
-        const error = () => {
+        const error: () => void = () => {
             // Reset button state
-            this.setButtonState(saveButton, true, false);
+            saveButton.setButtonState(true, false);
         };
 
         this.options.putComment(commentJSON, success, error);
@@ -369,38 +391,39 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     private reRenderComment(id: string): void {
         const commentModel: Record<string, any> = this.commentsById[id];
-        const commentElements = this.container.querySelectorAll(`li.comment[data-id="${commentModel.id}"]`);
+        const commentElement: CommentComponent = this.container.querySelector(`ax-comment[data-id="${commentModel.id}"]`)!;
 
-        commentElements.forEach((commentEl) => {
-            const commentWrapper = this.createCommentWrapperElement(commentModel);
-            commentEl.querySelector('.comment-wrapper')!.replaceWith(commentWrapper);
-        });
+        commentElement.reRenderCommentContainer();
     }
 
     deleteComment(e: UIEvent): void {
-        const deleteButton = $(e.currentTarget);
-        const commentEl = findParentsBySelector(deleteButton, '.comment').first();
-        let commentJSON = Object.assign({}, this.commentsById[commentEl.attr('data-id')]);
-        const commentId = commentJSON.id;
-        const parentId = commentJSON.parent;
+        const deleteButton: ButtonComponent = e.currentTarget as ButtonComponent;
+        const commentEl: HTMLElement = findParentsBySelector(deleteButton, '.comment').first()!;
+        let commentJSON: Record<string, any> = Object.assign({}, this.commentsById[commentEl.getAttribute('data-id')!]);
+        const commentId: string = commentJSON.id;
+        const parentId: string = commentJSON.parent;
 
         // Set button state to loading
-        this.setButtonState(deleteButton, false, true);
+        deleteButton.setButtonState(false, true);
 
         // Reverse mapping
-        commentJSON = this.applyExternalMappings(commentJSON);
+        commentJSON = this.commentTransformer.applyExternalMappings(commentJSON);
 
-        const success = () => {
+        const success: () => void = () => {
             this.removeComment(commentId);
-            if (parentId) this.reRenderCommentActionBar(parentId);
+            if (parentId) {
+                findParentsBySelector<CommentComponent>(commentEl, `ax-comment[data-id="${parentId}"]`)
+                    .first()!
+                    .reRenderCommentActionBar();
+            }
 
             // Reset button state
-            this.setButtonState(deleteButton, false, false);
+            deleteButton.setButtonState(false, false);
         };
 
-        const error = () => {
+        const error: () => void = () => {
             // Reset button state
-            this.setButtonState(deleteButton, true, false);
+            deleteButton.setButtonState(true, false);
         };
 
         this.options.deleteComment(commentJSON, success, error);
@@ -409,38 +432,29 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     private removeComment(commentId: string): void {
         this.commentUtil.removeComment(commentId, parentEl => {
             // Update the toggle all button
-            this.updateToggleAllButton(parentEl);
-        });
-    }
-
-    private reRenderCommentActionBar(id: string): void {
-        const commentModel: Record<string, any> = this.commentsById[id];
-        const commentElements = this.container.querySelectorAll(`li.comment[data-id="${commentModel.id}"]`);
-
-        commentElements.forEach((commentEl) => {
-            const commentWrapper = this.createCommentWrapperElement(commentModel);
-            commentEl.querySelector('.actions')!.replaceWith(commentWrapper.find('.actions'));
+            ToggleAllButtonElement.updateToggleAllButton(parentEl, this.options);
         });
     }
 
     preDeleteAttachment(e: UIEvent) {
-        const commentingField = findParentsBySelector(e.currentTarget as HTMLElement, '.commenting-field').first();
-        const attachmentEl = findParentsBySelector(e.currentTarget as HTMLElement, '.attachment').first();
+        const commentingField: CommentingFieldComponent = findParentsBySelector<CommentingFieldComponent>(e.currentTarget as HTMLElement, 'ax-commenting-field')
+            .first()!;
+        const attachmentEl: HTMLElement = findParentsBySelector(e.currentTarget as HTMLElement, '.attachment').first()!;
         attachmentEl.remove();
 
         // Check if save button needs to be enabled
-        this.toggleSaveButton(commentingField);
+        commentingField.toggleSaveButton();
     }
 
     fileInputChanged(e: Event): void {
         const input: HTMLInputElement = e.currentTarget as HTMLInputElement;
         const files = input.files!;
-        const commentingField = findParentsBySelector(input, '.commenting-field').first();
+        const commentingField: CommentingFieldComponent = findParentsBySelector<CommentingFieldComponent>(input, 'ax-commenting-field').first()!;
         this.preSaveAttachments(files, commentingField);
     }
 
     upvoteComment(e: UIEvent): void {
-        const commentEl = findParentsBySelector(e.currentTarget as HTMLElement, 'li.comment').first();
+        const commentEl: HTMLElement = findParentsBySelector(e.currentTarget as HTMLElement, 'li.comment').first()!;
         const commentModel = commentEl.data().model;
 
         // Check whether user upvoted the comment or revoked the upvote
@@ -459,15 +473,15 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
         // Reverse mapping
         let commentJSON = Object.assign({}, commentModel);
-        commentJSON = this.applyExternalMappings(commentJSON);
+        commentJSON = this.commentTransformer.applyExternalMappings(commentJSON);
 
-        const success = commentJSON => {
+        const success: (commentJSON: Record<string, any>) => void = commentJSON => {
             const commentModel = this.createCommentModel(commentJSON);
             this.updateCommentModel(commentModel);
             this.reRenderUpvotes(commentModel.id);
         };
 
-        const error = () => {
+        const error: () => void = () => {
             // Revert changes
             commentModel.userHasUpvoted = !commentModel.userHasUpvoted;
             commentModel.upvoteCount = previousUpvoteCount;
@@ -479,49 +493,51 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     private reRenderUpvotes(id: string): void {
         const commentModel: Record<string, any> = this.commentsById[id];
-        const commentElements = this.container.querySelectorAll(`li.comment[data-id="${commentModel.id}"]`);
+        const commentElement: CommentComponent = this.container.querySelector(`ax-comment[data-id="${commentModel.id}"]`)!;
 
-        commentElements.forEach(commentEl => {
-            const upvotes = this.createUpvoteElement(commentModel);
-            commentEl.querySelector('.upvote')!.replaceWith(upvotes);
-        });
+        commentElement.reRenderUpvotes();
     }
 
     hashtagClicked(e: MouseEvent): void {
-        const el = $(e.currentTarget);
-        const value = el.attr('data-value');
+        const el: HTMLElement = e.currentTarget as HTMLElement;
+        const value: string = el.getAttribute('data-value')!;
         this.options.hashtagClicked(value);
     }
 
     pingClicked(e: MouseEvent): void {
-        const el = $(e.currentTarget);
-        const value = el.attr('data-value');
+        const el: HTMLElement = e.currentTarget as HTMLElement;
+        const value: string = el.getAttribute('data-value')!;
         this.options.pingClicked(value);
     }
 
     toggleReplies(e: UIEvent): void {
-        const el = $(e.currentTarget);
-        el.siblings('.togglable-reply').toggleClass('visible');
-        this.setToggleAllButtonText(el, true);
+        const toggleAllButton: ToggleAllButtonElement = e.currentTarget as ToggleAllButtonElement;
+        findSiblingsBySelector(toggleAllButton, '.togglable-reply')
+            .forEach((togglableReply: HTMLElement) => togglableReply.classList.toggle('visible'));
+        toggleAllButton.setToggleAllButtonText(true);
     }
 
     replyButtonClicked(e: MouseEvent): void {
-        const replyButton = $(e.currentTarget);
-        const outermostParent = findParentsBySelector(replyButton, 'li.comment').last();
-        const parentId = findParentsBySelector(replyButton, '.comment').first().data().id;
+        const replyButton: HTMLElement = e.currentTarget as HTMLElement;
+        const outermostParent: HTMLElement = findParentsBySelector(replyButton, 'li.comment').last()!;
+        const parentId: string | null = findParentsBySelector(replyButton, '.comment').first()!.getAttribute('data-id');
 
         // Remove existing field
-        let replyField = outermostParent.find('.child-comments > .commenting-field');
-        if (replyField.length) replyField.remove();
-        const previousParentId = replyField.find('.textarea').attr('data-parent');
+        let replyField: CommentingFieldComponent | null = outermostParent.querySelector('.child-comments > .commenting-field');
+        let previousParentId: string | null = null;
+        if (replyField) {
+            previousParentId = replyField.querySelector('.textarea')!.getAttribute('data-parent');
+            replyField.remove();
+        }
 
         // Create the reply field (do not re-create)
-        if (previousParentId != parentId) {
-            replyField = this.createCommentingFieldElement(parentId);
-            outermostParent.find('.child-comments').append(replyField);
+        if (previousParentId !== parentId) {
+            replyField = document.createElement('ax-commenting-field') as CommentingFieldComponent;
+            replyField.parentId = parentId;
+            outermostParent.querySelector('.child-comments')!.append(replyField);
 
             // Move cursor to end
-            const textarea = replyField.find('.textarea');
+            const textarea: HTMLElement = replyField.querySelector('.textarea')!;
             this.moveCursorToEnd(textarea);
 
             // Ensure element stays visible
@@ -562,21 +578,23 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     }
 
     editButtonClicked(e: MouseEvent): void {
-        const editButton = $(e.currentTarget);
-        const commentEl = findParentsBySelector(editButton, 'li.comment').first();
+        const editButton: HTMLElement = e.currentTarget as HTMLElement;
+        const commentEl: HTMLElement = findParentsBySelector(editButton, 'li.comment').first()!;
         const commentModel = commentEl.data().model;
-        commentEl.addClass('edit');
+        commentEl.classList.add('edit');
 
         // Create the editing field
-        const editField = this.createCommentingFieldElement(commentModel.parent, commentModel.id);
-        commentEl.find('.comment-wrapper').first().append(editField);
+        const editField: CommentingFieldComponent = document.createElement('ax-commenting-field') as CommentingFieldComponent;
+        editField.parentId = commentModel.parent;
+        editField.existingCommentId = commentModel.id;
+        commentEl.querySelector('.comment-wrapper')!.append(editField);
 
         // Append original content
-        const textarea: HTMLElement = editField.querySelector('.textarea');
+        const textarea: HTMLElement = editField.querySelector('.textarea')!;
         textarea.setAttribute('data-comment', commentModel.id);
 
         // Escaping HTML
-        textarea.append(this.getFormattedCommentContent(commentModel, true));
+        textarea.append(this.commentContentFormatter.getFormattedCommentContent(commentModel, true));
 
         // Move cursor to end
         this.moveCursorToEnd(textarea);
@@ -590,7 +608,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
             this.container.querySelectorAll<HTMLElement>('.droppable-overlay')
                 .forEach(element => {
                     element.style.top = this.container.scrollTop + 'px';
-                    element.style.display = 'block';
+                    showElement(element);
                 });
             this.container.classList.add('drag-ongoing');
         }
@@ -622,7 +640,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     private hideDroppableOverlay(): void {
         this.container.querySelectorAll<HTMLElement>('.droppable-overlay')
-            .forEach(element => element.style.display = 'none');
+            .forEach(hideElement);
         this.container.classList.remove('drag-ongoing');
     }
 

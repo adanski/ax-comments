@@ -1,3 +1,22 @@
+const PREVIOUS_DISPLAY_VALUE: WeakMap<HTMLElement, string> = new WeakMap();
+
+export function showElement(element: HTMLElement): void {
+    element.style.display = PREVIOUS_DISPLAY_VALUE.get(element) ?? 'block';
+}
+
+export function hideElement(element: HTMLElement): void {
+    PREVIOUS_DISPLAY_VALUE.set(element, element.style.display);
+    element.style.display = 'none';
+}
+
+export function toggleElementVisibility(element: HTMLElement): void {
+    if (element.style.display !== 'none') {
+        hideElement(element);
+    } else {
+        showElement(element);
+    }
+}
+
 export function findSiblingsBySelector<E extends HTMLElement = HTMLElement>(element: Element, selectors?: string): QueryableElementArray<E> {
     const siblings: E[] = [];
     for (const sibling of element.parentElement!.children) {

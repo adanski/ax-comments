@@ -2,30 +2,44 @@ import {ProfilePictureFactory} from './profile-picture-factory';
 import {CommentContentFormatter} from './comment-content-formatter';
 import * as sanitize from 'sanitize-html';
 import {TagFactory} from './tag-factory';
-import {UpvoteFactory} from './upvote-factory';
 import {CommentsOptions} from '../comments-options';
 import {CommentsById} from '../comments-by-id';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider';
+import {WebComponent} from '../web-component';
+import {RegisterCustomElement} from '../register-custom-element';
+import {findParentsBySelector} from '../html-util';
 
-export class CommentWrapperFactory {
+@RegisterCustomElement('ax-comment-container')
+export class CommentContainerComponent extends HTMLElement implements WebComponent {
 
-    private readonly options: CommentsOptions;
-    private readonly commentsById: CommentsById;
-    private readonly profilePictureFactory: ProfilePictureFactory;
-    private readonly tagFactory: TagFactory;
-    private readonly upvoteFactory: UpvoteFactory;
-    private readonly commentContentFormatter: CommentContentFormatter;
+    commentModel!: Record<string, any>;
 
-    constructor(private readonly container: HTMLDivElement) {
+    private container!: HTMLDivElement
+    private options!: CommentsOptions;
+    private commentsById!: CommentsById;
+    private profilePictureFactory!: ProfilePictureFactory;
+    private tagFactory!: TagFactory;
+    private commentContentFormatter!: CommentContentFormatter;
+
+    connectedCallback(): void {
+        this.#initServices();
+        this.#initElement();
+    }
+
+    #initServices(): void {
+        const container: HTMLDivElement | null = findParentsBySelector<HTMLDivElement>(this, '#comments-container').first();
+        if (!container) {
+            throw new Error(`[ax-commenting-field] Commenting Field will not work outside ax-comments.`);
+        }
+        this.container = container;
         this.options = OptionsProvider.get(container)!;
         this.commentsById = CommentsProvider.get(container)!;
         this.profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
         this.tagFactory = ServiceProvider.get(container, TagFactory);
-        this.upvoteFactory = ServiceProvider.get(container, UpvoteFactory);
         this.commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
     }
 
-    createCommentWrapperElement(commentModel: Record<string, any>): HTMLElement {
+    #initElement(commentModel: Record<string, any> = this.commentModel): void {
         const commentWrapper: HTMLDivElement = document.createElement('div');
         commentWrapper.classList.add('comment-wrapper');
 
@@ -165,6 +179,14 @@ export class CommentWrapperFactory {
 
         // Actions
         // =======
+        const actions: HTMLSpanElement = this.#createActions(commentModel);
+
+        wrapper.append(content, attachments, actions);
+        commentWrapper.append(profilePicture, time, commentHeaderEl, wrapper);
+        this.appendChild(commentWrapper);
+    }
+
+    #createActions(commentModel: Record<string, any>): HTMLSpanElement {
         const actions: HTMLSpanElement = document.createElement('span');
         actions.classList.add('actions');
 
@@ -173,28 +195,19 @@ export class CommentWrapperFactory {
         separator.classList.add('separator');
         separator.textContent = '·';
 
+        // Append buttons for actions that are enabled
         // Reply
-        const reply: HTMLButtonElement = document.createElement('button');
-        reply.type = 'button';
-        reply.classList.add('action', 'reply');
-        reply.textContent = this.options.textFormatter(this.options.replyText);
-
-        // Upvote icon
-        const upvoteIcon: HTMLElement = document.createElement('i');
-        upvoteIcon.classList.add('fa', 'fa-thumbs-up');
-        if (this.options.upvoteIconURL.length) {
-            upvoteIcon.style.backgroundImage = `url("${this.options.upvoteIconURL}")`;
-            upvoteIcon.classList.add('image');
+        if (this.options.enableReplying) {
+            const reply: HTMLButtonElement = document.createElement('button');
+            reply.type = 'button';
+            reply.classList.add('action', 'reply');
+            reply.textContent = this.options.textFormatter(this.options.replyText);
+            actions.append(reply);
         }
 
         // Upvotes
-        const upvotes: HTMLElement = this.upvoteFactory.createUpvoteElement(commentModel);
-
-        // Append buttons for actions that are enabled
-        if (this.options.enableReplying) {
-            actions.append(reply);
-        }
         if (this.options.enableUpvoting) {
+            const upvotes: HTMLElement = this.#createUpvoteElement(commentModel);
             actions.append(upvotes);
         }
 
@@ -213,8 +226,40 @@ export class CommentWrapperFactory {
             }
         }
 
-        wrapper.append(content, attachments, actions);
-        commentWrapper.append(profilePicture, time, commentHeaderEl, wrapper);
-        return commentWrapper;
+        return actions;
+    }
+
+    #createUpvoteElement(commentModel: Record<string, any>): HTMLElement {
+        // Upvote icon
+        const upvoteIcon: HTMLElement = document.createElement('i');
+        upvoteIcon.classList.add('fa', 'fa-thumbs-up');
+        if (this.options.upvoteIconURL.length) {
+            upvoteIcon.style.backgroundImage = `url("${this.options.upvoteIconURL}")`;
+            upvoteIcon.classList.add('image');
+        }
+
+        // Upvotes
+        const upvoteEl: HTMLButtonElement = document.createElement('button');
+        upvoteEl.classList.add('action', 'upvote', commentModel.userHasUpvoted ? 'highlight-font' : '');
+        const upvoteCount: HTMLSpanElement = document.createElement('span');
+        upvoteCount.classList.add('upvote-count')
+        upvoteCount.textContent = commentModel.upvoteCount;
+        upvoteEl.append(upvoteCount, upvoteIcon);
+
+        return upvoteEl;
+    }
+
+    reRenderUpvotes(): void {
+        const commentModel: Record<string, any> = this.commentModel;
+        const upvotes: HTMLElement = this.#createUpvoteElement(commentModel);
+
+        this.querySelector('.upvote')!.replaceWith(upvotes);
+    }
+
+    reRenderCommentActionBar(): void {
+        const commentModel: Record<string, any> = this.commentModel;
+        const actions: HTMLSpanElement = this.#createActions(commentModel);
+
+        this.querySelector('.actions')!.replaceWith(actions);
     }
 }

@@ -1,16 +1,14 @@
 import $ from 'cash-dom';
-import {ButtonService} from './button-service';
+import {ButtonComponent} from './button-component';
 import {CommentsOptions} from '../comments-options';
-import {OptionsProvider, ServiceProvider} from '../provider';
+import {OptionsProvider} from '../provider';
 
 export class TagFactory {
 
     private readonly options: CommentsOptions;
-    private readonly buttonService: ButtonService;
 
     constructor(private readonly container: HTMLDivElement) {
         this.options = OptionsProvider.get(container)!;
-        this.buttonService = ServiceProvider.get(container, ButtonService);
     }
 
     createTagElement(text: string, extraClasses: string, value: string, extraAttributes?: Record<string, any>): HTMLElement {
@@ -78,7 +76,7 @@ export class TagFactory {
             attachmentTag.classList.add('deletable');
 
             // Append close button
-            const closeButton: HTMLElement = this.buttonService.createCloseButton('delete');
+            const closeButton: ButtonComponent = ButtonComponent.createCloseButton(this.options, 'delete');
             attachmentTag.append(closeButton);
         }
 

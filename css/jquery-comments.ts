@@ -489,7 +489,7 @@ const mainStyle: string = `
 }
 
 .jquery-comments ul.main li.comment .comment-wrapper,
-.jquery-comments ul.main li.toggle-all,
+.jquery-comments ul.main ax-toggle-all-button.toggle-all,
 .jquery-comments ul.main li.comment .commenting-field {
 	padding: .5em;
 }
@@ -692,20 +692,20 @@ const childCommentsStyle: string = `
 	font-size: 2.4em;
 }
 
-.jquery-comments ul.main li.comment .child-comments li.toggle-all {
+.jquery-comments ul.main li.comment .child-comments ax-toggle-all-button.toggle-all {
 	padding-top: 0;
 }
 
-.jquery-comments ul.main li.comment .child-comments li.toggle-all span:first-child {
+.jquery-comments ul.main li.comment .child-comments ax-toggle-all-button.toggle-all span:first-child {
 	vertical-align: middle;
 }
 
-.jquery-comments ul.main li.comment .child-comments li.toggle-all span:first-child:hover {
+.jquery-comments ul.main li.comment .child-comments ax-toggle-all-button.toggle-all span:first-child:hover {
 	cursor: pointer;
 	text-decoration: underline;
 }
 
-.jquery-comments ul.main li.comment .child-comments li.toggle-all .caret {
+.jquery-comments ul.main li.comment .child-comments ax-toggle-all-button.toggle-all .caret {
 	display: inline-block;
 	vertical-align: middle;
 	width: 0;
@@ -720,7 +720,7 @@ const childCommentsStyle: string = `
 	border-right-color: rgba(0, 0, 0, 0);
 }
 
-.jquery-comments ul.main li.comment .child-comments li.toggle-all .caret.up {
+.jquery-comments ul.main li.comment .child-comments ax-toggle-all-button.toggle-all .caret.up {
 	border-top-color: rgba(0, 0, 0, 0);
 	border-bottom-color: inherit;
 	margin-top: -.2em;
