@@ -1,9 +1,9 @@
-import {CommentsOptions} from './comments-options';
-import {CommentsById} from './comments-by-id';
-import {SpinnerFactory} from './subcomponent/spinner-factory';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider';
-import {isNil} from './util';
-import {findParentsBySelector} from './html-util';
+import {CommentsOptions} from './api.js';
+import {CommentsById} from './comments-by-id.js';
+import {SpinnerFactory} from './subcomponent/spinner-factory.js';
+import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider.js';
+import {isNil} from './util.js';
+import {findParentsBySelector} from './html-util.js';
 
 export class CommentUtil {
 

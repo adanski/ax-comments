@@ -1,5 +1,5 @@
-import {CommentsOptions} from '../comments-options';
-import {OptionsProvider} from '../provider';
+import {CommentsOptions} from '../api.js';
+import {OptionsProvider} from '../provider.js';
 
 export class ProfilePictureFactory {
 

@@ -1,8 +1,8 @@
 import $ from 'cash-dom';
-import {isNil} from '../util';
-import {RegisterCustomElement} from '../register-custom-element';
-import {WebComponent} from '../web-component';
-import {CommentContainerComponent} from './comment-container-component';
+import {isNil} from '../util.js';
+import {RegisterCustomElement} from '../register-custom-element.js';
+import {WebComponent} from '../web-component.js';
+import {CommentContainerComponent} from './comment-container-component.js';
 
 @RegisterCustomElement('ax-comment')
 export class CommentComponent extends HTMLElement implements WebComponent {

@@ -1,4 +1,4 @@
-import {ElementEventsHandler} from './element-events-handler';
+import {ElementEventsHandler} from './element-events-handler.js';
 
 export const EVENT_HANDLERS_MAP: Map<ElementEvent, ElementEventHandlerNames> = new Map([
     // Close dropdowns

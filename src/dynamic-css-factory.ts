@@ -1,4 +1,4 @@
-import {CommentsOptions} from './comments-options';
+import {CommentsOptions} from './api.js';
 
 export function createCssDeclarations(options: CommentsOptions): CSSStyleSheet {
     let css: string = '';

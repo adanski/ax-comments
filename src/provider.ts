@@ -1,5 +1,5 @@
-import {CommentsOptions} from './comments-options';
-import {CommentsById} from './comments-by-id';
+import {CommentsOptions} from './api.js';
+import {CommentsById} from './comments-by-id.js';
 
 export class OptionsProvider {
     private static readonly OPTIONS: WeakMap<HTMLDivElement, CommentsOptions> = new WeakMap();

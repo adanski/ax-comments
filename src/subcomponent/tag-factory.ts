@@ -1,7 +1,7 @@
 import $ from 'cash-dom';
-import {ButtonComponent} from './button-component';
-import {CommentsOptions} from '../comments-options';
-import {OptionsProvider} from '../provider';
+import {ButtonComponent} from './button-component.js';
+import {CommentsOptions} from '../api.js';
+import {OptionsProvider} from '../provider.js';
 
 export class TagFactory {
 

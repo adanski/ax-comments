@@ -1,10 +1,10 @@
-import {CommentsOptions} from '../comments-options';
-import {ServiceProvider} from '../provider';
+import {CommentsOptions} from '../api.js';
+import {ServiceProvider} from '../provider.js';
 import $ from 'cash-dom';
-import {SpinnerFactory} from './spinner-factory';
-import {RegisterCustomElement} from '../register-custom-element';
-import {WebComponent} from '../web-component';
-import {findParentsBySelector} from '../html-util';
+import {SpinnerFactory} from './spinner-factory.js';
+import {RegisterCustomElement} from '../register-custom-element.js';
+import {WebComponent} from '../web-component.js';
+import {findParentsBySelector} from '../html-util.js';
 
 @RegisterCustomElement('ax-button')
 export class ButtonComponent extends HTMLSpanElement implements WebComponent {

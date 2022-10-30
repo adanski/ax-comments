@@ -1,23 +1,23 @@
-import {CommentsById} from './comments-by-id';
-import {CommentsOptions} from './comments-options';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider';
-import {TextareaService} from './subcomponent/textarea-service';
-import {CommentUtil} from './comment-util';
+import {CommentsById} from './comments-by-id.js';
+import {CommentsOptions} from './api.js';
+import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider.js';
+import {TextareaService} from './subcomponent/textarea-service.js';
+import {CommentUtil} from './comment-util.js';
 import {
     findParentsBySelector,
     findSiblingsBySelector,
     hideElement,
     showElement,
     toggleElementVisibility
-} from './html-util';
-import {isNil} from './util';
-import {CommentingFieldComponent} from './subcomponent/commenting-field-component';
-import {ButtonComponent} from './subcomponent/button-component';
-import {CommentTransformer} from './comment-transformer';
-import {CommentComponent} from './subcomponent/comment-component';
-import {CommentContentFormatter} from './subcomponent/comment-content-formatter';
-import {TagFactory} from './subcomponent/tag-factory';
-import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element';
+} from './html-util.js';
+import {isNil} from './util.js';
+import {CommentingFieldComponent} from './subcomponent/commenting-field-component.js';
+import {ButtonComponent} from './subcomponent/button-component.js';
+import {CommentTransformer} from './comment-transformer.js';
+import {CommentComponent} from './subcomponent/comment-component.js';
+import {CommentContentFormatter} from './subcomponent/comment-content-formatter.js';
+import {TagFactory} from './subcomponent/tag-factory.js';
+import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
 
 export interface ElementEventsHandler {
     closeDropdowns(e: UIEvent): void;
@@ -579,8 +579,8 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     editButtonClicked(e: MouseEvent): void {
         const editButton: HTMLElement = e.currentTarget as HTMLElement;
-        const commentEl: HTMLElement = findParentsBySelector(editButton, 'li.comment').first()!;
-        const commentModel = commentEl.data().model;
+        const commentEl: CommentComponent = findParentsBySelector<CommentComponent>(editButton, 'ax-comment').first()!;
+        const commentModel: Record<string, any> = commentEl.commentModel;
         commentEl.classList.add('edit');
 
         // Create the editing field

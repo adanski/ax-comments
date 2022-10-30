@@ -1,13 +1,13 @@
-import {ProfilePictureFactory} from './profile-picture-factory';
-import {CommentContentFormatter} from './comment-content-formatter';
+import {ProfilePictureFactory} from './profile-picture-factory.js';
+import {CommentContentFormatter} from './comment-content-formatter.js';
 import * as sanitize from 'sanitize-html';
-import {TagFactory} from './tag-factory';
-import {CommentsOptions} from '../comments-options';
-import {CommentsById} from '../comments-by-id';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider';
-import {WebComponent} from '../web-component';
-import {RegisterCustomElement} from '../register-custom-element';
-import {findParentsBySelector} from '../html-util';
+import {TagFactory} from './tag-factory.js';
+import {CommentsOptions} from '../api.js';
+import {CommentsById} from '../comments-by-id.js';
+import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider.js';
+import {WebComponent} from '../web-component.js';
+import {RegisterCustomElement} from '../register-custom-element.js';
+import {findParentsBySelector} from '../html-util.js';
 
 @RegisterCustomElement('ax-comment-container')
 export class CommentContainerComponent extends HTMLElement implements WebComponent {

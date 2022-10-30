@@ -1,6 +1,6 @@
-import {normalizeSpaces} from '../util';
-import {CommentsOptions} from '../comments-options';
-import {OptionsProvider} from '../provider';
+import {normalizeSpaces} from '../util.js';
+import {CommentsOptions} from '../api.js';
+import {OptionsProvider} from '../provider.js';
 
 export class TextareaService {
 

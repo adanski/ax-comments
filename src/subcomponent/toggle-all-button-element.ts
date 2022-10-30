@@ -1,9 +1,9 @@
-import {isNil} from '../util';
-import {CommentsOptions} from '../comments-options';
-import {OptionsProvider} from '../provider';
-import {WebComponent} from '../web-component';
-import {RegisterCustomElement} from '../register-custom-element';
-import {findParentsBySelector} from '../html-util';
+import {isNil} from '../util.js';
+import {CommentsOptions} from '../api.js';
+import {OptionsProvider} from '../provider.js';
+import {WebComponent} from '../web-component.js';
+import {RegisterCustomElement} from '../register-custom-element.js';
+import {findParentsBySelector} from '../html-util.js';
 
 @RegisterCustomElement('ax-toggle-all-button')
 export class ToggleAllButtonElement extends HTMLLIElement implements WebComponent {

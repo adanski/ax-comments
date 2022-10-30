@@ -1,19 +1,19 @@
 import $ from 'cash-dom';
-import {ProfilePictureFactory} from './profile-picture-factory';
-import {ButtonComponent} from './button-component';
+import {ProfilePictureFactory} from './profile-picture-factory.js';
+import {ButtonComponent} from './button-component.js';
 import {ContenteditableEditor} from '@textcomplete/contenteditable';
 import {StrategyProps, Textcomplete} from '@textcomplete/core';
 import {TextcompleteOption} from '@textcomplete/core/src/Textcomplete';
-import {TagFactory} from './tag-factory';
-import {TextareaService} from './textarea-service';
-import {CommentsOptions} from '../comments-options';
-import {areArraysEqual, isStringEmpty, normalizeSpaces} from '../util';
-import {CommentsById} from '../comments-by-id';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider';
-import {CommentUtil} from '../comment-util';
-import {WebComponent} from '../web-component';
-import {RegisterCustomElement} from '../register-custom-element';
-import {findParentsBySelector, findSiblingsBySelector} from '../html-util';
+import {TagFactory} from './tag-factory.js';
+import {TextareaService} from './textarea-service.js';
+import {CommentsOptions} from '../api.js';
+import {areArraysEqual, isStringEmpty, normalizeSpaces} from '../util.js';
+import {CommentsById} from '../comments-by-id.js';
+import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider.js';
+import {CommentUtil} from '../comment-util.js';
+import {WebComponent} from '../web-component.js';
+import {RegisterCustomElement} from '../register-custom-element.js';
+import {findParentsBySelector, findSiblingsBySelector} from '../html-util.js';
 
 @RegisterCustomElement('ax-commenting-field')
 export class CommentingFieldComponent extends HTMLElement implements WebComponent {

@@ -1,4 +1,4 @@
-import {CommentsOptions} from './comments-options';
+import {CommentsOptions} from './api.js';
 
 export function getDefaultOptions(scrollContainer: HTMLElement): CommentsOptions {
     return {

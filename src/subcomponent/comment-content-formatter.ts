@@ -1,7 +1,7 @@
-import {TagFactory} from './tag-factory';
-import {isNil, normalizeSpaces} from '../util';
-import {CommentsOptions} from '../comments-options';
-import {OptionsProvider, ServiceProvider} from '../provider';
+import {TagFactory} from './tag-factory.js';
+import {isNil, normalizeSpaces} from '../util.js';
+import {CommentsOptions} from '../api.js';
+import {OptionsProvider, ServiceProvider} from '../provider.js';
 
 export class CommentContentFormatter {
 

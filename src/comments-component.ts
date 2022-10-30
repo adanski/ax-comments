@@ -1,30 +1,30 @@
-import {WebComponent} from './web-component';
-import {isMobileBrowser, isNil} from './util';
-import {getDefaultOptions} from './default-options-factory';
+import {WebComponent} from './web-component.js';
+import {isMobileBrowser, isNil} from './util.js';
+import {getDefaultOptions} from './default-options-factory.js';
 import {CommentTransformer} from './comment-transformer.js';
-import {EVENT_HANDLERS_MAP} from './events';
-import {CommentsOptions} from './comments-options';
-import {CommentsById} from './comments-by-id';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider';
-import {DefaultElementEventsHandler, ElementEventsHandler} from './element-events-handler';
-import {CommentSorter} from './comment-sorter';
-import {NavigationFactory} from './subcomponent/navigation-factory';
-import {SpinnerFactory} from './subcomponent/spinner-factory';
-import {CommentUtil} from './comment-util';
-import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util';
-import {STYLE_SHEET} from '../css/jquery-comments';
-import {RegisterCustomElement} from './register-custom-element';
-import {createCssDeclarations} from './dynamic-css-factory';
-import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element';
-import {CommentingFieldComponent} from './subcomponent/commenting-field-component';
-import {CommentComponent} from './subcomponent/comment-component';
+import {EVENT_HANDLERS_MAP} from './events.js';
+import {CommentsOptions} from './api.js';
+import {CommentsById} from './comments-by-id.js';
+import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider.js';
+import {DefaultElementEventsHandler, ElementEventsHandler} from './element-events-handler.js';
+import {CommentSorter} from './comment-sorter.js';
+import {NavigationFactory} from './subcomponent/navigation-factory.js';
+import {SpinnerFactory} from './subcomponent/spinner-factory.js';
+import {CommentUtil} from './comment-util.js';
+import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util.js';
+import {STYLE_SHEET} from '../css/jquery-comments.js';
+import {RegisterCustomElement} from './register-custom-element.js';
+import {createCssDeclarations} from './dynamic-css-factory.js';
+import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
+import {CommentingFieldComponent} from './subcomponent/commenting-field-component.js';
+import {CommentComponent} from './subcomponent/comment-component.js';
 
 @RegisterCustomElement('ax-comments')
 export class CommentsComponent extends HTMLElement implements WebComponent {
     readonly shadowRoot!: ShadowRoot;
     private container!: HTMLDivElement;
 
-    readonly #options: CommentsOptions = {};
+    readonly #options: CommentsOptions = {} as CommentsOptions;
     readonly #commentsById: CommentsById = {};
 
     private readonly commentTransformer: CommentTransformer;

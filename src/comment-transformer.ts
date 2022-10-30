@@ -1,5 +1,5 @@
-import {CommentsOptions} from './comments-options';
-import {OptionsProvider} from './provider';
+import {CommentFieldMappings, CommentsOptions} from './api.js';
+import {OptionsProvider} from './provider.js';
 
 export class CommentTransformer {
 
@@ -12,10 +12,10 @@ export class CommentTransformer {
     applyInternalMappings(commentJSON: Record<string, any>): Record<string, any> {
         // Inverting field mappings
         const invertedMappings: Record<string, string> = {};
-        const mappings: Record<string, string> = this.options.fieldMappings;
-        for (let prop in mappings) {
+        const mappings: CommentFieldMappings = this.options.fieldMappings;
+        for (const prop in mappings) {
             if (mappings.hasOwnProperty(prop)) {
-                invertedMappings[mappings[prop]] = prop;
+                invertedMappings[mappings[prop as keyof CommentFieldMappings] as string] = prop;
             }
         }
 
@@ -23,8 +23,8 @@ export class CommentTransformer {
     }
 
     applyExternalMappings(commentJSON: Record<string, any>): Record<string, any> {
-        const mappings: Record<string, string> = this.options.fieldMappings;
-        return CommentTransformer.applyMappings(mappings, commentJSON);
+        const mappings: CommentFieldMappings = this.options.fieldMappings;
+        return CommentTransformer.applyMappings(mappings as any, commentJSON);
     }
 
     private static applyMappings(mappings: Record<string, string>, commentJSON: Record<string, any>): Record<string, any> {
@@ -32,7 +32,7 @@ export class CommentTransformer {
 
         for (let key1 in commentJSON) {
             if (key1 in mappings) {
-                const key2 = mappings[key1];
+                const key2: string = mappings[key1];
                 result[key2] = commentJSON[key1];
             }
         }
