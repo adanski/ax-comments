@@ -1,4 +1,3 @@
-import $ from 'cash-dom';
 import {ButtonComponent} from './button-component.js';
 import {CommentsOptions} from '../api.js';
 import {OptionsProvider} from '../provider.js';
@@ -42,11 +41,12 @@ export class TagFactory {
         }
 
         // Bind data
-        $(attachmentTag).data({
+        attachmentTag.setAttribute('id', attachment.id);
+        (attachmentTag as any).attachmentTagData = {
             id: attachment.id,
             mime_type: attachment.mime_type,
             file: attachment.file,
-        });
+        };
 
         // File name
         let fileName: string = '';

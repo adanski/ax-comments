@@ -39,15 +39,15 @@ export const EVENT_HANDLERS_MAP: Map<ElementEvent, ElementEventHandlerNames> = n
     of(eventOf('change', '.commenting-field .upload.enabled input[type="file"]'), 'fileInputChanged'),
 
     // Other actions
-    of(eventOf('click', 'li.comment button.upvote'), 'upvoteComment'),
-    of(eventOf('click', 'li.comment button.delete.enabled'), 'deleteComment'),
-    of(eventOf('click', 'li.comment .hashtag'), 'hashtagClicked'),
-    of(eventOf('click', 'li.comment .ping'), 'pingClicked'),
+    of(eventOf('click', 'ax-comment button.upvote'), 'upvoteComment'),
+    of(eventOf('click', 'ax-comment button.delete.enabled'), 'deleteComment'),
+    of(eventOf('click', 'ax-comment .hashtag'), 'hashtagClicked'),
+    of(eventOf('click', 'ax-comment .ping'), 'pingClicked'),
 
     // Other
-    of(eventOf('click', 'li.comment ul.child-comments .toggle-all'), 'toggleReplies'),
-    of(eventOf('click', 'li.comment button.reply'), 'replyButtonClicked'),
-    of(eventOf('click', 'li.comment button.edit'), 'editButtonClicked'),
+    of(eventOf('click', 'ax-comment ul.child-comments .toggle-all'), 'toggleReplies'),
+    of(eventOf('click', 'ax-comment button.reply'), 'replyButtonClicked'),
+    of(eventOf('click', 'ax-comment button.edit'), 'editButtonClicked'),
 
     // Drag & dropping attachments
     of(eventOf('dragenter'), 'showDroppableOverlay'),
@@ -82,4 +82,6 @@ interface ElementEvent {
     readonly selector?: string;
 }
 
-type ElementEventHandlerNames = Array<keyof ElementEventsHandler>;
+type ElementEventHandlerNames = FunctionProps<ElementEventsHandler>[];
+
+type FunctionProps<T> = ({ [P in keyof T]: T[P] extends Function ? P : never })[keyof T];

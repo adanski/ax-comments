@@ -1,5 +1,6 @@
 import {CommentsOptions} from '../api.js';
 import {OptionsProvider} from '../provider.js';
+import {SortKey} from '../comment-sorter.js';
 
 export class NavigationFactory {
 
@@ -19,25 +20,25 @@ export class NavigationFactory {
         // Newest
         const newest: HTMLLIElement = document.createElement('li');
         newest.textContent = this.options.textFormatter(this.options.newestText);
-        newest.setAttribute('data-sort-key', 'newest');
+        newest.setAttribute('data-sort-key', SortKey.NEWEST);
         newest.setAttribute('data-container-name', 'comments');
 
         // Oldest
         const oldest: HTMLLIElement = document.createElement('li');
         oldest.textContent = this.options.textFormatter(this.options.oldestText);
-        oldest.setAttribute('data-sort-key', 'oldest');
+        oldest.setAttribute('data-sort-key', SortKey.OLDEST);
         oldest.setAttribute('data-container-name', 'comments');
 
         // Popular
         const popular: HTMLLIElement = document.createElement('li');
         popular.textContent = this.options.textFormatter(this.options.popularText);
-        popular.setAttribute('data-sort-key', 'popularity');
+        popular.setAttribute('data-sort-key', SortKey.POPULARITY);
         popular.setAttribute('data-container-name', 'comments');
 
         // Attachments
         const attachments: HTMLLIElement = document.createElement('li');
         attachments.textContent = this.options.textFormatter(this.options.attachmentsText);
-        attachments.setAttribute('data-sort-key', 'attachments');
+        attachments.setAttribute('data-sort-key', SortKey.ATTACHMENTS);
         attachments.setAttribute('data-container-name', 'attachments');
 
         // Attachments icon

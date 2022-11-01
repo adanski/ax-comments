@@ -9,8 +9,8 @@ export class CommentSorter {
         this.options = OptionsProvider.get(container)!;
     }
 
-    sortComments(comments: Record<string, any>[], sortKey: 'popularity' | 'oldest' | 'newest' | 'attachments'): void {
-        if (sortKey === 'popularity') { // Sort by popularity
+    sortComments(comments: Record<string, any>[], sortKey: SortKey): void {
+        if (sortKey === SortKey.POPULARITY) { // Sort by popularity
             comments.sort((commentA, commentB) => {
                 let pointsOfA = commentA.childs.length;
                 let pointsOfB = commentB.childs.length;
@@ -33,7 +33,7 @@ export class CommentSorter {
             comments.sort((commentA, commentB) => {
                 const createdA = new Date(commentA.created).getTime();
                 const createdB = new Date(commentB.created).getTime();
-                if (sortKey == 'oldest') {
+                if (sortKey == SortKey.OLDEST) {
                     return createdA - createdB;
                 } else {
                     return createdB - createdA;
@@ -41,4 +41,11 @@ export class CommentSorter {
             });
         }
     }
+}
+
+export enum SortKey {
+    POPULARITY = 'popularity',
+    OLDEST = 'oldest',
+    NEWEST = 'newest',
+    ATTACHMENTS = 'attachments'
 }

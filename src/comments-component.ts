@@ -7,7 +7,7 @@ import {CommentsOptions} from './api.js';
 import {CommentsById} from './comments-by-id.js';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider.js';
 import {DefaultElementEventsHandler, ElementEventsHandler} from './element-events-handler.js';
-import {CommentSorter} from './comment-sorter.js';
+import {CommentSorter, SortKey} from './comment-sorter.js';
 import {NavigationFactory} from './subcomponent/navigation-factory.js';
 import {SpinnerFactory} from './subcomponent/spinner-factory.js';
 import {CommentUtil} from './comment-util.js';
@@ -18,6 +18,9 @@ import {createCssDeclarations} from './dynamic-css-factory.js';
 import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
 import {CommentingFieldComponent} from './subcomponent/commenting-field-component.js';
 import {CommentComponent} from './subcomponent/comment-component.js';
+import EventEmitter from 'EventEmitter3';
+
+import './subcomponent/comment-component.js';
 
 @RegisterCustomElement('ax-comments')
 export class CommentsComponent extends HTMLElement implements WebComponent {
@@ -27,6 +30,9 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     readonly #options: CommentsOptions = {} as CommentsOptions;
     readonly #commentsById: CommentsById = {};
 
+    readonly #elementEventHandlerEmitter: EventEmitter<'navigationElementClicked' | 'postComment'>;
+    readonly #elementEventHandler: ElementEventsHandler;
+
     private readonly commentTransformer: CommentTransformer;
     private readonly commentSorter: CommentSorter;
     private readonly commentUtil: CommentUtil;
@@ -34,12 +40,13 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     private readonly spinnerFactory: SpinnerFactory;
 
     private dataFetched: boolean = false;
-    private currentSortKey: 'popularity' | 'oldest' | 'newest'| 'attachments' = 'newest';
 
     constructor() {
         super();
         this.initShadowDom();
         CommentsProvider.set(this.container, this.#commentsById);
+        this.#elementEventHandlerEmitter = new EventEmitter();
+        this.#elementEventHandler = new DefaultElementEventsHandler(this.container, this.#elementEventHandlerEmitter);
         this.commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
         this.commentSorter = ServiceProvider.get(this.container, CommentSorter);
         this.commentUtil = ServiceProvider.get(this.container, CommentUtil);
@@ -52,16 +59,13 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
             console.warn('[ax-comments] Options not set, component could not be initialized.');
             return;
         }
-        this.initComponent();
+        this.initElement();
+        this.initEmitterListeners();
     }
 
     disconnectedCallback(): void {
-        //this.mainCommentingField.destroy();
+        this.#elementEventHandlerEmitter.removeAllListeners();
     }
-
-    /*static get observedAttributes(): string[] {
-        return ['videoid', 'playlistid'];
-    }*/
 
     get options(): CommentsOptions {
         return this.#options;
@@ -101,7 +105,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         this.container = this.shadowRoot.querySelector<HTMLDivElement>('#comments-container')!;
     }
 
-    private initComponent(): void {
+    private initElement(): void {
         this.undelegateEvents();
         this.delegateEvents();
 
@@ -115,7 +119,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         }
 
         // Set initial sort key
-        this.currentSortKey = this.options.defaultNavigationSortKey;
+        this.#elementEventHandler.currentSortKey = this.options.defaultNavigationSortKey;
 
         // Create user CSS declarations
         const userStyle: CSSStyleSheet | undefined = this.options.styles;
@@ -129,6 +133,20 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         this.fetchDataAndRender();
     }
 
+    private initEmitterListeners(): void {
+        this.#elementEventHandlerEmitter.on('postComment', commentJSON => {
+            this.createComment(commentJSON);
+        });
+        this.#elementEventHandlerEmitter.on('navigationElementClicked', (sortKey: SortKey) => {
+            // Create attachments if necessary
+            if (sortKey === SortKey.ATTACHMENTS) {
+                this.createAttachments();
+            }
+
+            this.showActiveSort();
+        });
+    }
+
     private delegateEvents(): void {
         this.toggleEventHandlers('addEventListener');
     }
@@ -138,11 +156,10 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private toggleEventHandlers(bindFunction: 'addEventListener' | 'removeEventListener') {
-        const elementEventsHandler: ElementEventsHandler = ServiceProvider.get(this.container, DefaultElementEventsHandler);
-
         EVENT_HANDLERS_MAP.forEach((handlerNames, event) => {
             handlerNames.forEach(handlerName => {
-                const method: (e: Event) => void = <(e: Event) => void>elementEventsHandler[handlerName].bind(elementEventsHandler);
+                const method: (e: Event) => void = <(e: Event) => void>this.#elementEventHandler[handlerName]
+                    .bind(this.#elementEventHandler);
 
                 if (isNil(event.selector)) {
                     this.container[bindFunction](event.type, method);
@@ -168,11 +185,11 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         this.options.getComments((commentsArray: Record<string, any>[]) => {
 
             // Convert comments to custom data model
-            const commentModels: Record<string, any>[] = commentsArray.map(commentsJSON => this.createCommentModel(commentsJSON));
+            const commentModels: Record<string, any>[] = commentsArray.map(commentsJSON => this.commentTransformer.toCommentModel(commentsJSON));
 
             // Sort comments by date (oldest first so that they can be appended to the data model
             // without caring dependencies)
-            this.commentSorter.sortComments(commentModels, 'oldest');
+            this.commentSorter.sortComments(commentModels, SortKey.OLDEST);
 
             commentModels.forEach(commentModel => {
                 this.addCommentToDataModel(commentModel);
@@ -203,13 +220,6 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         };
 
         this.options.getComments(success, error);
-    }
-
-    private createCommentModel(commentJSON: Record<string, any>): Record<string, any> {
-        const commentModel: Record<string, any> = this.commentTransformer.applyInternalMappings(commentJSON);
-        commentModel.childs = [];
-        commentModel.hasAttachments = () => commentModel.attachments.length > 0;
-        return commentModel;
     }
 
     private addCommentToDataModel(commentModel: Record<string, any>): void {
@@ -272,13 +282,13 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         });
 
         // Append main level comments
-        this.commentSorter.sortComments(mainLevelComments, this.currentSortKey);
+        this.commentSorter.sortComments(mainLevelComments, this.#elementEventHandler.currentSortKey);
         mainLevelComments.forEach(commentModel => {
             this.addComment(commentModel, commentList);
         });
 
         // Append replies in chronological order
-        this.commentSorter.sortComments(replies, 'oldest');
+        this.commentSorter.sortComments(replies, SortKey.OLDEST);
         replies.forEach(commentModel => {
             this.addComment(commentModel, commentList);
         });
@@ -295,7 +305,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         attachmentList.classList.add('main');
 
         const attachments = this.commentUtil.getAttachments();
-        this.commentSorter.sortComments(attachments, 'newest');
+        this.commentSorter.sortComments(attachments, SortKey.NEWEST);
         attachments.forEach(commentModel => {
             this.addAttachment(commentModel, attachmentList);
         });
@@ -348,7 +358,8 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private showActiveSort(): void {
-        const activeElements: NodeListOf<HTMLElement> = this.container.querySelectorAll(`.navigation li[data-sort-key="${this.currentSortKey}"]`);
+        const activeElements: NodeListOf<HTMLElement> = this.container
+            .querySelectorAll(`.navigation li[data-sort-key="${this.#elementEventHandler.currentSortKey}"]`);
 
         // Indicate active sort
         this.container.querySelectorAll('.navigation li')
@@ -357,7 +368,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
         // Update title for dropdown
         const titleEl: HTMLElement = this.container.querySelector('.navigation .title')!;
-        if (this.currentSortKey !== 'attachments') {
+        if (this.#elementEventHandler.currentSortKey !== SortKey.ATTACHMENTS) {
             titleEl.classList.add('active');
             titleEl.querySelector('header')!.innerHTML = activeElements.item(0).innerHTML;
         } else {
@@ -371,15 +382,15 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private createComment(commentJSON: Record<string, any>): void {
-        const commentModel: Record<string, any> = this.createCommentModel(commentJSON);
+        const commentModel: Record<string, any> = this.commentTransformer.toCommentModel(commentJSON);
         this.addCommentToDataModel(commentModel);
 
         // Add comment element
         const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
-        const prependComment = this.currentSortKey == 'newest';
+        const prependComment = this.#elementEventHandler.currentSortKey === SortKey.NEWEST;
         this.addComment(commentModel, commentList, prependComment);
 
-        if (this.currentSortKey === 'attachments' && commentModel.hasAttachments()) {
+        if (this.#elementEventHandler.currentSortKey === SortKey.ATTACHMENTS && commentModel.hasAttachments()) {
             this.addAttachment(commentModel);
         }
     }

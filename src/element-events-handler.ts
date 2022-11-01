@@ -18,8 +18,12 @@ import {CommentComponent} from './subcomponent/comment-component.js';
 import {CommentContentFormatter} from './subcomponent/comment-content-formatter.js';
 import {TagFactory} from './subcomponent/tag-factory.js';
 import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
+import {CommentSorter, SortKey} from './comment-sorter.js';
+import EventEmitter from 'EventEmitter3';
 
 export interface ElementEventsHandler {
+    currentSortKey: SortKey;
+
     closeDropdowns(e: UIEvent): void;
     preSavePastedAttachments(e: ClipboardEvent): void;
     saveOnKeydown(e: KeyboardEvent): void;
@@ -54,22 +58,27 @@ export interface ElementEventsHandler {
 
 export class DefaultElementEventsHandler implements ElementEventsHandler {
 
-    private readonly options: CommentsOptions;
-    private readonly commentsById: CommentsById;
-    private readonly textareaService: TextareaService;
-    private readonly commentUtil: CommentUtil;
-    private readonly commentTransformer: CommentTransformer;
-    private readonly commentContentFormatter: CommentContentFormatter;
-    private readonly tagFactory: TagFactory;
+    currentSortKey: SortKey = SortKey.NEWEST;
 
-    constructor(private readonly container: HTMLDivElement) {
-        this.options = OptionsProvider.get(container)!;
-        this.commentsById = CommentsProvider.get(container)!;
-        this.textareaService = ServiceProvider.get(container, TextareaService);
-        this.commentUtil = ServiceProvider.get(container, CommentUtil);
-        this.commentTransformer = ServiceProvider.get(container, CommentTransformer);
-        this.commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
-        this.tagFactory = ServiceProvider.get(container, TagFactory);
+    readonly #options: CommentsOptions;
+    readonly #commentsById: CommentsById;
+    readonly #textareaService: TextareaService;
+    readonly #commentUtil: CommentUtil;
+    readonly #commentTransformer: CommentTransformer;
+    readonly #commentSorter: CommentSorter;
+    readonly #commentContentFormatter: CommentContentFormatter;
+    readonly #tagFactory: TagFactory;
+
+    constructor(private readonly container: HTMLDivElement,
+                private readonly emitter: EventEmitter<'navigationElementClicked' | 'postComment'>) {
+        this.#options = OptionsProvider.get(container)!;
+        this.#commentsById = CommentsProvider.get(container)!;
+        this.#textareaService = ServiceProvider.get(container, TextareaService);
+        this.#commentUtil = ServiceProvider.get(container, CommentUtil);
+        this.#commentTransformer = ServiceProvider.get(container, CommentTransformer);
+        this.#commentSorter = ServiceProvider.get(container, CommentSorter);
+        this.#commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
+        this.#tagFactory = ServiceProvider.get(container, TagFactory);
     }
 
     closeDropdowns(): void {
@@ -133,12 +142,12 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
             uploadButton.setButtonState(false, true);
 
             // Validate attachments
-            this.options.validateAttachments(attachments, (validatedAttachments: any[]) => {
+            this.#options.validateAttachments(attachments, (validatedAttachments: any[]) => {
 
                 if (validatedAttachments.length) {
                     // Create attachment tags
                     validatedAttachments.forEach(attachment => {
-                        const attachmentTag: HTMLAnchorElement = this.tagFactory.createAttachmentTagElement(attachment, true);
+                        const attachmentTag: HTMLAnchorElement = this.#tagFactory.createAttachmentTagElement(attachment, true);
                         attachmentsContainer.append(attachmentTag);
                     });
 
@@ -159,7 +168,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         // Save comment on cmd/ctrl + enter
         if (e.keyCode === 13) {
             const metaKey = e.metaKey || e.ctrlKey;
-            if (this.options.postCommentOnEnter || metaKey) {
+            if (this.#options.postCommentOnEnter || metaKey) {
                 const el: HTMLElement = e.currentTarget as HTMLElement;
                 findSiblingsBySelector(el, '.control-row').querySelector('.save')!.click();
                 e.stopPropagation();
@@ -184,30 +193,29 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     navigationElementClicked(e: MouseEvent): void {
         const navigationEl: HTMLElement = e.currentTarget as HTMLElement;
-        const sortKey: 'popularity' | 'oldest' | 'newest' | 'attachments' = navigationEl.getAttribute('data-sort-key') as any;
-
-        // Sort the comments if necessary
-        if (sortKey === 'attachments') {
-            this.createAttachments();
-        } else {
-            this.sortAndReArrangeComments(sortKey);
-        }
+        const sortKey: SortKey = navigationEl.getAttribute('data-sort-key') as SortKey;
 
         // Save the current sort key
         this.currentSortKey = sortKey;
-        this.showActiveSort();
+
+        // Sort the comments if necessary
+        if (this.currentSortKey !== SortKey.ATTACHMENTS) {
+            this.#sortAndReArrangeComments(sortKey);
+        }
+
+        this.emitter.emit('navigationElementClicked', sortKey);
     }
 
-    private sortAndReArrangeComments(sortKey: 'popularity' | 'oldest' | 'newest' | 'attachments'): void {
+    #sortAndReArrangeComments(sortKey: SortKey): void {
         const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
 
         // Get main level comments
-        const mainLevelComments: Record<string, any>[] = this.getComments().filter(commentModel => !commentModel.parent);
-        this.sortComments(mainLevelComments, sortKey);
+        const mainLevelComments: Record<string, any>[] = this.#commentUtil.getComments().filter(commentModel => !commentModel.parent);
+        this.#commentSorter.sortComments(mainLevelComments, sortKey);
 
         // Rearrange the main level comments
         mainLevelComments.forEach(commentModel => {
-            const commentEl: HTMLElement = commentList.querySelector(`> li.comment[data-id=${commentModel.id}]`)!;
+            const commentEl: HTMLElement = commentList.querySelector(`> ax-comment[data-id=${commentModel.id}]`)!;
             commentList.append(commentEl);
         });
     }
@@ -236,7 +244,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         const mainControlRow: HTMLElement = commentingField.querySelector('.control-row')!;
 
         // Clear text area
-        this.textareaService.clearTextarea(mainTextarea);
+        this.#textareaService.clearTextarea(mainTextarea);
 
         // Clear attachments
         commentingField.querySelector('.attachments')!.innerHTML = '';
@@ -245,7 +253,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         commentingField.toggleSaveButton();
 
         // Adjust height
-        this.textareaService.adjustTextareaHeight(mainTextarea, false);
+        this.#textareaService.adjustTextareaHeight(mainTextarea, false);
 
         hideElement(mainControlRow);
         hideElement(closeButton);
@@ -255,7 +263,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     increaseTextareaHeight(e: Event): void {
         const textarea: HTMLElement = e.currentTarget as HTMLElement;
-        this.textareaService.adjustTextareaHeight(textarea, true);
+        this.#textareaService.adjustTextareaHeight(textarea, true);
     }
 
     textareaContentChanged(e: Event): void {
@@ -267,7 +275,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
             // Case: editing comment
             if (commentId) {
-                const parentComments: HTMLElement[] = findParentsBySelector(textarea, 'li.comment');
+                const parentComments: HTMLElement[] = findParentsBySelector(textarea, 'ax-comment');
                 if (parentComments.length > 1) {
                     const parentId: string = parentComments[parentComments.length - 1].getAttribute('data-id')!;
                     textarea.setAttribute('data-parent', parentId);
@@ -275,7 +283,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
                 // Case: new comment
             } else {
-                const parentId: string = findParentsBySelector(textarea, 'li.comment').last()!.getAttribute('data-id')!;
+                const parentId: string = findParentsBySelector(textarea, 'ax-comment').last()!.getAttribute('data-id')!;
                 textarea.setAttribute('data-parent', parentId);
             }
         }
@@ -318,22 +326,22 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         let commentJSON = commentingField.createCommentJSON();
 
         // Reverse mapping
-        commentJSON = this.commentTransformer.applyExternalMappings(commentJSON);
+        commentJSON = this.#commentTransformer.applyExternalMappings(commentJSON);
 
         const success: (commentJSON: Record<string, any>) => void = commentJSON => {
-            this.createComment(commentJSON);
+            this.emitter.emit('postComment', commentJSON);
             commentingField.querySelector<HTMLElement>('.close')!.click();
 
             // Reset button state
             sendButton.setButtonState(false, false);
         };
 
-        const error = () => {
+        const error: () => void = () => {
             // Reset button state
             sendButton.setButtonState(true, false);
         };
 
-        this.options.postComment(commentJSON, success, error);
+        this.#options.postComment(commentJSON, success, error);
     }
 
     putComment(e: UIEvent): void {
@@ -345,23 +353,23 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         saveButton.setButtonState(false, true);
 
         // Use a clone of the existing model and update the model after succesfull update
-        let commentJSON = Object.assign({}, this.commentsById[textarea.getAttribute('data-comment')!]);
+        let commentJSON = Object.assign({}, this.#commentsById[textarea.getAttribute('data-comment')!]);
         Object.assign(commentJSON, {
             parent: textarea.getAttribute('data-parent'),
-            content: this.textareaService.getTextareaContent(textarea),
-            pings: this.textareaService.getPings(textarea),
+            content: this.#textareaService.getTextareaContent(textarea),
+            pings: this.#textareaService.getPings(textarea),
             modified: new Date().getTime(),
             attachments: commentingField.getAttachmentsFromCommentingField()
         });
 
         // Reverse mapping
-        commentJSON = this.commentTransformer.applyExternalMappings(commentJSON);
+        commentJSON = this.#commentTransformer.applyExternalMappings(commentJSON);
 
         const success: (commentJSON: Record<string, any>) => void = commentJSON => {
             // The outermost parent can not be changed by editing the comment so the childs array
             // of parent does not require an update
 
-            const commentModel = this.createCommentModel(commentJSON);
+            const commentModel = this.#commentTransformer.toCommentModel(commentJSON);
 
             // Delete childs array from new comment model since it doesn't need an update
             delete commentModel.childs;
@@ -382,15 +390,15 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
             saveButton.setButtonState(true, false);
         };
 
-        this.options.putComment(commentJSON, success, error);
+        this.#options.putComment(commentJSON, success, error);
     }
 
     private updateCommentModel(commentModel: Record<string, any>): void {
-        Object.assign(this.commentsById[commentModel.id], commentModel);
+        Object.assign(this.#commentsById[commentModel.id], commentModel);
     }
 
     private reRenderComment(id: string): void {
-        const commentModel: Record<string, any> = this.commentsById[id];
+        const commentModel: Record<string, any> = this.#commentsById[id];
         const commentElement: CommentComponent = this.container.querySelector(`ax-comment[data-id="${commentModel.id}"]`)!;
 
         commentElement.reRenderCommentContainer();
@@ -399,7 +407,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     deleteComment(e: UIEvent): void {
         const deleteButton: ButtonComponent = e.currentTarget as ButtonComponent;
         const commentEl: HTMLElement = findParentsBySelector(deleteButton, '.comment').first()!;
-        let commentJSON: Record<string, any> = Object.assign({}, this.commentsById[commentEl.getAttribute('data-id')!]);
+        let commentJSON: Record<string, any> = Object.assign({}, this.#commentsById[commentEl.getAttribute('data-id')!]);
         const commentId: string = commentJSON.id;
         const parentId: string = commentJSON.parent;
 
@@ -407,7 +415,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         deleteButton.setButtonState(false, true);
 
         // Reverse mapping
-        commentJSON = this.commentTransformer.applyExternalMappings(commentJSON);
+        commentJSON = this.#commentTransformer.applyExternalMappings(commentJSON);
 
         const success: () => void = () => {
             this.removeComment(commentId);
@@ -426,13 +434,13 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
             deleteButton.setButtonState(true, false);
         };
 
-        this.options.deleteComment(commentJSON, success, error);
+        this.#options.deleteComment(commentJSON, success, error);
     }
 
     private removeComment(commentId: string): void {
-        this.commentUtil.removeComment(commentId, parentEl => {
+        this.#commentUtil.removeComment(commentId, parentEl => {
             // Update the toggle all button
-            ToggleAllButtonElement.updateToggleAllButton(parentEl, this.options);
+            ToggleAllButtonElement.updateToggleAllButton(parentEl, this.#options);
         });
     }
 
@@ -454,8 +462,8 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     }
 
     upvoteComment(e: UIEvent): void {
-        const commentEl: HTMLElement = findParentsBySelector(e.currentTarget as HTMLElement, 'li.comment').first()!;
-        const commentModel = commentEl.data().model;
+        const commentEl: CommentComponent = findParentsBySelector<CommentComponent>(e.currentTarget as HTMLElement, 'ax-comment').first()!;
+        const commentModel = commentEl.commentModel;
 
         // Check whether user upvoted the comment or revoked the upvote
         const previousUpvoteCount = commentModel.upvoteCount;
@@ -473,10 +481,10 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
         // Reverse mapping
         let commentJSON = Object.assign({}, commentModel);
-        commentJSON = this.commentTransformer.applyExternalMappings(commentJSON);
+        commentJSON = this.#commentTransformer.applyExternalMappings(commentJSON);
 
         const success: (commentJSON: Record<string, any>) => void = commentJSON => {
-            const commentModel = this.createCommentModel(commentJSON);
+            const commentModel = this.#commentTransformer.toCommentModel(commentJSON);
             this.updateCommentModel(commentModel);
             this.reRenderUpvotes(commentModel.id);
         };
@@ -488,11 +496,11 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
             this.reRenderUpvotes(commentModel.id);
         };
 
-        this.options.upvoteComment(commentJSON, success, error);
+        this.#options.upvoteComment(commentJSON, success, error);
     }
 
     private reRenderUpvotes(id: string): void {
-        const commentModel: Record<string, any> = this.commentsById[id];
+        const commentModel: Record<string, any> = this.#commentsById[id];
         const commentElement: CommentComponent = this.container.querySelector(`ax-comment[data-id="${commentModel.id}"]`)!;
 
         commentElement.reRenderUpvotes();
@@ -501,13 +509,13 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     hashtagClicked(e: MouseEvent): void {
         const el: HTMLElement = e.currentTarget as HTMLElement;
         const value: string = el.getAttribute('data-value')!;
-        this.options.hashtagClicked(value);
+        this.#options.hashtagClicked(value);
     }
 
     pingClicked(e: MouseEvent): void {
         const el: HTMLElement = e.currentTarget as HTMLElement;
         const value: string = el.getAttribute('data-value')!;
-        this.options.pingClicked(value);
+        this.#options.pingClicked(value);
     }
 
     toggleReplies(e: UIEvent): void {
@@ -519,7 +527,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
 
     replyButtonClicked(e: MouseEvent): void {
         const replyButton: HTMLElement = e.currentTarget as HTMLElement;
-        const outermostParent: HTMLElement = findParentsBySelector(replyButton, 'li.comment').last()!;
+        const outermostParent: HTMLElement = findParentsBySelector(replyButton, 'ax-comment').last()!;
         const parentId: string | null = findParentsBySelector(replyButton, '.comment').first()!.getAttribute('data-id');
 
         // Remove existing field
@@ -565,7 +573,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     }
 
     private ensureElementStaysVisible(el: HTMLElement): void {
-        const scrollContainer: HTMLElement = this.options.scrollContainer;
+        const scrollContainer: HTMLElement = this.#options.scrollContainer;
         const maxScrollTop: number = el.offsetTop;
         const minScrollTop: number = el.offsetTop + el.offsetHeight - scrollContainer.offsetHeight;
 
@@ -594,7 +602,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
         textarea.setAttribute('data-comment', commentModel.id);
 
         // Escaping HTML
-        textarea.append(this.commentContentFormatter.getFormattedCommentContent(commentModel, true));
+        textarea.append(this.#commentContentFormatter.getFormattedCommentContent(commentModel, true));
 
         // Move cursor to end
         this.moveCursorToEnd(textarea);
@@ -604,7 +612,7 @@ export class DefaultElementEventsHandler implements ElementEventsHandler {
     }
 
     showDroppableOverlay(e: UIEvent): void {
-        if (this.options.enableAttachments) {
+        if (this.#options.enableAttachments) {
             this.container.querySelectorAll<HTMLElement>('.droppable-overlay')
                 .forEach(element => {
                     element.style.top = this.container.scrollTop + 'px';

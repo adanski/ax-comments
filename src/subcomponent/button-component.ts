@@ -1,6 +1,5 @@
 import {CommentsOptions} from '../api.js';
 import {ServiceProvider} from '../provider.js';
-import $ from 'cash-dom';
 import {SpinnerFactory} from './spinner-factory.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {WebComponent} from '../web-component.js';
@@ -9,6 +8,7 @@ import {findParentsBySelector} from '../html-util.js';
 @RegisterCustomElement('ax-button')
 export class ButtonComponent extends HTMLSpanElement implements WebComponent {
 
+    originalContent: string | HTMLElement | HTMLCollection = '';
     #spinnerFactory!: SpinnerFactory;
 
     connectedCallback(): void {
@@ -46,7 +46,7 @@ export class ButtonComponent extends HTMLSpanElement implements WebComponent {
         const saveButton: ButtonComponent = document.createElement('ax-button') as ButtonComponent;
         saveButton.classList.add(saveButtonClass, 'save', 'highlight-background');
         saveButton.textContent = saveButtonText;
-        $(saveButton).data('original-content', saveButtonText);
+        saveButton.originalContent = saveButtonText;
 
         return saveButton;
     }
@@ -57,7 +57,7 @@ export class ButtonComponent extends HTMLSpanElement implements WebComponent {
         deleteButton.classList.add('delete', 'enabled');
         deleteButton.textContent = deleteButtonText;
         deleteButton.style.backgroundColor = options.deleteButtonColor;
-        $(deleteButton).data('original-content', deleteButtonText);
+        deleteButton.originalContent = deleteButtonText;
 
         return deleteButton;
     }
@@ -91,8 +91,13 @@ export class ButtonComponent extends HTMLSpanElement implements WebComponent {
         if (loading) {
             this.innerHTML = '';
             this.append(this.#spinnerFactory.createSpinner(true));
+        } else if (typeof this.originalContent === 'string') {
+            this.innerHTML = this.originalContent;
+        } else if ((this.originalContent as HTMLCollection).length) {
+            this.innerHTML = '';
+            this.append(...this.originalContent as HTMLCollection);
         } else {
-            this.innerHTML = $(this).data('original-content');
+            this.append(this.originalContent as HTMLElement);
         }
     }
 

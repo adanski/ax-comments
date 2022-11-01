@@ -1,4 +1,3 @@
-import $ from 'cash-dom';
 import {ProfilePictureFactory} from './profile-picture-factory.js';
 import {ButtonComponent} from './button-component.js';
 import {ContenteditableEditor} from '@textcomplete/contenteditable';
@@ -115,13 +114,13 @@ export class CommentingFieldComponent extends HTMLElement implements WebComponen
             const uploadButton: ButtonComponent = ButtonComponent.createUploadButton(this.options);
 
             // Main upload button
-            const mainUploadButton: HTMLElement = uploadButton.cloneNode(true) as HTMLElement;
-            $(mainUploadButton).data('original-content', mainUploadButton.children);
+            const mainUploadButton: ButtonComponent = uploadButton.cloneNode(true) as ButtonComponent;
+            mainUploadButton.originalContent = mainUploadButton.children;
             controlRow.append(mainUploadButton);
 
             // Inline upload button for main commenting field
             if (this.isMain) {
-                const inlineUploadButton: HTMLElement = uploadButton.cloneNode(true) as HTMLElement;
+                const inlineUploadButton: ButtonComponent = uploadButton.cloneNode(true) as ButtonComponent;
                 inlineUploadButton.classList.add('inline-button');
                 textareaWrapper.append(inlineUploadButton);
             }
@@ -270,7 +269,7 @@ export class CommentingFieldComponent extends HTMLElement implements WebComponen
         const attachmentElements: NodeListOf<HTMLAnchorElement> = this.querySelectorAll('.attachments .attachment');
         const attachments: any[] = [];
         for (let i = 0; i < attachmentElements.length; i++) {
-            attachments[i] = $(attachmentElements[i]).data();
+            attachments[i] = (attachmentElements[i] as any).attachmentTagData;
         }
 
         return attachments;

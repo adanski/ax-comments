@@ -9,6 +9,13 @@ export class CommentTransformer {
         this.options = OptionsProvider.get(container)!;
     }
 
+    toCommentModel(commentJSON: Record<string, any>): Record<string, any> {
+        const commentModel: Record<string, any> = this.applyInternalMappings(commentJSON);
+        commentModel.childs = [];
+        commentModel.hasAttachments = () => commentModel.attachments.length > 0;
+        return commentModel;
+    }
+
     applyInternalMappings(commentJSON: Record<string, any>): Record<string, any> {
         // Inverting field mappings
         const invertedMappings: Record<string, string> = {};

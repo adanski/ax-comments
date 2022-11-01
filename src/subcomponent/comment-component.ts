@@ -1,8 +1,9 @@
-import $ from 'cash-dom';
 import {isNil} from '../util.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {WebComponent} from '../web-component.js';
 import {CommentContainerComponent} from './comment-container-component.js';
+
+import './comment-container-component.js';
 
 @RegisterCustomElement('ax-comment')
 export class CommentComponent extends HTMLElement implements WebComponent {
@@ -29,8 +30,6 @@ export class CommentComponent extends HTMLElement implements WebComponent {
         commentEl.classList.add('comment');
         commentEl.setAttribute('data-id', commentModel.id);
         this.setAttribute('data-id', commentModel.id);
-
-        $(commentEl).data('model', commentModel);
 
         if (commentModel.createdByCurrentUser) {
             commentEl.classList.add('by-current-user');
