@@ -1,4 +1,4 @@
-import {ButtonComponent} from './button-component.js';
+import {ButtonElement} from './button-element.js';
 import {CommentsOptions} from '../api.js';
 import {OptionsProvider} from '../provider.js';
 
@@ -76,7 +76,7 @@ export class TagFactory {
             attachmentTag.classList.add('deletable');
 
             // Append close button
-            const closeButton: ButtonComponent = ButtonComponent.createCloseButton(this.options, 'delete');
+            const closeButton: ButtonElement = ButtonElement.createCloseButton(this.options, 'delete');
             attachmentTag.append(closeButton);
         }
 

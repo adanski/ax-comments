@@ -1,10 +1,10 @@
-# jquery-comments
-jquery-comments is a jQuery plugin for implementing an out-of-the-box commenting solution to any web application with an existing backend. It provides all the UI functionalities and ties them to callbacks that let you easily define what you want to do with the data. The library is highly customizable and very easy to integrate thanks to a wide variety of settings.
+# <ax-comments> element
+ax-comments is a standalone web component with minimal set of dependencies (no jQuery!) for implementing an out-of-the-box commenting solution to any web application with an existing backend. It provides all the UI functionalities and ties them to callbacks that let you easily define what you want to do with the data. The library is highly customizable and very easy to integrate thanks to a wide variety of settings.
 
 ![Screenshot of jquery-comments](screenshot.png?raw=true "Screenshot of jquery-comments")
 
-Features
---------
+## Features
+
 - Commenting
 - Replying (nested comments)
 - Editing comments
@@ -21,12 +21,10 @@ Features
 - Fully responsive and mobile compatible
 - Miscellaneous settings
 
-Demo
-----
-http://viima.github.io/jquery-comments/demo/
+## Demo
+http://adanski.github.io/ax-comments/demo/
 
-Quick start
------------
+## Quick start
 **1) Add the following to your HTML file**
 
 ```html
@@ -38,9 +36,14 @@ Quick start
 
 **2) Initialize the library**
 ```javascript
-$('#comments-container').comments({
-    getComments: function(success, error) {
-        var commentsArray = [{
+import 'ax-comments/comments-element';
+
+...
+
+const commentsElement = document.createElement('ax-comments');
+commentsElement.options = {
+    getComments: (onSuccess, onError) => {
+        const commentsArray = [{
             id: 1,
             created: '2015-10-01',
             content: 'Lorem ipsum dolort sit amet',
@@ -48,9 +51,11 @@ $('#comments-container').comments({
             upvote_count: 2,
             user_has_upvoted: false
         }];
-        success(commentsArray);
+        onSuccess(commentsArray);
     }
-});
+};
+
+document.body.append(commentsElement);
 ```
 If you are not using Font Awesome for icons, you should replace the icons with custom images by overriding following options when initializing the library:
 ```javascript
@@ -63,24 +68,21 @@ uploadIconURL: '',      // Only if attachments are enabled
 attachmentIconURL: '',  // Only if attachments are enabled
 ```
 
-Dependencies
-------------
-- jQuery >= 1.9.0
+## Dependencies
+- textcomplete
+- sanitize-html
 - Font Awesome (optional)
-- jquery-textcomplete (optional)
 
-Documentation
--------------
-http://viima.github.io/jquery-comments
+## Documentation
+http://adanski.github.io/ax-comments
 
-Maintainers
------------
-- [Joona Tykkyläinen](https://www.linkedin.com/in/joonatykkylainen), Viima Solutions Oy
+## Maintainers
+- [adanski](https://github.com/adanski)
+- [Joona Tykkyläinen](https://www.linkedin.com/in/joonatykkylainen)
 
-Browser support
----------------
-MS Edge and all modern browsers
+## Browser support
+Chrome, Firefox, Edge, Safari
 
-Copyright and license
----------------------
-Code and documentation copyright 2020 [Viima Solutions Oy](https://www.viima.com/). Code released under [the MIT license](https://github.com/Viima/jquery-comments/blob/master/LICENSE).
+## Copyright and license
+Code and documentation copyright 2017-2021 [Viima Solutions Oy](https://www.viima.com/), 2022 [adanski](https://github.com/adanski).
+Code released under [the MIT license](https://github.com/Viima/jquery-comments/blob/master/LICENSE).

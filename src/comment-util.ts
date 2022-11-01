@@ -4,7 +4,7 @@ import {SpinnerFactory} from './subcomponent/spinner-factory.js';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider.js';
 import {isNil} from './util.js';
 import {findParentsBySelector} from './html-util.js';
-import {CommentComponent} from './subcomponent/comment-component.js';
+import {CommentElement} from './subcomponent/comment-element.js';
 
 export class CommentUtil {
 
@@ -59,7 +59,7 @@ export class CommentUtil {
         // Remove the comment from data model
         delete this.commentsById[commentId];
 
-        const commentElement: CommentComponent = this.container.querySelector(`ax-comment[data-id="${commentId}"]`)!;
+        const commentElement: CommentElement = this.container.querySelector(`ax-comment[data-id="${commentId}"]`)!;
         const parentEl: HTMLElement = findParentsBySelector(commentElement, 'ax-comment').last()!;
 
         // Remove the element

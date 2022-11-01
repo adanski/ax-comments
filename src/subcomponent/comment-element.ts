@@ -1,12 +1,10 @@
 import {isNil} from '../util.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {WebComponent} from '../web-component.js';
-import {CommentContainerComponent} from './comment-container-component.js';
-
-import './comment-container-component.js';
+import {CommentContainerElement} from './comment-container-element.js';
 
 @RegisterCustomElement('ax-comment')
-export class CommentComponent extends HTMLElement implements WebComponent {
+export class CommentElement extends HTMLElement implements WebComponent {
 
     #commentModel!: Record<string, any>;
     #initialized: boolean = false;
@@ -17,6 +15,12 @@ export class CommentComponent extends HTMLElement implements WebComponent {
 
     set commentModel(newValue: Record<string, any>) {
         this.#commentModel = newValue;
+    }
+
+    static create(options: Pick<CommentElement, 'commentModel'>): CommentElement {
+        const commentEl: CommentElement = document.createElement('ax-comment') as CommentElement;
+        Object.assign(commentEl, options);
+        return commentEl;
     }
 
     connectedCallback(): void {
@@ -43,8 +47,7 @@ export class CommentComponent extends HTMLElement implements WebComponent {
         childComments.classList.add('child-comments');
 
         // Comment container
-        const commentContainer: CommentContainerComponent = document.createElement('ax-comment-container') as CommentContainerComponent;
-        commentContainer.commentModel = commentModel;
+        const commentContainer: CommentContainerElement = CommentContainerElement.create({commentModel: commentModel});
 
         commentEl.append(commentContainer);
         if (isNil(commentModel.parent)) {
@@ -54,19 +57,18 @@ export class CommentComponent extends HTMLElement implements WebComponent {
     }
 
     reRenderUpvotes(): void {
-        const commentContainer: CommentContainerComponent = this.querySelector('ax-comment-container')!;
+        const commentContainer: CommentContainerElement = this.querySelector('ax-comment-container')!;
         commentContainer.reRenderUpvotes();
     }
 
     reRenderCommentActionBar(): void {
-        const commentContainer: CommentContainerComponent = this.querySelector('ax-comment-container')!;
+        const commentContainer: CommentContainerElement = this.querySelector('ax-comment-container')!;
         commentContainer.reRenderCommentActionBar();
     }
 
     reRenderCommentContainer(): void {
         // Comment container
-        const commentContainer: CommentContainerComponent = document.createElement('ax-comment-container') as CommentContainerComponent;
-        commentContainer.commentModel = this.#commentModel;
+        const commentContainer: CommentContainerElement = CommentContainerElement.create({commentModel: this.#commentModel});
 
         this.querySelector('ax-comment-container')!.replaceWith(commentContainer);
     }

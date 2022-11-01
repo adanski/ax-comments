@@ -1,6 +1,6 @@
 {
-  "name": "comments-web-component",
-  "title": "comments-web-component",
+  "name": "ax-comments",
+  "title": "ax-comments",
   "version": "2.0.0",
   "author": {
     "name": "Joona Tykkylainen"
@@ -16,22 +16,23 @@
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/comments-component.d.ts",
-        "default": "./dist/comments-component.js"
+        "types": "./dist/comments-element.d.ts",
+        "default": "./dist/comments-element.js"
       }
     }
   },
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "minify": "terser dist/jquery-comments.js --comments '/^!/' --output dist/jquery-comments.min.js"
+    "bundle": "esbuild src/comments-element.ts --bundle --format=esm --platform=browser --target=esnext --outdir=dist",
+    "test": "jest"
   },
   "files": [
-    "dist/comments.component.d.ts",
-    "src/comments-component.ts",
-    "dist/comments.component.js.map"
+    "dist/comments-element.d.ts",
+    "src/comments-element.ts",
+    "dist/comments-element.js.map"
   ],
-  "homepage": "https://www.viima.com/",
+  "homepage": "https://adanski.github.io/ax-comments/",
   "keywords": [
     "web component",
     "javascript",
@@ -42,13 +43,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Viima/jquery-comments.git"
+    "url": "https://github.com/adanski/ax-comments.git"
   },
   "dependencies": {
     "@textcomplete/core": "~0.1.12",
     "@textcomplete/contenteditable": "~0.1.12",
     "@textcomplete/textarea": "~0.1.12",
-    "sanitize-html": "~2.6.1"
+    "sanitize-html": "~2.7.3"
   },
   "devDependencies": {
     "@types/node": "~14.18.33",
@@ -56,7 +57,7 @@
     "@types/sanitize-html": "~2.6.2",
     "typescript": "~4.8.4",
     "tslib": "~2.4.1",
-    "terser": "~5.15.1",
-    "jest": "~29.2.2"
+    "jest": "~29.2.2",
+    "esbuild": "~0.15.12"
   }
 }

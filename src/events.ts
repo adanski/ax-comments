@@ -1,4 +1,4 @@
-import {ElementEventsHandler} from './element-events-handler.js';
+import {ElementEventHandler} from './element-event-handler.js';
 
 export const EVENT_HANDLERS_MAP: Map<ElementEvent, ElementEventHandlerNames> = new Map([
     // Close dropdowns
@@ -82,6 +82,6 @@ interface ElementEvent {
     readonly selector?: string;
 }
 
-type ElementEventHandlerNames = FunctionProps<ElementEventsHandler>[];
+type ElementEventHandlerNames = FunctionProps<ElementEventHandler>[];
 
-type FunctionProps<T> = ({ [P in keyof T]: T[P] extends Function ? P : never })[keyof T];
+export type FunctionProps<T> = ({ [P in keyof T]: T[P] extends Function ? P : never })[keyof T];

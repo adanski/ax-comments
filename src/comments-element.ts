@@ -6,24 +6,22 @@ import {EVENT_HANDLERS_MAP} from './events.js';
 import {CommentsOptions} from './api.js';
 import {CommentsById} from './comments-by-id.js';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider.js';
-import {DefaultElementEventsHandler, ElementEventsHandler} from './element-events-handler.js';
+import {CommentsElementEventHandler, ElementEventHandler} from './element-event-handler.js';
 import {CommentSorter, SortKey} from './comment-sorter.js';
 import {NavigationFactory} from './subcomponent/navigation-factory.js';
 import {SpinnerFactory} from './subcomponent/spinner-factory.js';
 import {CommentUtil} from './comment-util.js';
 import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util.js';
-import {STYLE_SHEET} from '../css/jquery-comments.js';
+import {STYLE_SHEET} from './css/ax-comments.js';
 import {RegisterCustomElement} from './register-custom-element.js';
 import {createCssDeclarations} from './dynamic-css-factory.js';
 import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
-import {CommentingFieldComponent} from './subcomponent/commenting-field-component.js';
-import {CommentComponent} from './subcomponent/comment-component.js';
+import {CommentingFieldElement} from './subcomponent/commenting-field-element.js';
+import {CommentElement} from './subcomponent/comment-element.js';
 import EventEmitter from 'EventEmitter3';
 
-import './subcomponent/comment-component.js';
-
 @RegisterCustomElement('ax-comments')
-export class CommentsComponent extends HTMLElement implements WebComponent {
+export class CommentsElement extends HTMLElement implements WebComponent {
     readonly shadowRoot!: ShadowRoot;
     private container!: HTMLDivElement;
 
@@ -31,7 +29,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     readonly #commentsById: CommentsById = {};
 
     readonly #elementEventHandlerEmitter: EventEmitter<'navigationElementClicked' | 'postComment'>;
-    readonly #elementEventHandler: ElementEventsHandler;
+    readonly #elementEventHandler: ElementEventHandler;
 
     private readonly commentTransformer: CommentTransformer;
     private readonly commentSorter: CommentSorter;
@@ -46,7 +44,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         this.initShadowDom();
         CommentsProvider.set(this.container, this.#commentsById);
         this.#elementEventHandlerEmitter = new EventEmitter();
-        this.#elementEventHandler = new DefaultElementEventsHandler(this.container, this.#elementEventHandlerEmitter);
+        this.#elementEventHandler = new CommentsElementEventHandler(this.container, this.#elementEventHandlerEmitter);
         this.commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
         this.commentSorter = ServiceProvider.get(this.container, CommentSorter);
         this.commentUtil = ServiceProvider.get(this.container, CommentUtil);
@@ -315,12 +313,11 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private addComment(commentModel: Record<string, any>, commentList: HTMLElement = this.container.querySelector('#comment-list')!, prependComment: boolean = false): void {
-        const commentEl: CommentComponent = document.createElement('ax-comment') as CommentComponent;
-        commentEl.commentModel = commentModel;
+        const commentEl: CommentElement = CommentElement.create({commentModel: commentModel});
 
         if (commentModel.parent) { // Case: reply
             const directParentEl: HTMLElement = commentList.querySelector(`.comment[data-id="${commentModel.parent}"]`)!;
-            const directParentComment: CommentComponent = findParentsBySelector<CommentComponent>(directParentEl, 'ax-comment').first()!;
+            const directParentComment: CommentElement = findParentsBySelector<CommentElement>(directParentEl, 'ax-comment').first()!;
 
             // Re-render action bar of direct parent element
             directParentComment.reRenderCommentActionBar();
@@ -352,8 +349,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
     }
 
     private addAttachment(commentModel: Record<string, any>, commentList: HTMLElement = this.container.querySelector('#attachment-list')!): void {
-        const commentEl: CommentComponent = document.createElement('ax-comment') as CommentComponent;
-        commentEl.commentModel = commentModel;
+        const commentEl: CommentElement = CommentElement.create({commentModel: commentModel});
         commentList.prepend(commentEl);
     }
 
@@ -397,7 +393,7 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
 
     private createHTML(): void {
         // Commenting field
-        const mainCommentingField: CommentingFieldComponent = this.createMainCommentingFieldElement();
+        const mainCommentingField: CommentingFieldElement = this.createMainCommentingFieldElement();
         this.container.append(mainCommentingField);
 
         // Hide control row and close button
@@ -485,10 +481,8 @@ export class CommentsComponent extends HTMLElement implements WebComponent {
         }
     }
 
-    private createMainCommentingFieldElement(): CommentingFieldComponent {
-        const commentingField: CommentingFieldComponent = document.createElement('ax-commenting-field') as CommentingFieldComponent;
-        commentingField.isMain = true;
-        return commentingField;
+    private createMainCommentingFieldElement(): CommentingFieldElement {
+        return CommentingFieldElement.create({isMain: true});
     }
 
 }

@@ -1,6 +1,5 @@
 import {ProfilePictureFactory} from './profile-picture-factory.js';
 import {CommentContentFormatter} from './comment-content-formatter.js';
-import * as sanitize from 'sanitize-html';
 import {TagFactory} from './tag-factory.js';
 import {CommentsOptions} from '../api.js';
 import {CommentsById} from '../comments-by-id.js';
@@ -8,9 +7,10 @@ import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider.js
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {findParentsBySelector} from '../html-util.js';
+import sanitize from 'sanitize-html';
 
 @RegisterCustomElement('ax-comment-container')
-export class CommentContainerComponent extends HTMLElement implements WebComponent {
+export class CommentContainerElement extends HTMLElement implements WebComponent {
 
     commentModel!: Record<string, any>;
 
@@ -20,6 +20,12 @@ export class CommentContainerComponent extends HTMLElement implements WebCompone
     private profilePictureFactory!: ProfilePictureFactory;
     private tagFactory!: TagFactory;
     private commentContentFormatter!: CommentContentFormatter;
+
+    static create(options: Pick<CommentContainerElement, 'commentModel'>): CommentContainerElement {
+        const commentContainerEl: CommentContainerElement = document.createElement('ax-comment-container') as CommentContainerElement;
+        Object.assign(commentContainerEl, options);
+        return commentContainerEl;
+    }
 
     connectedCallback(): void {
         this.#initServices();

@@ -6,7 +6,7 @@ import {WebComponent} from '../web-component.js';
 import {findParentsBySelector} from '../html-util.js';
 
 @RegisterCustomElement('ax-button')
-export class ButtonComponent extends HTMLSpanElement implements WebComponent {
+export class ButtonElement extends HTMLSpanElement implements WebComponent {
 
     originalContent: string | HTMLElement | HTMLCollection = '';
     #spinnerFactory!: SpinnerFactory;
@@ -23,8 +23,8 @@ export class ButtonComponent extends HTMLSpanElement implements WebComponent {
         this.#spinnerFactory = ServiceProvider.get(container, SpinnerFactory);
     }
 
-    static createCloseButton(options: CommentsOptions, className?: string): ButtonComponent {
-        const closeButton: ButtonComponent = document.createElement('ax-button') as ButtonComponent;
+    static createCloseButton(options: CommentsOptions, className?: string): ButtonElement {
+        const closeButton: ButtonElement = document.createElement('ax-button') as ButtonElement;
         closeButton.classList.add(className || 'close');
 
         const icon: HTMLElement = document.createElement('i');
@@ -40,10 +40,10 @@ export class ButtonComponent extends HTMLSpanElement implements WebComponent {
         return closeButton;
     }
 
-    static createSaveButton(options: CommentsOptions, existingCommentId: string | null): ButtonComponent {
+    static createSaveButton(options: CommentsOptions, existingCommentId: string | null): ButtonElement {
         const saveButtonClass: string = existingCommentId ? 'update' : 'send';
         const saveButtonText: string = existingCommentId ? options.textFormatter(options.saveText) : options.textFormatter(options.sendText);
-        const saveButton: ButtonComponent = document.createElement('ax-button') as ButtonComponent;
+        const saveButton: ButtonElement = document.createElement('ax-button') as ButtonElement;
         saveButton.classList.add(saveButtonClass, 'save', 'highlight-background');
         saveButton.textContent = saveButtonText;
         saveButton.originalContent = saveButtonText;
@@ -51,9 +51,9 @@ export class ButtonComponent extends HTMLSpanElement implements WebComponent {
         return saveButton;
     }
 
-    static createDeleteButton(options: CommentsOptions): ButtonComponent {
+    static createDeleteButton(options: CommentsOptions): ButtonElement {
         const deleteButtonText: string = options.textFormatter(options.deleteText);
-        const deleteButton: ButtonComponent = document.createElement('ax-button') as ButtonComponent;
+        const deleteButton: ButtonElement = document.createElement('ax-button') as ButtonElement;
         deleteButton.classList.add('delete', 'enabled');
         deleteButton.textContent = deleteButtonText;
         deleteButton.style.backgroundColor = options.deleteButtonColor;
@@ -62,8 +62,8 @@ export class ButtonComponent extends HTMLSpanElement implements WebComponent {
         return deleteButton;
     }
 
-    static createUploadButton(options: CommentsOptions): ButtonComponent {
-        const uploadButton: ButtonComponent = document.createElement('ax-button') as ButtonComponent;
+    static createUploadButton(options: CommentsOptions): ButtonElement {
+        const uploadButton: ButtonElement = document.createElement('ax-button') as ButtonElement;
         uploadButton.classList.add('upload', 'enabled');
         const uploadIcon: HTMLElement = document.createElement('i');
         uploadIcon.classList.add('fa', 'fa-paperclip');

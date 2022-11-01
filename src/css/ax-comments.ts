@@ -1,9 +1,3 @@
-/*jquery-comments.js 1.5.0
-
-(c) 2017 Joona Tykkyläinen, Viima Solutions Oy
-jquery-comments may be freely distributed under the MIT license.
-For all details and documentation:
-http://viima.github.io/jquery-comments/*/
 const mainStyle: string = `
 .jquery-comments * {
 	box-sizing: border-box;

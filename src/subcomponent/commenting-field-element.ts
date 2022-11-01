@@ -1,5 +1,5 @@
 import {ProfilePictureFactory} from './profile-picture-factory.js';
-import {ButtonComponent} from './button-component.js';
+import {ButtonElement} from './button-element.js';
 import {ContenteditableEditor} from '@textcomplete/contenteditable';
 import {StrategyProps, Textcomplete} from '@textcomplete/core';
 import {TextcompleteOption} from '@textcomplete/core/src/Textcomplete';
@@ -15,7 +15,7 @@ import {RegisterCustomElement} from '../register-custom-element.js';
 import {findParentsBySelector, findSiblingsBySelector} from '../html-util.js';
 
 @RegisterCustomElement('ax-commenting-field')
-export class CommentingFieldComponent extends HTMLElement implements WebComponent {
+export class CommentingFieldElement extends HTMLElement implements WebComponent {
     private textcomplete: Textcomplete | undefined;
 
     parentId: string | null = null;
@@ -29,6 +29,12 @@ export class CommentingFieldComponent extends HTMLElement implements WebComponen
     private tagFactory!: TagFactory;
     private textareaService!: TextareaService;
     private commentUtil!: CommentUtil;
+
+    static create(options: Partial<Pick<CommentingFieldElement, 'parentId' | 'existingCommentId' | 'isMain'>>): CommentingFieldElement {
+        const commentingFieldEl: CommentingFieldElement = document.createElement('ax-commenting-field') as CommentingFieldElement;
+        Object.assign(commentingFieldEl, options);
+        return commentingFieldEl;
+    }
 
     connectedCallback(): void {
         this.initServices();
@@ -92,17 +98,17 @@ export class CommentingFieldComponent extends HTMLElement implements WebComponen
         const textarea: HTMLDivElement = this.textareaService.createTextarea();
 
         // Close button
-        const closeButton: ButtonComponent = ButtonComponent.createCloseButton(this.options);
+        const closeButton: ButtonElement = ButtonElement.createCloseButton(this.options);
         closeButton.classList.add('inline-button');
 
         // Save button
-        const saveButton: ButtonComponent = ButtonComponent.createSaveButton(this.options, this.existingCommentId);
+        const saveButton: ButtonElement = ButtonElement.createSaveButton(this.options, this.existingCommentId);
         controlRow.append(saveButton);
 
         // Delete button
         if (this.existingCommentId && this.isAllowedToDelete(this.existingCommentId)) {
             // Delete button
-            const deleteButton: HTMLSpanElement = ButtonComponent.createDeleteButton(this.options);
+            const deleteButton: HTMLSpanElement = ButtonElement.createDeleteButton(this.options);
             controlRow.append(deleteButton);
         }
 
@@ -111,16 +117,16 @@ export class CommentingFieldComponent extends HTMLElement implements WebComponen
             // Upload buttons
             // ==============
 
-            const uploadButton: ButtonComponent = ButtonComponent.createUploadButton(this.options);
+            const uploadButton: ButtonElement = ButtonElement.createUploadButton(this.options);
 
             // Main upload button
-            const mainUploadButton: ButtonComponent = uploadButton.cloneNode(true) as ButtonComponent;
+            const mainUploadButton: ButtonElement = uploadButton.cloneNode(true) as ButtonElement;
             mainUploadButton.originalContent = mainUploadButton.children;
             controlRow.append(mainUploadButton);
 
             // Inline upload button for main commenting field
             if (this.isMain) {
-                const inlineUploadButton: ButtonComponent = uploadButton.cloneNode(true) as ButtonComponent;
+                const inlineUploadButton: ButtonElement = uploadButton.cloneNode(true) as ButtonElement;
                 inlineUploadButton.classList.add('inline-button');
                 textareaWrapper.append(inlineUploadButton);
             }
@@ -277,7 +283,7 @@ export class CommentingFieldComponent extends HTMLElement implements WebComponen
 
     toggleSaveButton(): void {
         const textarea: HTMLElement = this.querySelector('.textarea')!;
-        const saveButton: ButtonComponent = findSiblingsBySelector<ButtonComponent>(textarea, '.control-row')
+        const saveButton: ButtonElement = findSiblingsBySelector<ButtonElement>(textarea, '.control-row')
             .querySelector('.save')!;
 
         const content = this.textareaService.getTextareaContent(textarea, true);
