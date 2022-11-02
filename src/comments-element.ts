@@ -22,34 +22,25 @@ import EventEmitter from 'EventEmitter3';
 
 @RegisterCustomElement('ax-comments')
 export class CommentsElement extends HTMLElement implements WebComponent {
-    readonly shadowRoot!: ShadowRoot;
     private container!: HTMLDivElement;
 
     readonly #options: CommentsOptions = {} as CommentsOptions;
     readonly #commentsById: CommentsById = {};
 
-    readonly #elementEventHandlerEmitter: EventEmitter<'navigationElementClicked' | 'postComment'>;
-    readonly #elementEventHandler: ElementEventHandler;
+    #elementEventHandlerEmitter!: EventEmitter<'navigationElementClicked' | 'postComment'>;
+    #elementEventHandler!: ElementEventHandler;
 
-    private readonly commentTransformer: CommentTransformer;
-    private readonly commentSorter: CommentSorter;
-    private readonly commentUtil: CommentUtil;
-    private readonly navigationFactory: NavigationFactory;
-    private readonly spinnerFactory: SpinnerFactory;
+    private commentTransformer!: CommentTransformer;
+    private commentSorter!: CommentSorter;
+    private commentUtil!: CommentUtil;
+    private navigationFactory!: NavigationFactory;
+    private spinnerFactory!: SpinnerFactory;
 
     private dataFetched: boolean = false;
 
     constructor() {
         super();
-        this.initShadowDom();
-        CommentsProvider.set(this.container, this.#commentsById);
-        this.#elementEventHandlerEmitter = new EventEmitter();
-        this.#elementEventHandler = new CommentsElementEventHandler(this.container, this.#elementEventHandlerEmitter);
-        this.commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
-        this.commentSorter = ServiceProvider.get(this.container, CommentSorter);
-        this.commentUtil = ServiceProvider.get(this.container, CommentUtil);
-        this.navigationFactory = ServiceProvider.get(this.container, NavigationFactory);
-        this.spinnerFactory = ServiceProvider.get(this.container, SpinnerFactory);
+        this.initShadowDom(this.attachShadow({mode: 'open'}));
     }
 
     connectedCallback(): void {
@@ -57,6 +48,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             console.warn('[ax-comments] Options not set, component could not be initialized.');
             return;
         }
+        this.initServices();
         this.initElement();
         this.initEmitterListeners();
     }
@@ -76,7 +68,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         }
         Object.assign(this.#options, getDefaultOptions(this.container), options);
         Object.freeze(this.#options);
-        OptionsProvider.set(this.container, this.#options);
     }
 
     private get commentsById(): CommentsById {
@@ -93,14 +84,25 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     /**
      * Define our shadowDOM for the component
      */
-    private initShadowDom(): void {
-        this.attachShadow({mode: 'open'});
-        this.shadowRoot.innerHTML = `
+    private initShadowDom(shadowRoot: ShadowRoot): void {
+        shadowRoot.innerHTML = `
             <div id="comments-container" class="jquery-comments">
             </div>
         `;
-        (this as any).adoptedStyleSheets = [STYLE_SHEET];
-        this.container = this.shadowRoot.querySelector<HTMLDivElement>('#comments-container')!;
+        shadowRoot.adoptedStyleSheets = [STYLE_SHEET];
+        this.container = shadowRoot.querySelector<HTMLDivElement>('#comments-container')!;
+    }
+
+    private initServices(): void {
+        OptionsProvider.set(this.container, this.#options);
+        CommentsProvider.set(this.container, this.#commentsById);
+        this.#elementEventHandlerEmitter = new EventEmitter();
+        this.#elementEventHandler = new CommentsElementEventHandler(this.container, this.#elementEventHandlerEmitter);
+        this.commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
+        this.commentSorter = ServiceProvider.get(this.container, CommentSorter);
+        this.commentUtil = ServiceProvider.get(this.container, CommentUtil);
+        this.navigationFactory = ServiceProvider.get(this.container, NavigationFactory);
+        this.spinnerFactory = ServiceProvider.get(this.container, SpinnerFactory);
     }
 
     private initElement(): void {
@@ -125,7 +127,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         if (userStyle) {
             allStyles.push(userStyle);
         }
-        (this as any).adoptedStyleSheets = (this as any).adoptedStyleSheets.concat(allStyles);
+        this.shadowRoot!.adoptedStyleSheets = this.shadowRoot!.adoptedStyleSheets.concat(allStyles);
 
         // Fetching data and rendering
         this.fetchDataAndRender();
@@ -243,7 +245,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
         // Create comments and attachments
         this.createComments();
-        if (this.options.enableAttachments && this.options.enableNavigation) this.createAttachments();
+        if (this.options.enableAttachments) this.createAttachments();
 
         // Remove spinner
         this.container.querySelectorAll('> .spinner')
@@ -263,7 +265,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
     private createComments() {
         // Create the list element before appending to DOM in order to reach better performance
-        this.container.querySelector('#comment-list')!.remove();
+        this.container.querySelector('#comment-list')?.remove();
         const commentList: HTMLUListElement = document.createElement('ul');
         commentList.id = 'comment-list';
         commentList.classList.add('main');
@@ -279,25 +281,27 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             }
         });
 
-        // Append main level comments
+
         this.commentSorter.sortComments(mainLevelComments, this.#elementEventHandler.currentSortKey);
+        this.commentSorter.sortComments(replies, SortKey.OLDEST);
+
+        // Append list to DOM
+        this.container.querySelector('[data-container="comments"]')!.prepend(commentList);
+
+        // Append sorted main level comments
         mainLevelComments.forEach(commentModel => {
             this.addComment(commentModel, commentList);
         });
 
         // Append replies in chronological order
-        this.commentSorter.sortComments(replies, SortKey.OLDEST);
         replies.forEach(commentModel => {
             this.addComment(commentModel, commentList);
         });
-
-        // Append list to DOM
-        this.container.querySelector('[data-container="comments"]')!.prepend(commentList);
     }
 
     private createAttachments(): void {
         // Create the list element before appending to DOM in order to reach better performance
-        this.container.querySelector('#attachment-list')!.remove();
+        this.container.querySelector('#attachment-list')?.remove();
         const attachmentList: HTMLUListElement = document.createElement('ul');
         attachmentList.id = 'attachment-list';
         attachmentList.classList.add('main');
@@ -316,11 +320,10 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         const commentEl: CommentElement = CommentElement.create({commentModel: commentModel});
 
         if (commentModel.parent) { // Case: reply
-            const directParentEl: HTMLElement = commentList.querySelector(`.comment[data-id="${commentModel.parent}"]`)!;
-            const directParentComment: CommentElement = findParentsBySelector<CommentElement>(directParentEl, 'ax-comment').first()!;
+            const directParentEl: CommentElement = commentList.querySelector(`.li.comment[data-id="${commentModel.parent}"]`)!;
 
             // Re-render action bar of direct parent element
-            directParentComment.reRenderCommentActionBar();
+            directParentEl.reRenderCommentActionBar();
 
             // Force replies into one level only
             let outerMostParent: HTMLElement | null = findParentsBySelector(directParentEl, '.comment').last();
@@ -402,10 +405,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         hideElement(mainCommentingField.querySelector<HTMLElement>('.close')!);
 
         // Navigation bar
-        if (this.options.enableNavigation) {
-            this.container.append(this.navigationFactory.createNavigationElement());
-            this.showActiveSort();
-        }
+        this.container.append(this.navigationFactory.createNavigationElement());
 
         // Loading spinner
         const spinner: HTMLElement = this.spinnerFactory.createSpinner();
@@ -479,6 +479,8 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             hideElement(droppableOverlay);
             this.container.append(droppableOverlay);
         }
+
+        this.showActiveSort();
     }
 
     private createMainCommentingFieldElement(): CommentingFieldElement {

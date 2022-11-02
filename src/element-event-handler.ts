@@ -215,7 +215,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
         // Rearrange the main level comments
         mainLevelComments.forEach(commentModel => {
-            const commentEl: HTMLElement = commentList.querySelector(`> ax-comment[data-id=${commentModel.id}]`)!;
+            const commentEl: HTMLElement = commentList.querySelector(`> li.comment[data-id=${commentModel.id}]`)!;
             commentList.append(commentEl);
         });
     }
@@ -275,7 +275,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
             // Case: editing comment
             if (commentId) {
-                const parentComments: HTMLElement[] = findParentsBySelector(textarea, 'ax-comment');
+                const parentComments: HTMLElement[] = findParentsBySelector(textarea, 'li.comment');
                 if (parentComments.length > 1) {
                     const parentId: string = parentComments[parentComments.length - 1].getAttribute('data-id')!;
                     textarea.setAttribute('data-parent', parentId);
@@ -283,7 +283,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
                 // Case: new comment
             } else {
-                const parentId: string = findParentsBySelector(textarea, 'ax-comment').last()!.getAttribute('data-id')!;
+                const parentId: string = findParentsBySelector(textarea, 'li.comment').last()!.getAttribute('data-id')!;
                 textarea.setAttribute('data-parent', parentId);
             }
         }
@@ -399,7 +399,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     private reRenderComment(id: string): void {
         const commentModel: Record<string, any> = this.#commentsById[id];
-        const commentElement: CommentElement = this.container.querySelector(`ax-comment[data-id="${commentModel.id}"]`)!;
+        const commentElement: CommentElement = this.container.querySelector(`li.comment[data-id="${commentModel.id}"]`)!;
 
         commentElement.reRenderCommentContainer();
     }
@@ -420,7 +420,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         const success: () => void = () => {
             this.removeComment(commentId);
             if (parentId) {
-                findParentsBySelector<CommentElement>(commentEl, `ax-comment[data-id="${parentId}"]`)
+                findParentsBySelector<CommentElement>(commentEl, `li.comment[data-id="${parentId}"]`)
                     .first()!
                     .reRenderCommentActionBar();
             }
@@ -462,7 +462,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     }
 
     upvoteComment(e: UIEvent): void {
-        const commentEl: CommentElement = findParentsBySelector<CommentElement>(e.currentTarget as HTMLElement, 'ax-comment').first()!;
+        const commentEl: CommentElement = findParentsBySelector<CommentElement>(e.currentTarget as HTMLElement, 'li.comment').first()!;
         const commentModel = commentEl.commentModel;
 
         // Check whether user upvoted the comment or revoked the upvote
@@ -501,7 +501,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     private reRenderUpvotes(id: string): void {
         const commentModel: Record<string, any> = this.#commentsById[id];
-        const commentElement: CommentElement = this.container.querySelector(`ax-comment[data-id="${commentModel.id}"]`)!;
+        const commentElement: CommentElement = this.container.querySelector(`li.comment[data-id="${commentModel.id}"]`)!;
 
         commentElement.reRenderUpvotes();
     }
@@ -527,7 +527,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     replyButtonClicked(e: MouseEvent): void {
         const replyButton: HTMLElement = e.currentTarget as HTMLElement;
-        const outermostParent: HTMLElement = findParentsBySelector(replyButton, 'ax-comment').last()!;
+        const outermostParent: HTMLElement = findParentsBySelector(replyButton, 'li.comment').last()!;
         const parentId: string | null = findParentsBySelector(replyButton, '.comment').first()!.getAttribute('data-id');
 
         // Remove existing field
@@ -586,7 +586,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     editButtonClicked(e: MouseEvent): void {
         const editButton: HTMLElement = e.currentTarget as HTMLElement;
-        const commentEl: CommentElement = findParentsBySelector<CommentElement>(editButton, 'ax-comment').first()!;
+        const commentEl: CommentElement = findParentsBySelector<CommentElement>(editButton, 'li.comment').first()!;
         const commentModel: Record<string, any> = commentEl.commentModel;
         commentEl.classList.add('edit');
 

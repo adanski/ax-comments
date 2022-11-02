@@ -5,7 +5,7 @@ import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {findParentsBySelector} from '../html-util.js';
 
-@RegisterCustomElement('ax-toggle-all-button')
+@RegisterCustomElement('ax-toggle-all-button', {extends: 'li'})
 export class ToggleAllButtonElement extends HTMLLIElement implements WebComponent {
 
     #options!: CommentsOptions;
@@ -24,14 +24,16 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
     }
 
     #initElement(): void {
-        this.classList.add('toggle-all', 'highlight-font-bold');
+        const button: HTMLButtonElement = document.createElement('button');
+        button.classList.add('toggle-all', 'highlight-font-bold');
         const toggleAllButtonText: HTMLSpanElement = document.createElement('span');
         toggleAllButtonText.classList.add('text');
         const caret: HTMLSpanElement = document.createElement('span');
         caret.classList.add('caret');
 
         // Append toggle button to DOM
-        this.append(toggleAllButtonText, caret);
+        button.append(toggleAllButtonText, caret);
+        this.append(button);
     }
 
     static updateToggleAllButton(parentEl: HTMLElement, options: CommentsOptions): void {
@@ -70,7 +72,7 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
         if (childComments.length > options.maxRepliesVisible) { // Make sure that toggle all button is present
             // Append button to toggle all replies if necessary
             if (isNil(toggleAllButton)) {
-                toggleAllButton = document.createElement('ax-toggle-all-button') as ToggleAllButtonElement;
+                toggleAllButton = document.createElement('li', {is: 'ax-toggle-all-button'}) as ToggleAllButtonElement;
                 childCommentsEl.prepend(toggleAllButton);
             }
 

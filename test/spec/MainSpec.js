@@ -141,7 +141,7 @@ describe('Basic features', function() {
 
 
     it('Should be able to toggle all replies', function() {
-        var toggleAll = $('#comment-list li.comment[data-id=1]').find('.child-comments ax-toggle-all-button.toggle-all');
+        var toggleAll = $('#comment-list li.comment[data-id=1]').find('.child-comments button.toggle-all');
         expect(toggleAll.length).toBe(1);
         expect(toggleAll.text()).toBe('View all 5 replies');
         expect($('#comment-list li.comment[data-id=1] li.comment:visible').length).toBe(2);
@@ -361,7 +361,7 @@ describe('Basic features', function() {
                 // Check position
                 checkOrder(mostPopularComment.find('li.comment'), [6,7,8,9,10,idOfNewComment]);
 
-                var toggleAllText = mostPopularComment.find('ax-toggle-all-button.toggle-all').text();
+                var toggleAllText = mostPopularComment.find('button.toggle-all').text();
                 expect(toggleAllText).toBe('View all 6 replies');
                 expect(mostPopularComment.find('li.comment:visible').length).toBe(2);
             });
@@ -437,7 +437,7 @@ describe('Basic features', function() {
                 expect(commentEl.hasClass('by-current-user')).toBe(true);
                 checkCommentElementData(commentEl);
 
-                var toggleAllText = mostPopularComment.find('ax-toggle-all-button.toggle-all').text();
+                var toggleAllText = mostPopularComment.find('button.toggle-all').text();
                 expect(toggleAllText).toBe('View all 6 replies');
                 expect(mostPopularComment.find('li.comment:visible').length).toBe(2);
             });
@@ -471,7 +471,7 @@ describe('Basic features', function() {
                 expect(commentEl.hasClass('by-current-user')).toBe(true);
                 checkCommentElementData(commentEl);
 
-                var toggleAllText = mostPopularComment.find('ax-toggle-all-button.toggle-all').text();
+                var toggleAllText = mostPopularComment.find('button.toggle-all').text();
                 expect(toggleAllText).toBe('Hide replies');
                 expect(mostPopularComment.find('li.comment:visible').length).toBe(6);
             });

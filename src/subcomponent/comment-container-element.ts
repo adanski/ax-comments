@@ -225,8 +225,9 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         }
 
         // Append separators between the actions
-        for (let i: number = 0; i < actions.children.length; i++) {
-            const action: Element = actions.children[i];
+        const actionsChildren: HTMLElement[] = [...actions.children] as HTMLElement[];
+        for (let i: number = 0; i < actionsChildren.length; i++) {
+            const action: HTMLElement = actionsChildren[i];
             if (action.nextSibling) {
                 action.after(separator.cloneNode(true))
             }
@@ -246,7 +247,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         // Upvotes
         const upvoteEl: HTMLButtonElement = document.createElement('button');
-        upvoteEl.classList.add('action', 'upvote', commentModel.userHasUpvoted ? 'highlight-font' : '');
+        upvoteEl.classList.add('action', 'upvote', commentModel.userHasUpvoted ? 'highlight-font' : 'not-upvoted');
         const upvoteCount: HTMLSpanElement = document.createElement('span');
         upvoteCount.classList.add('upvote-count')
         upvoteCount.textContent = commentModel.upvoteCount;

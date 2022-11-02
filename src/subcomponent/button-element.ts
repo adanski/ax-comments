@@ -5,17 +5,23 @@ import {RegisterCustomElement} from '../register-custom-element.js';
 import {WebComponent} from '../web-component.js';
 import {findParentsBySelector} from '../html-util.js';
 
-@RegisterCustomElement('ax-button')
-export class ButtonElement extends HTMLSpanElement implements WebComponent {
+@RegisterCustomElement('ax-button', {extends: 'button'})
+export class ButtonElement extends HTMLButtonElement implements WebComponent {
 
     originalContent: string | HTMLElement | HTMLCollection = '';
+    span!: HTMLSpanElement;
     #spinnerFactory!: SpinnerFactory;
 
-    connectedCallback(): void {
-        this.initServices();
+    constructor() {
+        super();
+        this.append(this.span = document.createElement('span'))
     }
 
-    private initServices(): void {
+    connectedCallback(): void {
+        this.#initServices();
+    }
+
+    #initServices(): void {
         const container: HTMLDivElement | null = findParentsBySelector<HTMLDivElement>(this, '#comments-container').first();
         if (!container) {
             throw new Error(`[ax-button] Button will not work outside ax-comments.`);
@@ -24,7 +30,7 @@ export class ButtonElement extends HTMLSpanElement implements WebComponent {
     }
 
     static createCloseButton(options: CommentsOptions, className?: string): ButtonElement {
-        const closeButton: ButtonElement = document.createElement('ax-button') as ButtonElement;
+        const closeButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         closeButton.classList.add(className || 'close');
 
         const icon: HTMLElement = document.createElement('i');
@@ -34,8 +40,7 @@ export class ButtonElement extends HTMLSpanElement implements WebComponent {
             icon.classList.add('image');
         }
 
-        closeButton.innerHTML = '';
-        closeButton.appendChild(icon);
+        closeButton.span.appendChild(icon);
 
         return closeButton;
     }
@@ -43,27 +48,27 @@ export class ButtonElement extends HTMLSpanElement implements WebComponent {
     static createSaveButton(options: CommentsOptions, existingCommentId: string | null): ButtonElement {
         const saveButtonClass: string = existingCommentId ? 'update' : 'send';
         const saveButtonText: string = existingCommentId ? options.textFormatter(options.saveText) : options.textFormatter(options.sendText);
-        const saveButton: ButtonElement = document.createElement('ax-button') as ButtonElement;
+        const saveButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         saveButton.classList.add(saveButtonClass, 'save', 'highlight-background');
-        saveButton.textContent = saveButtonText;
         saveButton.originalContent = saveButtonText;
+        saveButton.span.textContent = saveButtonText;
 
         return saveButton;
     }
 
     static createDeleteButton(options: CommentsOptions): ButtonElement {
         const deleteButtonText: string = options.textFormatter(options.deleteText);
-        const deleteButton: ButtonElement = document.createElement('ax-button') as ButtonElement;
+        const deleteButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         deleteButton.classList.add('delete', 'enabled');
-        deleteButton.textContent = deleteButtonText;
         deleteButton.style.backgroundColor = options.deleteButtonColor;
         deleteButton.originalContent = deleteButtonText;
+        deleteButton.span.textContent = deleteButtonText;
 
         return deleteButton;
     }
 
     static createUploadButton(options: CommentsOptions): ButtonElement {
-        const uploadButton: ButtonElement = document.createElement('ax-button') as ButtonElement;
+        const uploadButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         uploadButton.classList.add('upload', 'enabled');
         const uploadIcon: HTMLElement = document.createElement('i');
         uploadIcon.classList.add('fa', 'fa-paperclip');
@@ -76,7 +81,7 @@ export class ButtonElement extends HTMLSpanElement implements WebComponent {
             uploadIcon.style.backgroundImage = `url("${options.uploadIconURL}")`;
             uploadIcon.classList.add('image');
         }
-        uploadButton.append(uploadIcon, fileInput);
+        uploadButton.span.append(uploadIcon, fileInput);
 
         return uploadButton;
     }
@@ -89,15 +94,15 @@ export class ButtonElement extends HTMLSpanElement implements WebComponent {
         }
 
         if (loading) {
-            this.innerHTML = '';
-            this.append(this.#spinnerFactory.createSpinner(true));
+            this.span.innerHTML = '';
+            this.span.append(this.#spinnerFactory.createSpinner(true));
         } else if (typeof this.originalContent === 'string') {
-            this.innerHTML = this.originalContent;
+            this.span.innerHTML = this.originalContent;
         } else if ((this.originalContent as HTMLCollection).length) {
-            this.innerHTML = '';
-            this.append(...this.originalContent as HTMLCollection);
+            this.span.innerHTML = '';
+            this.span.append(...this.originalContent as HTMLCollection);
         } else {
-            this.append(this.originalContent as HTMLElement);
+            this.span.append(this.originalContent as HTMLElement);
         }
     }
 

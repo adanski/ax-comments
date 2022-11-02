@@ -46,7 +46,6 @@ export function getDefaultOptions(scrollContainer: HTMLElement): CommentsOptions
         enableHashtags: false,
         enablePinging: false,
         enableDeletingCommentWithReplies: false,
-        enableNavigation: true,
         postCommentOnEnter: false,
         forceResponsive: false,
         readOnly: false,

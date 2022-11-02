@@ -59,8 +59,8 @@ export class CommentUtil {
         // Remove the comment from data model
         delete this.commentsById[commentId];
 
-        const commentElement: CommentElement = this.container.querySelector(`ax-comment[data-id="${commentId}"]`)!;
-        const parentEl: HTMLElement = findParentsBySelector(commentElement, 'ax-comment').last()!;
+        const commentElement: CommentElement = this.container.querySelector(`li.comment[data-id="${commentId}"]`)!;
+        const parentEl: HTMLElement = findParentsBySelector(commentElement, 'li.comment').last()!;
 
         // Remove the element
         commentElement.remove();

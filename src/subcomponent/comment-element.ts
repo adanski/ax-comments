@@ -3,8 +3,8 @@ import {RegisterCustomElement} from '../register-custom-element.js';
 import {WebComponent} from '../web-component.js';
 import {CommentContainerElement} from './comment-container-element.js';
 
-@RegisterCustomElement('ax-comment')
-export class CommentElement extends HTMLElement implements WebComponent {
+@RegisterCustomElement('ax-comment', {extends: 'li'})
+export class CommentElement extends HTMLLIElement implements WebComponent {
 
     #commentModel!: Record<string, any>;
     #initialized: boolean = false;
@@ -18,7 +18,7 @@ export class CommentElement extends HTMLElement implements WebComponent {
     }
 
     static create(options: Pick<CommentElement, 'commentModel'>): CommentElement {
-        const commentEl: CommentElement = document.createElement('ax-comment') as CommentElement;
+        const commentEl: CommentElement = document.createElement('li', {is: 'ax-comment'}) as CommentElement;
         Object.assign(commentEl, options);
         return commentEl;
     }
@@ -29,17 +29,14 @@ export class CommentElement extends HTMLElement implements WebComponent {
     }
 
     #initElement(commentModel: Record<string, any> = this.#commentModel): void {
-        // Comment container element
-        const commentEl: HTMLLIElement = document.createElement('li');
-        commentEl.classList.add('comment');
-        commentEl.setAttribute('data-id', commentModel.id);
+        this.classList.add('comment');
         this.setAttribute('data-id', commentModel.id);
 
         if (commentModel.createdByCurrentUser) {
-            commentEl.classList.add('by-current-user');
+            this.classList.add('by-current-user');
         }
         if (commentModel.createdByAdmin) {
-            commentEl.classList.add('by-admin');
+            this.classList.add('by-admin');
         }
 
         // Child comments
@@ -49,11 +46,10 @@ export class CommentElement extends HTMLElement implements WebComponent {
         // Comment container
         const commentContainer: CommentContainerElement = CommentContainerElement.create({commentModel: commentModel});
 
-        commentEl.append(commentContainer);
+        this.append(commentContainer);
         if (isNil(commentModel.parent)) {
-            commentEl.append(childComments);
+            this.append(childComments);
         }
-        this.appendChild(commentEl);
     }
 
     reRenderUpvotes(): void {
