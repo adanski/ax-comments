@@ -68,6 +68,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         const commentingField: HTMLDivElement = document.createElement('div');
         commentingField.classList.add('commenting-field');
         if (this.isMain) {
+            this.classList.add('main');
             commentingField.classList.add('main');
         }
 

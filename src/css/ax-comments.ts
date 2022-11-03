@@ -483,7 +483,7 @@ const mainStyle: string = `
 }
 
 .jquery-comments ul.main li.comment .comment-wrapper,
-.jquery-comments ul.main ax-toggle-all-button.toggle-all,
+.jquery-comments ul.main button.toggle-all,
 .jquery-comments ul.main li.comment .commenting-field {
 	padding: .5em;
 }

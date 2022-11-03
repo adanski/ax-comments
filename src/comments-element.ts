@@ -55,6 +55,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
     disconnectedCallback(): void {
         this.#elementEventHandlerEmitter.removeAllListeners();
+        this.undelegateEvents();
     }
 
     get options(): CommentsOptions {
@@ -106,9 +107,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     }
 
     private initElement(): void {
-        this.undelegateEvents();
-        this.delegateEvents();
-
         if (isMobileBrowser()) {
             this.container.classList.add('mobile');
         }
@@ -247,8 +245,10 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.createComments();
         if (this.options.enableAttachments) this.createAttachments();
 
+        this.delegateEvents();
+
         // Remove spinner
-        this.container.querySelectorAll('> .spinner')
+        this.container.querySelectorAll(':scope > .spinner')
             .forEach(spinner => spinner.remove());
 
         this.options.refresh();
@@ -320,7 +320,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         const commentEl: CommentElement = CommentElement.create({commentModel: commentModel});
 
         if (commentModel.parent) { // Case: reply
-            const directParentEl: CommentElement = commentList.querySelector(`.li.comment[data-id="${commentModel.parent}"]`)!;
+            const directParentEl: CommentElement = commentList.querySelector(`li.comment[data-id="${commentModel.parent}"]`)!;
 
             // Re-render action bar of direct parent element
             directParentEl.reRenderCommentActionBar();

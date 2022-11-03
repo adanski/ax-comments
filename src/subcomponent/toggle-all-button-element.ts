@@ -44,7 +44,8 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
 
         const childCommentsEl: HTMLElement = parentEl.querySelector('.child-comments')!;
         const childComments: HTMLElement[] = [...childCommentsEl.querySelectorAll<HTMLElement>('.comment:not(.hidden)')];
-        let toggleAllButton: ToggleAllButtonElement | null = childCommentsEl.querySelector('ax-toggle-all-button.toggle-all');
+        let toggleAllButton: ToggleAllButtonElement | null = childCommentsEl.querySelector('button.toggle-all')
+            ?.parentElement as ToggleAllButtonElement;
         childComments.forEach(childComment => {
             childComment.classList.remove('togglable-reply');
         });
