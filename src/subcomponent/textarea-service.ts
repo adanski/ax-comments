@@ -6,7 +6,7 @@ export class TextareaService {
 
     private readonly options: CommentsOptions;
 
-    constructor(private readonly container: HTMLDivElement) {
+    constructor(private readonly container: HTMLElement) {
         this.options = OptionsProvider.get(container)!;
     }
 

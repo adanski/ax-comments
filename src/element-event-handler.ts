@@ -69,7 +69,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     readonly #commentContentFormatter: CommentContentFormatter;
     readonly #tagFactory: TagFactory;
 
-    constructor(private readonly container: HTMLDivElement,
+    constructor(private readonly container: HTMLElement,
                 private readonly emitter: EventEmitter<'navigationElementClicked' | 'postComment'>) {
         this.#options = OptionsProvider.get(container)!;
         this.#commentsById = CommentsProvider.get(container)!;
@@ -215,7 +215,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
         // Rearrange the main level comments
         mainLevelComments.forEach(commentModel => {
-            const commentEl: HTMLElement = commentList.querySelector(`> li.comment[data-id=${commentModel.id}]`)!;
+            const commentEl: HTMLElement = commentList.querySelector(`:scope > li.comment[data-id=${commentModel.id}]`)!;
             commentList.append(commentEl);
         });
     }
@@ -519,7 +519,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     }
 
     toggleReplies(e: UIEvent): void {
-        const toggleAllButton: ToggleAllButtonElement = e.currentTarget as ToggleAllButtonElement;
+        const toggleAllButton: ToggleAllButtonElement = (e.currentTarget as HTMLButtonElement).parentElement as ToggleAllButtonElement;
         findSiblingsBySelector(toggleAllButton, '.togglable-reply')
             .forEach((togglableReply: HTMLElement) => togglableReply.classList.toggle('visible'));
         toggleAllButton.setToggleAllButtonText(true);
@@ -572,13 +572,13 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     }
 
     private ensureElementStaysVisible(el: HTMLElement): void {
-        const scrollContainer: HTMLElement = this.#options.scrollContainer;
+        const scrollContainer: HTMLElement = this.container;
         const maxScrollTop: number = el.offsetTop;
         const minScrollTop: number = el.offsetTop + el.offsetHeight - scrollContainer.offsetHeight;
 
-        if (scrollContainer.scrollTop > maxScrollTop) { // Case: element hidden above scoll area
+        if (scrollContainer.scrollTop > maxScrollTop) { // Case: element hidden above scroll area
             scrollContainer.scrollTop = maxScrollTop;
-        } else if (scrollContainer.scrollTop < minScrollTop) { // Case: element hidden below scoll area
+        } else if (scrollContainer.scrollTop < minScrollTop) { // Case: element hidden below srcoll area
             scrollContainer.scrollTop = minScrollTop;
         }
 

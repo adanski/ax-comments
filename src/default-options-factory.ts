@@ -1,6 +1,6 @@
 import {CommentsOptions} from './api.js';
 
-export function getDefaultOptions(scrollContainer: HTMLElement): CommentsOptions {
+export function getDefaultOptions(): CommentsOptions {
     return {
 
         // User
@@ -55,7 +55,6 @@ export function getDefaultOptions(scrollContainer: HTMLElement): CommentsOptions
         highlightColor: '#2793e6',
         deleteButtonColor: '#C9302C',
 
-        scrollContainer: scrollContainer,
         roundProfilePictures: false,
         textareaRows: 2,
         textareaRowsOnFocus: 2,
@@ -81,6 +80,7 @@ export function getDefaultOptions(scrollContainer: HTMLElement): CommentsOptions
         },
 
         searchUsers: (term: string, success: Function, error: Function) => {success([])},
+        searchTags: (term: string, success: Function, error: Function) => {success([])},
         getComments: (success: Function, error: Function) => {success([])},
         postComment: (commentJSON: string, success: Function, error: Function) => {success(commentJSON)},
         putComment: (commentJSON: string, success: Function, error: Function) => {success(commentJSON)},

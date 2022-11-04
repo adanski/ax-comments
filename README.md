@@ -25,16 +25,12 @@ ax-comments is a standalone web component with minimal set of dependencies (no j
 http://adanski.github.io/ax-comments/demo/
 
 ## Quick start
-**1) Add the following to your HTML file**
-
-```html
-<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
-<script type="text/javascript" src="js/jquery-comments.js"></script>
+### Installation
+```console
+$ npm install --save ax-comments
 ```
 
-**2) Initialize the library**
+### Usage
 ```javascript
 import 'ax-comments/comments-element';
 
@@ -68,20 +64,20 @@ uploadIconURL: '',      // Only if attachments are enabled
 attachmentIconURL: '',  // Only if attachments are enabled
 ```
 
-## Dependencies
-- textcomplete
-- sanitize-html
-- Font Awesome (optional)
-
 ## Documentation
 http://adanski.github.io/ax-comments
 
 ## Maintainers
 - [adanski](https://github.com/adanski)
-- [Joona Tykkyläinen](https://www.linkedin.com/in/joonatykkylainen)
 
 ## Browser support
 Chrome, Firefox, Edge, Safari
+
+## Special thanks
+ax-comments probably wouldn't exist if it wasn't for the outstanding work of the authors of the following packages:
+- [jquery-comments](https://github.com/Viima/jquery-comments)
+- [textcomplete](https://github.com/yuku/textcomplete)
+- [markdown-toolbar-element](https://github.com/github/markdown-toolbar-element)
 
 ## Copyright and license
 Code and documentation copyright 2017-2021 [Viima Solutions Oy](https://www.viima.com/), 2022 [adanski](https://github.com/adanski).

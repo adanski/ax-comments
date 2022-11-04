@@ -87,7 +87,7 @@ const mainStyle: string = `
 	border-color: #2793e6;
 }
 
-.jquery-comments [contentEditable=true]:empty:not(:focus):before{
+.jquery-comments [contentEditable=true]:empty:not(:focus):before {
     content:attr(data-placeholder);
     color: #CCC;
     position: inherit;

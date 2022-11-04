@@ -3,7 +3,7 @@ import {ServiceProvider} from '../provider.js';
 import {SpinnerFactory} from './spinner-factory.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {WebComponent} from '../web-component.js';
-import {findParentsBySelector} from '../html-util.js';
+import {getHostContainer} from '../html-util.js';
 
 @RegisterCustomElement('ax-button', {extends: 'button'})
 export class ButtonElement extends HTMLButtonElement implements WebComponent {
@@ -14,18 +14,16 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
 
     constructor() {
         super();
-        this.append(this.span = document.createElement('span'))
+        this.span = document.createElement('span')
     }
 
     connectedCallback(): void {
+        this.append(this.span);
         this.#initServices();
     }
 
     #initServices(): void {
-        const container: HTMLDivElement | null = findParentsBySelector<HTMLDivElement>(this, '#comments-container').first();
-        if (!container) {
-            throw new Error(`[ax-button] Button will not work outside ax-comments.`);
-        }
+        const container: HTMLElement = getHostContainer(this);
         this.#spinnerFactory = ServiceProvider.get(container, SpinnerFactory);
     }
 

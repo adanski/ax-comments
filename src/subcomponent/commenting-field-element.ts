@@ -12,7 +12,7 @@ import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider.js
 import {CommentUtil} from '../comment-util.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
-import {findParentsBySelector, findSiblingsBySelector} from '../html-util.js';
+import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
 
 @RegisterCustomElement('ax-commenting-field')
 export class CommentingFieldElement extends HTMLElement implements WebComponent {
@@ -22,7 +22,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     existingCommentId: string | null = null;
     isMain: boolean = false;
 
-    private container!: HTMLDivElement;
+    private container!: HTMLElement;
     private options!: CommentsOptions;
     private commentsById!: CommentsById;
     private profilePictureFactory!: ProfilePictureFactory;
@@ -46,10 +46,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     }
 
     private initServices(): void {
-        const container: HTMLDivElement | null = findParentsBySelector<HTMLDivElement>(this, '#comments-container').first();
-        if (!container) {
-            throw new Error(`[ax-commenting-field] Commenting Field will not work outside ax-comments.`);
-        }
+        const container: HTMLElement = getHostContainer(this);
         this.container = container;
         this.options = OptionsProvider.get(container)!;
         this.commentsById = CommentsProvider.get(container)!;
@@ -193,7 +190,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             template: user => {
                 const wrapper: HTMLDivElement = document.createElement('div');
 
-                const profilePictureEl: HTMLElement = this.profilePictureFactory.createProfilePictureElement(user.profile_picture_url, user.id);
+                const profilePictureEl: HTMLElement = this.profilePictureFactory.createProfilePictureElement(user[this.options.fieldMappings.profilePictureURL as string], user.id);
 
                 const detailsEl: HTMLDivElement = document.createElement('div');
                 detailsEl.classList.add('details');
@@ -224,9 +221,9 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         };
         const textcompleteOptions: TextcompleteOption = {
             dropdown: {
-                parent: document.querySelector('.jquery-comments') as HTMLElement,
+                parent: this.container,
                 className: 'dropdown autocomplete',
-                maxCount: 5,
+                maxCount: 10,
                 rotate: true
             }
         };

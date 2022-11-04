@@ -22,7 +22,7 @@ import EventEmitter from 'EventEmitter3';
 
 @RegisterCustomElement('ax-comments')
 export class CommentsElement extends HTMLElement implements WebComponent {
-    private container!: HTMLDivElement;
+    private container!: HTMLElement;
 
     readonly #options: CommentsOptions = {} as CommentsOptions;
     readonly #commentsById: CommentsById = {};
@@ -67,7 +67,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             console.warn('[ax-comments] Options already set, component can not be reinitialized.');
             return;
         }
-        Object.assign(this.#options, getDefaultOptions(this.container), options);
+        Object.assign(this.#options, getDefaultOptions(), options);
         Object.freeze(this.#options);
     }
 
@@ -87,11 +87,11 @@ export class CommentsElement extends HTMLElement implements WebComponent {
      */
     private initShadowDom(shadowRoot: ShadowRoot): void {
         shadowRoot.innerHTML = `
-            <div id="comments-container" class="jquery-comments">
-            </div>
+            <section id="comments-container" class="jquery-comments">
+            </section>
         `;
         shadowRoot.adoptedStyleSheets = [STYLE_SHEET];
-        this.container = shadowRoot.querySelector<HTMLDivElement>('#comments-container')!;
+        this.container = shadowRoot.querySelector<HTMLElement>('#comments-container')!;
     }
 
     private initServices(): void {

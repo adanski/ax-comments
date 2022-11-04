@@ -6,7 +6,7 @@ export class NavigationFactory {
 
     private readonly options: CommentsOptions;
 
-    constructor(private readonly container: HTMLDivElement) {
+    constructor(private readonly container: HTMLElement) {
         this.options = OptionsProvider.get(container)!;
     }
 
@@ -86,6 +86,6 @@ export class NavigationFactory {
     }
 
     private forceResponsive(): void {
-        this.options.scrollContainer.classList.add('responsive');
+        this.container.classList.add('responsive');
     }
 }

@@ -6,7 +6,7 @@ import {CommentsById} from '../comments-by-id.js';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
-import {findParentsBySelector} from '../html-util.js';
+import {getHostContainer} from '../html-util.js';
 import sanitize from 'sanitize-html';
 
 @RegisterCustomElement('ax-comment-container')
@@ -14,7 +14,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
     commentModel!: Record<string, any>;
 
-    private container!: HTMLDivElement
+    private container!: HTMLElement
     private options!: CommentsOptions;
     private commentsById!: CommentsById;
     private profilePictureFactory!: ProfilePictureFactory;
@@ -33,10 +33,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
     }
 
     #initServices(): void {
-        const container: HTMLDivElement | null = findParentsBySelector<HTMLDivElement>(this, '#comments-container').first();
-        if (!container) {
-            throw new Error(`[ax-commenting-field] Commenting Field will not work outside ax-comments.`);
-        }
+        const container: HTMLElement | null = getHostContainer(this);
         this.container = container;
         this.options = OptionsProvider.get(container)!;
         this.commentsById = CommentsProvider.get(container)!;

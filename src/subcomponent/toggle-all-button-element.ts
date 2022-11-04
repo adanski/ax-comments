@@ -3,7 +3,7 @@ import {CommentsOptions} from '../api.js';
 import {OptionsProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
-import {findParentsBySelector} from '../html-util.js';
+import {getHostContainer} from '../html-util.js';
 
 @RegisterCustomElement('ax-toggle-all-button', {extends: 'li'})
 export class ToggleAllButtonElement extends HTMLLIElement implements WebComponent {
@@ -16,10 +16,7 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
     }
 
     #initServices(): void {
-        const container: HTMLDivElement | null = findParentsBySelector<HTMLDivElement>(this, '#comments-container').first();
-        if (!container) {
-            throw new Error(`[ax-toggle-all-button] Commenting Field will not work outside ax-comments.`);
-        }
+        const container: HTMLElement = getHostContainer(this);
         this.#options = OptionsProvider.get(container)!;
     }
 

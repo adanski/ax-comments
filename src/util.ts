@@ -8,9 +8,9 @@ export function isStringEmpty(value: string | undefined | null): boolean {
 
 // compares references only
 export function areArraysEqual(first: any[], second: any[]): boolean {
-    if (first.length !== second.length) { // Case: arrays are different sized
+    if (first.length !== second.length) { // Case: arrays have different size
         return false;
-    } else { // Case: arrays are equal sized
+    } else { // Case: arrays have equal size
         first.sort();
         second.sort();
 
@@ -31,6 +31,10 @@ export function isMobileBrowser(): boolean {
     return /Mobile/i.test(window.navigator.userAgent);
 }
 
+/**
+ * Converts non-standard spaces to regular spaces and trims any spaces at both ends
+ */
 export function normalizeSpaces(inputText: string): string {
-    return inputText.replace(new RegExp('\u00a0', 'g'), ' ');   // Convert non-breaking spaces to regular spaces
+    return inputText.replace(/\s+/g, ' ')
+        .trim();
 }

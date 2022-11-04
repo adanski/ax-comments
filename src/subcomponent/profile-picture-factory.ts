@@ -5,7 +5,7 @@ export class ProfilePictureFactory {
 
     private readonly options: CommentsOptions;
 
-    constructor(private readonly container: HTMLDivElement) {
+    constructor(private readonly container: HTMLElement) {
         this.options = OptionsProvider.get(container)!;
     }
 

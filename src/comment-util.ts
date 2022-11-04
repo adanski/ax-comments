@@ -12,7 +12,7 @@ export class CommentUtil {
     private readonly commentsById: CommentsById;
     private readonly spinnerFactory: SpinnerFactory;
 
-    constructor(private readonly container: HTMLDivElement) {
+    constructor(private readonly container: HTMLElement) {
         this.options = OptionsProvider.get(container)!;
         this.commentsById = CommentsProvider.get(container)!;
         this.spinnerFactory = ServiceProvider.get(container, SpinnerFactory);

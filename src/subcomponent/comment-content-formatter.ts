@@ -8,7 +8,7 @@ export class CommentContentFormatter {
     private readonly options: CommentsOptions;
     private readonly tagFactory: TagFactory;
 
-    constructor(private readonly container: HTMLDivElement) {
+    constructor(private readonly container: HTMLElement) {
         this.options = OptionsProvider.get(container)!;
         this.tagFactory = ServiceProvider.get(container, TagFactory);
     }

@@ -1,5 +1,13 @@
 const PREVIOUS_DISPLAY_VALUE: WeakMap<HTMLElement, string> = new WeakMap();
 
+export function getHostContainer(child: HTMLElement): HTMLElement {
+    const container: HTMLElement | null = findParentsBySelector<HTMLDivElement>(child, '#comments-container').first();
+    if (!container) {
+        throw new Error(`${child.constructor.name} will not work outside ax-comments.`);
+    }
+    return container;
+}
+
 export function showElement(element: HTMLElement): void {
     element.style.display = PREVIOUS_DISPLAY_VALUE.get(element) ?? 'block';
 }
