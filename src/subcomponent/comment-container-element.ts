@@ -33,13 +33,12 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
     }
 
     #initServices(): void {
-        const container: HTMLElement | null = getHostContainer(this);
-        this.container = container;
-        this.options = OptionsProvider.get(container)!;
-        this.commentsById = CommentsProvider.get(container)!;
-        this.profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
-        this.tagFactory = ServiceProvider.get(container, TagFactory);
-        this.commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
+        this.container = getHostContainer(this);
+        this.options = OptionsProvider.get(this.container)!;
+        this.commentsById = CommentsProvider.get(this.container)!;
+        this.profilePictureFactory = ServiceProvider.get(this.container, ProfilePictureFactory);
+        this.tagFactory = ServiceProvider.get(this.container, TagFactory);
+        this.commentContentFormatter = ServiceProvider.get(this.container, CommentContentFormatter);
     }
 
     #initElement(commentModel: Record<string, any> = this.commentModel): void {

@@ -5,6 +5,9 @@ import {OptionsProvider, ServiceProvider} from '../provider.js';
 
 export class CommentContentFormatter {
 
+    static readonly PING_REGEXP: RegExp = /(^|\s)@([a-z\u00C0-\u00FF\d-_]+)/gim;
+    static readonly HASHTAG_REGEXP: RegExp = /(^|\s)#([a-z\u00C0-\u00FF\d-_]+)/gim;
+
     private readonly options: CommentsOptions;
     private readonly tagFactory: TagFactory;
 
@@ -79,7 +82,7 @@ export class CommentContentFormatter {
 
     private highlightHashtags(commentModel: Record<string, any>, html: string): string {
         if (html.indexOf('#') !== -1) {
-            const regex: RegExp = /(^|\s)#([a-z\u00C0-\u00FF\d-_]+)/gim;
+            const regex: RegExp = CommentContentFormatter.HASHTAG_REGEXP;
             html = html.replace(regex, ($0, $1, $2) => $1 + this.createHashTag($2));
         }
         return html;

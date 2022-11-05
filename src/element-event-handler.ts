@@ -1,7 +1,7 @@
 import {CommentsById} from './comments-by-id.js';
 import {CommentsOptions} from './api.js';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider.js';
-import {TextareaService} from './subcomponent/textarea-service.js';
+import {TextareaElement} from './subcomponent/textarea-element.js';
 import {CommentUtil} from './comment-util.js';
 import {
     findParentsBySelector,
@@ -62,7 +62,6 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     readonly #options: CommentsOptions;
     readonly #commentsById: CommentsById;
-    readonly #textareaService: TextareaService;
     readonly #commentUtil: CommentUtil;
     readonly #commentTransformer: CommentTransformer;
     readonly #commentSorter: CommentSorter;
@@ -73,7 +72,6 @@ export class CommentsElementEventHandler implements ElementEventHandler {
                 private readonly emitter: EventEmitter<'navigationElementClicked' | 'postComment'>) {
         this.#options = OptionsProvider.get(container)!;
         this.#commentsById = CommentsProvider.get(container)!;
-        this.#textareaService = ServiceProvider.get(container, TextareaService);
         this.#commentUtil = ServiceProvider.get(container, CommentUtil);
         this.#commentTransformer = ServiceProvider.get(container, CommentTransformer);
         this.#commentSorter = ServiceProvider.get(container, CommentSorter);
@@ -240,11 +238,11 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     hideMainCommentingField(e: UIEvent): void {
         const closeButton: HTMLElement = e.currentTarget as HTMLElement;
         const commentingField: CommentingFieldElement = this.container.querySelector('ax-commenting-field.main')!
-        const mainTextarea: HTMLElement = commentingField.querySelector('.textarea')!;
+        const mainTextarea: TextareaElement = commentingField.querySelector<TextareaElement>('.textarea')!;
         const mainControlRow: HTMLElement = commentingField.querySelector('.control-row')!;
 
         // Clear text area
-        this.#textareaService.clearTextarea(mainTextarea);
+        mainTextarea.clearTextarea();
 
         // Clear attachments
         commentingField.querySelector('.attachments')!.innerHTML = '';
@@ -253,7 +251,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         commentingField.toggleSaveButton();
 
         // Adjust height
-        this.#textareaService.adjustTextareaHeight(mainTextarea, false);
+        mainTextarea.adjustTextareaHeight(false);
 
         hideElement(mainControlRow);
         hideElement(closeButton);
@@ -262,8 +260,8 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     }
 
     increaseTextareaHeight(e: Event): void {
-        const textarea: HTMLElement = e.currentTarget as HTMLElement;
-        this.#textareaService.adjustTextareaHeight(textarea, true);
+        const textarea: TextareaElement = e.currentTarget as TextareaElement;
+        textarea.adjustTextareaHeight(true);
     }
 
     textareaContentChanged(e: Event): void {
@@ -347,7 +345,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     putComment(e: UIEvent): void {
         const saveButton: ButtonElement = e.currentTarget as ButtonElement;
         const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(saveButton, 'ax-commenting-field').first()!;
-        const textarea: HTMLElement = commentingField.querySelector('.textarea')!;
+        const textarea: TextareaElement = commentingField.querySelector('.textarea')!;
 
         // Set button state to loading
         saveButton.setButtonState(false, true);
@@ -356,8 +354,8 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         let commentJSON = Object.assign({}, this.#commentsById[textarea.getAttribute('data-comment')!]);
         Object.assign(commentJSON, {
             parent: textarea.getAttribute('data-parent'),
-            content: this.#textareaService.getTextareaContent(textarea),
-            pings: this.#textareaService.getPings(textarea),
+            content: textarea.getTextareaContent(),
+            pings: textarea.getPings(),
             modified: new Date().getTime(),
             attachments: commentingField.getAttachmentsFromCommentingField()
         });

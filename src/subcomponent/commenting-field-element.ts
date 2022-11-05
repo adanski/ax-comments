@@ -1,18 +1,17 @@
 import {ProfilePictureFactory} from './profile-picture-factory.js';
 import {ButtonElement} from './button-element.js';
-import {ContenteditableEditor} from '@textcomplete/contenteditable';
-import {StrategyProps, Textcomplete} from '@textcomplete/core';
-import {TextcompleteOption} from '@textcomplete/core/src/Textcomplete';
+import {Textcomplete} from '@textcomplete/core';
 import {TagFactory} from './tag-factory.js';
-import {TextareaService} from './textarea-service.js';
+import {TextareaElement} from './textarea-element.js';
 import {CommentsOptions} from '../api.js';
-import {areArraysEqual, isStringEmpty, normalizeSpaces} from '../util.js';
+import {areArraysEqual, isStringEmpty} from '../util.js';
 import {CommentsById} from '../comments-by-id.js';
 import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider.js';
 import {CommentUtil} from '../comment-util.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
+import {TextcompleteFactory} from './textcomplete-factory.js';
 
 @RegisterCustomElement('ax-commenting-field')
 export class CommentingFieldElement extends HTMLElement implements WebComponent {
@@ -26,8 +25,8 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     private options!: CommentsOptions;
     private commentsById!: CommentsById;
     private profilePictureFactory!: ProfilePictureFactory;
+    private textcompleteFactory!: TextcompleteFactory;
     private tagFactory!: TagFactory;
-    private textareaService!: TextareaService;
     private commentUtil!: CommentUtil;
 
     static create(options: Partial<Pick<CommentingFieldElement, 'parentId' | 'existingCommentId' | 'isMain'>>): CommentingFieldElement {
@@ -46,14 +45,13 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     }
 
     private initServices(): void {
-        const container: HTMLElement = getHostContainer(this);
-        this.container = container;
-        this.options = OptionsProvider.get(container)!;
-        this.commentsById = CommentsProvider.get(container)!;
-        this.profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
-        this.tagFactory = ServiceProvider.get(container, TagFactory);
-        this.textareaService = ServiceProvider.get(container, TextareaService);
-        this.commentUtil = ServiceProvider.get(container, CommentUtil);
+        this.container = getHostContainer(this);
+        this.options = OptionsProvider.get(this.container)!;
+        this.commentsById = CommentsProvider.get(this.container)!;
+        this.profilePictureFactory = ServiceProvider.get(this.container, ProfilePictureFactory);
+        this.textcompleteFactory = ServiceProvider.get(this.container, TextcompleteFactory);
+        this.tagFactory = ServiceProvider.get(this.container, TagFactory);
+        this.commentUtil = ServiceProvider.get(this.container, CommentUtil);
     }
 
     private initElement(): void {
@@ -93,7 +91,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         controlRow.classList.add('control-row');
 
         // Textarea
-        const textarea: HTMLDivElement = this.textareaService.createTextarea();
+        const textarea: TextareaElement = TextareaElement.create();
 
         // Close button
         const closeButton: ButtonElement = ButtonElement.createCloseButton(this.options);
@@ -153,81 +151,22 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             // Append reply-to tag if necessary
             const parentModel = this.commentsById[this.parentId];
             if (parentModel.parent) {
-                textarea.innerHTML = '&nbsp;';    // Needed to set the cursor to correct place
 
                 // Creating the reply-to tag
-                const replyToName = '@' + parentModel.fullname;
-                const replyToTag = this.tagFactory.createTagElement(replyToName, 'reply-to', parentModel.creator, {
-                    'data-user-id': parentModel.creator
+                textarea.value = '@' + parentModel.fullname + ' ';
+                textarea.pingedUsers.push({
+                    id: this.parentId,
+                    fullname: parentModel.fullname
                 });
-                textarea.prepend(replyToTag);
             }
         }
 
         // Pinging users
         if (this.options.enablePinging) {
-            this.textcomplete = this.createTextcomplete(textarea);
+            this.textcomplete = this.textcompleteFactory.createTextcomplete(textarea);
         }
 
         this.appendChild(commentingField);
-    }
-
-    private createTextcomplete(textarea: HTMLDivElement): Textcomplete {
-        const textcompleteEditor: ContenteditableEditor = new ContenteditableEditor(textarea);
-        const textcompleteStrategy: StrategyProps<Record<string, any>> = {
-            match: /(^|\s)@([^@]*)$/i,
-            index: 2,
-            search: (term, callback) => {
-                term = normalizeSpaces(term);
-
-                // Return empty array on error
-                const error = () => {
-                    callback([]);
-                };
-
-                this.options.searchUsers(term, callback, error);
-            },
-            template: user => {
-                const wrapper: HTMLDivElement = document.createElement('div');
-
-                const profilePictureEl: HTMLElement = this.profilePictureFactory.createProfilePictureElement(user[this.options.fieldMappings.profilePictureURL as string], user.id);
-
-                const detailsEl: HTMLDivElement = document.createElement('div');
-                detailsEl.classList.add('details');
-                const nameEl: HTMLDivElement = document.createElement('div');
-                nameEl.classList.add('name');
-                nameEl.textContent = user.fullname;
-
-                const emailEl: HTMLDivElement = document.createElement('div');
-                emailEl.classList.add('email');
-                emailEl.textContent = user.email;
-
-                if (user.email) {
-                    detailsEl.append(nameEl, emailEl);
-                } else {
-                    detailsEl.classList.add('no-email');
-                    detailsEl.append(nameEl);
-                }
-
-                wrapper.append(profilePictureEl, detailsEl);
-                return wrapper.outerHTML;
-            },
-            replace: user => {
-                const tag: HTMLElement = this.tagFactory.createTagElement('@' + user.fullname, 'ping', user.id, {
-                    'data-user-id': user.id
-                });
-                return ` ${tag.outerHTML} `;
-            },
-        };
-        const textcompleteOptions: TextcompleteOption = {
-            dropdown: {
-                parent: this.container,
-                className: 'dropdown autocomplete',
-                maxCount: 10,
-                rotate: true
-            }
-        };
-        return new Textcomplete(textcompleteEditor, [textcompleteStrategy], textcompleteOptions);
     }
 
     private isAllowedToDelete(commentId: string): boolean {
@@ -249,7 +188,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     }
 
     createCommentJSON(): Record<string, any> {
-        const textarea: HTMLElement = this.querySelector('.textarea') as HTMLElement;
+        const textarea: TextareaElement = this.querySelector('.textarea') as TextareaElement;
         const time: string = new Date().toISOString();
 
         const commentJSON = {
@@ -257,8 +196,8 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             parent: textarea.getAttribute('data-parent') || null,
             created: time,
             modified: time,
-            content: this.textareaService.getTextareaContent(textarea),
-            pings: this.textareaService.getPings(textarea),
+            content: textarea.getTextareaContent(),
+            pings: textarea.getPings(),
             fullname: this.options.textFormatter(this.options.youText),
             profilePictureURL: this.options.profilePictureURL,
             createdByCurrentUser: true,
@@ -280,11 +219,11 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     }
 
     toggleSaveButton(): void {
-        const textarea: HTMLElement = this.querySelector('.textarea')!;
+        const textarea: TextareaElement = this.querySelector('.textarea')!;
         const saveButton: ButtonElement = findSiblingsBySelector<ButtonElement>(textarea, '.control-row')
             .querySelector('.save')!;
 
-        const content = this.textareaService.getTextareaContent(textarea, true);
+        const content = textarea.getTextareaContent();
         const attachments = this.getAttachmentsFromCommentingField();
         let enabled: boolean;
 
@@ -293,7 +232,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         if (commentModel) {
 
             // Case: parent changed
-            const contentChanged = content != commentModel.content;
+            const contentChanged = content !== commentModel.content;
             let parentFromModel: string = '';
             if (commentModel.parent) {
                 parentFromModel = commentModel.parent.toString();
