@@ -24,7 +24,7 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "bundle": "esbuild src/comments-element.ts --bundle --format=esm --platform=browser --target=esnext --outdir=dist",
+    "bundle": "esbuild src/comments-element.ts --bundle --format=esm --platform=browser --target=esnext --outfile=dist/comments-element-bundle.js",
     "test": "jest"
   },
   "files": [

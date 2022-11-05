@@ -293,9 +293,9 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(textarea, 'li.commenting-field')
             .first()!;
         if (textarea.scrollHeight > textarea.getBoundingClientRect().height) {
-            commentingField.querySelector('.commenting-field')!.classList.add('commenting-field-scrollable');
+            commentingField.classList.add('commenting-field-scrollable');
         } else {
-            commentingField.querySelector('.commenting-field')!.classList.remove('commenting-field-scrollable');
+            commentingField.classList.remove('commenting-field-scrollable');
         }
 
         // Check if save button needs to be enabled

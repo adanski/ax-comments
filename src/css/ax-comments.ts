@@ -87,7 +87,7 @@ const mainStyle: string = `
 	border-color: #2793e6;
 }
 
-.jquery-comments [contentEditable=true]:empty:not(:focus):before {
+.jquery-comments textarea.textarea:empty:not(:focus):before {
     content:attr(data-placeholder);
     color: #CCC;
     position: inherit;
@@ -145,7 +145,7 @@ const mainStyle: string = `
 	border-radius: 50%;
 }
 
-.jquery-comments .commenting-field.main{
+.jquery-comments .commenting-field.main {
 	margin-bottom: 0.75em;
 }
 

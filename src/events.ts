@@ -8,15 +8,11 @@ export const EVENT_HANDLERS_MAP: Map<ElementEvent, ElementEventHandlerNames> = n
     of(eventOf('paste'), 'preSavePastedAttachments'),
 
     // Save comment on keydown
-    of(eventOf('keydown', '[contenteditable]'), 'saveOnKeydown'),
+    of(eventOf('keydown', 'textarea.textarea'), 'saveOnKeydown'),
 
-    // Listening changes in contenteditable fields (due to input event not working with IE)
-    of(eventOf('focus', '[contenteditable]'), 'saveEditableContent'),
-
-    of(eventOf('keyup', '[contenteditable]'), 'checkEditableContentForChange'),
-    of(eventOf('paste', '[contenteditable]'), 'checkEditableContentForChange'),
-    of(eventOf('input', '[contenteditable]'), 'checkEditableContentForChange'),
-    of(eventOf('blur', '[contenteditable]'), 'checkEditableContentForChange'),
+    // Listening changes in textarea fields
+    of(eventOf('input', 'textarea.textarea'), 'saveEditableContent'),
+    of(eventOf('input', 'textarea.textarea'), 'checkEditableContentForChange'),
 
     // Navigation
     of(eventOf('click', '.navigation li[data-sort-key]'), 'navigationElementClicked'),

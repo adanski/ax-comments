@@ -29,6 +29,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
     #elementEventHandlerEmitter!: EventEmitter<'navigationElementClicked' | 'postComment'>;
     #elementEventHandler!: ElementEventHandler;
+    #mutationObserver!: MutationObserver;
 
     #commentTransformer!: CommentTransformer;
     #commentSorter!: CommentSorter;
@@ -55,6 +56,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     disconnectedCallback(): void {
         this.#elementEventHandlerEmitter.removeAllListeners();
         this.#undelegateEvents();
+        this.#mutationObserver.disconnect();
         this.container.innerHTML = '';
     }
 
@@ -99,6 +101,16 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         CommentsProvider.set(this.container, this.#commentsById);
         this.#elementEventHandlerEmitter = new EventEmitter();
         this.#elementEventHandler = new CommentsElementEventHandler(this.container, this.#elementEventHandlerEmitter);
+        this.#mutationObserver = new MutationObserver(() => {
+            this.#undelegateEvents(true);
+            this.#delegateEvents(true);
+        });
+        this.#mutationObserver.observe(this.container, {
+            attributes: false,
+            characterData: false,
+            childList: true,
+            subtree: true
+        });
         this.#commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
         this.#commentSorter = ServiceProvider.get(this.container, CommentSorter);
         this.#commentUtil = ServiceProvider.get(this.container, CommentUtil);
@@ -145,16 +157,18 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         });
     }
 
-    #delegateEvents(): void {
-        this.#toggleEventHandlers('addEventListener');
+    #delegateEvents(forChildrenOnly: boolean = false): void {
+        this.#toggleEventHandlers('addEventListener', forChildrenOnly);
     }
 
-    #undelegateEvents(): void {
-        this.#toggleEventHandlers('removeEventListener');
+    #undelegateEvents(forChildrenOnly: boolean = false): void {
+        this.#toggleEventHandlers('removeEventListener', forChildrenOnly);
     }
 
-    #toggleEventHandlers(bindFunction: 'addEventListener' | 'removeEventListener') {
+    #toggleEventHandlers(bindFunction: 'addEventListener' | 'removeEventListener', forChildrenOnly: boolean) {
         EVENT_HANDLERS_MAP.forEach((handlerNames, event) => {
+            if (forChildrenOnly && isNil(event.selector)) return;
+
             handlerNames.forEach(handlerName => {
                 const method: (e: Event) => void = <(e: Event) => void>this.#elementEventHandler[handlerName]
                     .bind(this.#elementEventHandler);
