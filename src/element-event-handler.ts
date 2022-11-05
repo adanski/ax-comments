@@ -265,10 +265,13 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     }
 
     textareaContentChanged(e: Event): void {
-        const textarea: HTMLElement = e.currentTarget as HTMLElement;
+        const textarea: TextareaElement = e.currentTarget as TextareaElement;
+        const isMain: boolean = findParentsBySelector<CommentingFieldElement>(textarea, 'ax-commenting-field')
+            .first()!
+            .isMain;
 
         // Update parent id if reply-to tag was removed
-        if (!textarea.querySelectorAll('.reply-to.tag').length) {
+        if (!(isMain || textarea.pingedUsers.length)) {
             const commentId = textarea.getAttribute('data-comment');
 
             // Case: editing comment

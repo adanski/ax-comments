@@ -20,7 +20,7 @@ export class TextcompleteFactory {
     createTextcomplete(textarea: TextareaElement): Textcomplete {
         const textcompleteEditor: TextareaEditor = new TextareaEditor(textarea);
         const textcompleteStrategy: StrategyProps<Record<string, any>> = {
-            match: /(^|\s)@([^@]*)$/i,
+            match: /(^|\s)(@|#[^@#]*)$/i,
             index: 2,
             search: (term, callback) => {
                 term = normalizeSpaces(term);
