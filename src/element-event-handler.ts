@@ -92,7 +92,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         if (files?.length === 1) {
 
             // Select correct commenting field
-            const parentCommentingField: CommentingFieldElement | null = findParentsBySelector<CommentingFieldElement>(e.target as HTMLElement, 'ax-commenting-field').first();
+            const parentCommentingField: CommentingFieldElement | null = findParentsBySelector<CommentingFieldElement>(e.target as HTMLElement, 'li.commenting-field').first();
             if (!isNil(parentCommentingField)) {
                 this.preSaveAttachments(files, parentCommentingField);
             }
@@ -102,7 +102,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         }
     }
 
-    private preSaveAttachments(files: FileList, commentingField: CommentingFieldElement = this.container.querySelector('ax-commenting-field.main')!): void {
+    private preSaveAttachments(files: FileList, commentingField: CommentingFieldElement = this.container.querySelector('li.commenting-field.main')!): void {
         // Elements
         const uploadButton: ButtonElement = commentingField.querySelector('.control-row .upload')!;
         const attachmentsContainer: HTMLElement = commentingField.querySelector('.control-row .attachments')!;
@@ -237,7 +237,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     hideMainCommentingField(e: UIEvent): void {
         const closeButton: HTMLElement = e.currentTarget as HTMLElement;
-        const commentingField: CommentingFieldElement = this.container.querySelector('ax-commenting-field.main')!
+        const commentingField: CommentingFieldElement = this.container.querySelector('li.commenting-field.main')!
         const mainTextarea: TextareaElement = commentingField.querySelector<TextareaElement>('.textarea')!;
         const mainControlRow: HTMLElement = commentingField.querySelector('.control-row')!;
 
@@ -266,7 +266,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     textareaContentChanged(e: Event): void {
         const textarea: TextareaElement = e.currentTarget as TextareaElement;
-        const isMain: boolean = findParentsBySelector<CommentingFieldElement>(textarea, 'ax-commenting-field')
+        const isMain: boolean = findParentsBySelector<CommentingFieldElement>(textarea, 'li.commenting-field')
             .first()!
             .isMain;
 
@@ -290,7 +290,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         }
 
         // Move close button if scrollbar is visible
-        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(textarea, 'ax-commenting-field')
+        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(textarea, 'li.commenting-field')
             .first()!;
         if (textarea.scrollHeight > textarea.getBoundingClientRect().height) {
             commentingField.querySelector('.commenting-field')!.classList.add('commenting-field-scrollable');
@@ -312,13 +312,13 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         }
 
         // Remove the field
-        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(closeButton, 'ax-commenting-field').first()!;
+        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(closeButton, 'li.commenting-field').first()!;
         commentingField.remove();
     }
 
     postComment(e: UIEvent): void {
         const sendButton: ButtonElement = e.currentTarget as ButtonElement;
-        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(sendButton, 'ax-commenting-field').first()!;
+        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(sendButton, 'li.commenting-field').first()!;
 
         // Set button state to loading
         sendButton.setButtonState(false, true);
@@ -347,7 +347,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     putComment(e: UIEvent): void {
         const saveButton: ButtonElement = e.currentTarget as ButtonElement;
-        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(saveButton, 'ax-commenting-field').first()!;
+        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(saveButton, 'li.commenting-field').first()!;
         const textarea: TextareaElement = commentingField.querySelector('.textarea')!;
 
         // Set button state to loading
@@ -446,7 +446,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     }
 
     preDeleteAttachment(e: UIEvent) {
-        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(e.currentTarget as HTMLElement, 'ax-commenting-field')
+        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(e.currentTarget as HTMLElement, 'li.commenting-field')
             .first()!;
         const attachmentEl: HTMLElement = findParentsBySelector(e.currentTarget as HTMLElement, '.attachment').first()!;
         attachmentEl.remove();
@@ -458,7 +458,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     fileInputChanged(e: Event): void {
         const input: HTMLInputElement = e.currentTarget as HTMLInputElement;
         const files = input.files!;
-        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(input, 'ax-commenting-field').first()!;
+        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(input, 'li.commenting-field').first()!;
         this.preSaveAttachments(files, commentingField);
     }
 

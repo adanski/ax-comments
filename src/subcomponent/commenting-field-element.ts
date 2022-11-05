@@ -13,13 +13,14 @@ import {RegisterCustomElement} from '../register-custom-element.js';
 import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
 import {TextcompleteFactory} from './textcomplete-factory.js';
 
-@RegisterCustomElement('ax-commenting-field')
-export class CommentingFieldElement extends HTMLElement implements WebComponent {
-    private textcomplete: Textcomplete | undefined;
+@RegisterCustomElement('ax-commenting-field', {extends: 'li'})
+export class CommentingFieldElement extends HTMLLIElement implements WebComponent {
 
     parentId: string | null = null;
     existingCommentId: string | null = null;
     isMain: boolean = false;
+
+    #textcomplete: Textcomplete | undefined;
 
     private container!: HTMLElement;
     private options!: CommentsOptions;
@@ -30,21 +31,21 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     private commentUtil!: CommentUtil;
 
     static create(options: Partial<Pick<CommentingFieldElement, 'parentId' | 'existingCommentId' | 'isMain'>>): CommentingFieldElement {
-        const commentingFieldEl: CommentingFieldElement = document.createElement('ax-commenting-field') as CommentingFieldElement;
+        const commentingFieldEl: CommentingFieldElement = document.createElement('li', {is: 'ax-commenting-field'}) as CommentingFieldElement;
         Object.assign(commentingFieldEl, options);
         return commentingFieldEl;
     }
 
     connectedCallback(): void {
-        this.initServices();
-        this.initElement();
+        this.#initServices();
+        this.#initElement();
     }
 
     disconnectedCallback(): void {
-        this.textcomplete?.destroy(true);
+        this.#textcomplete?.destroy(true);
     }
 
-    private initServices(): void {
+    #initServices(): void {
         this.container = getHostContainer(this);
         this.options = OptionsProvider.get(this.container)!;
         this.commentsById = CommentsProvider.get(this.container)!;
@@ -54,17 +55,14 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         this.commentUtil = ServiceProvider.get(this.container, CommentUtil);
     }
 
-    private initElement(): void {
+    #initElement(): void {
         let profilePictureURL: string;
         let userId: string;
         let attachments: Record<string, any>[];
 
-        // Commenting field
-        const commentingField: HTMLDivElement = document.createElement('div');
-        commentingField.classList.add('commenting-field');
+        this.classList.add('commenting-field');
         if (this.isMain) {
             this.classList.add('main');
-            commentingField.classList.add('main');
         }
 
         // Comment was modified, use existing data
@@ -142,7 +140,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
 
         // Populate the element
         textareaWrapper.append(closeButton, textarea, controlRow);
-        commentingField.append(profilePicture, textareaWrapper);
+        this.append(profilePicture, textareaWrapper);
 
         if (this.parentId) {
             // Set the parent id to the field if necessary
@@ -163,10 +161,8 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
 
         // Pinging users
         if (this.options.enablePinging) {
-            this.textcomplete = this.textcompleteFactory.createTextcomplete(textarea);
+            this.#textcomplete = this.textcompleteFactory.createTextcomplete(textarea);
         }
-
-        this.appendChild(commentingField);
     }
 
     private isAllowedToDelete(commentId: string): boolean {

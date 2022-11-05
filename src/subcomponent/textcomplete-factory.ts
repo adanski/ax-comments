@@ -3,7 +3,7 @@ import {OptionsProvider, ServiceProvider} from '../provider.js';
 import {TextareaElement} from './textarea-element.js';
 import {StrategyProps, Textcomplete} from '@textcomplete/core';
 import {TextareaEditor} from '@textcomplete/textarea';
-import {normalizeSpaces} from '../util.js';
+import {isStringEmpty, normalizeSpaces} from '../util.js';
 import {TextcompleteOption} from '@textcomplete/core/src/Textcomplete';
 import {ProfilePictureFactory} from './profile-picture-factory.js';
 
@@ -20,17 +20,21 @@ export class TextcompleteFactory {
     createTextcomplete(textarea: TextareaElement): Textcomplete {
         const textcompleteEditor: TextareaEditor = new TextareaEditor(textarea);
         const textcompleteStrategy: StrategyProps<Record<string, any>> = {
-            match: /(^|\s)(@|#[^@#]*)$/i,
+            match: /(^|\s)([@#][^\W_]{3,})$/i,
             index: 2,
             search: (term, callback) => {
                 term = normalizeSpaces(term);
+                const prefix: string = term[0];
+                term = term.substring(1);
 
                 // Return empty array on error
                 const error: () => void = () => callback([]);
 
-                if (term.startsWith('@')) {
+                if (isStringEmpty(term)) error();
+
+                if (prefix === '@') {
                     this.#options.searchUsers(term, callback, error);
-                } else if (term.startsWith('#')) {
+                } else if (prefix === '#') {
                     this.#options.searchTags(term, callback, error);
                 } else {
                     error();
@@ -65,7 +69,7 @@ export class TextcompleteFactory {
                     id: user.id,
                     fullname: user.fullname
                 })
-                return `user.fullname `;
+                return `@${user.fullname} `;
             },
             cache: true
         };
