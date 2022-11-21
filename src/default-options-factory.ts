@@ -1,14 +1,13 @@
-import {CommentsOptions} from './api.js';
+import {CommentsOptions, SortKey, STYLE_SHEET} from './api.js';
 
-export function getDefaultOptions(): CommentsOptions {
+export function getDefaultOptions(): Required<CommentsOptions> {
     return {
-
-        // User
+        // CurrentUser
         profilePictureURL: '',
         currentUserIsAdmin: false,
-        currentUserId: null,
+        currentUserId: '',
 
-        // Font awesome icon overrides
+        // Icons
         spinnerIconURL: '',
         upvoteIconURL: '',
         replyIconURL: '',
@@ -17,7 +16,7 @@ export function getDefaultOptions(): CommentsOptions {
         noCommentsIconURL: '',
         closeIconURL: '',
 
-        // Strings to be formatted (for example localization)
+        // Labels
         textareaPlaceholderText: 'Add a comment',
         newestText: 'Newest',
         oldestText: 'Oldest',
@@ -49,49 +48,37 @@ export function getDefaultOptions(): CommentsOptions {
         postCommentOnEnter: false,
         forceResponsive: false,
         readOnly: false,
-        defaultNavigationSortKey: 'newest',
+        defaultNavigationSortKey: SortKey.NEWEST,
 
-        // Colors
+        // Callbacks
+        searchUsers: (term, success, error) => success([]),
+        searchTags: (term, success, error) => success([{tag: term}]),
+        getComments: (success, error) => success([]),
+        postComment: (comment, success, error) => success(comment),
+        putComment: (comment, success, error) => success(comment),
+        deleteComment: (comment, success, error) => success({
+            ...comment,
+            content: 'Deleted'
+        }),
+        upvoteComment: (comment, success, error) => success(comment),
+        validateAttachments: (attachments, accept) => accept(attachments),
+        hashtagClicked: (hashtag) => {},
+        pingClicked: (userId) => {},
+        refresh: () => {},
+
+        // Formatters
+        timeFormatter: (time) => new Date(time).toLocaleDateString(),
+
+        // Misc
+        styles: [STYLE_SHEET],
         highlightColor: '#2793e6',
-        deleteButtonColor: '#C9302C',
+        deleteButtonColor: '#c9302c',
 
         roundProfilePictures: false,
         textareaRows: 2,
         textareaRowsOnFocus: 2,
         textareaMaxRows: 5,
         maxRepliesVisible: 2,
-
-        fieldMappings: {
-            id: 'id',
-            parent: 'parent',
-            created: 'created',
-            modified: 'modified',
-            content: 'content',
-            attachments: 'attachments',
-            pings: 'pings',
-            creator: 'creator',
-            fullname: 'fullname',
-            profilePictureURL: 'profile_picture_url',
-            isNew: 'is_new',
-            createdByAdmin: 'created_by_admin',
-            createdByCurrentUser: 'created_by_current_user',
-            upvoteCount: 'upvote_count',
-            userHasUpvoted: 'user_has_upvoted'
-        },
-
-        searchUsers: (term: string, success: Function, error: Function) => {success([])},
-        searchTags: (term: string, success: Function, error: Function) => {success([])},
-        getComments: (success: Function, error: Function) => {success([])},
-        postComment: (commentJSON: string, success: Function, error: Function) => {success(commentJSON)},
-        putComment: (commentJSON: string, success: Function, error: Function) => {success(commentJSON)},
-        deleteComment: (commentJSON: string, success: Function, error: Function) => {success()},
-        upvoteComment: (commentJSON: string, success: Function, error: Function) => {success(commentJSON)},
-        validateAttachments: (attachments: any[], callback: Function) => callback(attachments),
-        hashtagClicked: (hashtag: string) => {},
-        pingClicked: (userId: string) => {},
-        refresh: () => {},
-        textFormatter: (text: string) => text,
-        timeFormatter: (time: number | string | Date) => new Date(time).toLocaleDateString()
     };
 
 }

@@ -45,6 +45,9 @@
     "type": "git",
     "url": "https://github.com/adanski/ax-comments.git"
   },
+  "engines": {
+    "node": ">=16.0.0 <21.0.0"
+  },
   "dependencies": {
     "@textcomplete/core": "~0.1.12",
     "@textcomplete/textarea": "~0.1.12",

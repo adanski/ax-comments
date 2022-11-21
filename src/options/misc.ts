@@ -1,5 +1,20 @@
 export interface Misc {
     /**
+     * An array of `CSSStyleSheet` to be applied to element's [adoptedStyleSheets]{@link https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot/adoptedStyleSheets}.
+     *
+     * @default [STYLE_SHEET]
+     * @example
+     * ```javascript
+     * const commentsElement = document.createElement('ax-comments');
+     * commentsElement.options = {
+     *     // ...
+     *     styles: [STYLE_SHEET, myMaterialStyleSheet],
+     *     // ...
+     * };
+     * ```
+     */
+    styles?: CSSStyleSheet[];
+    /**
      * A `css` value for the highlight color that is used for example to highlight active sorting button and comments by admin
      *
      * @default '#2793e6'
@@ -104,7 +119,7 @@ export interface Misc {
      * };
      * ```
      */
-    textareaMaxRows?: number | boolean,
+    textareaMaxRows?: number | false,
     /**
      * An `integer` or a `boolean` value determining the maximum amount of replies that are visibile intially under a comment.
      * The hidden replies can be shown by clicking the button with a text set in `viewAllRepliesText` option.
@@ -121,7 +136,7 @@ export interface Misc {
      * };
      * ```
      */
-    maxRepliesVisible?: number | boolean,
+    maxRepliesVisible?: number | false,
 }
 
 export enum SortKey {

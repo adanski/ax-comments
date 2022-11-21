@@ -1,34 +1,37 @@
 import {CommentsOptions} from './api.js';
 import {CommentsById} from './comments-by-id.js';
+import {CommentViewModel} from './comment-view-model.js';
 
 export class OptionsProvider {
-    private static readonly OPTIONS: WeakMap<HTMLElement, CommentsOptions> = new WeakMap();
+    private static readonly OPTIONS: WeakMap<HTMLElement, Required<CommentsOptions>> = new WeakMap();
 
-    static set(container: HTMLElement, options: CommentsOptions): void {
+    static set(container: HTMLElement, options: Required<CommentsOptions>): void {
         if (this.OPTIONS.has(container)) {
             console.warn('[OptionsProvider] Options reference cannot be changed after initialization');
         }
         this.OPTIONS.set(container, options);
     }
 
-    static get(container: HTMLElement): CommentsOptions | undefined {
-        return this.OPTIONS.get(container);
+    static get(container: HTMLElement): Required<CommentsOptions> {
+        return this.OPTIONS.get(container)!;
     }
 }
 
-export class CommentsProvider {
+export class CommentViewModelProvider {
 
-    private static readonly COMMENTS: WeakMap<HTMLElement, CommentsById> = new WeakMap();
+    private static readonly COMMENTS: WeakMap<HTMLElement, CommentViewModel> = new WeakMap();
 
-    static set(container: HTMLElement, commentsById: CommentsById): void {
+    static set(container: HTMLElement, commentsById: CommentsById): CommentViewModel {
         if (this.COMMENTS.has(container)) {
             console.warn('[CommentsProvider] Comments reference cannot be changed after initialization');
+        } else {
+            this.COMMENTS.set(container, new CommentViewModel(commentsById));
         }
-        this.COMMENTS.set(container, commentsById);
+        return CommentViewModelProvider.get(container);
     }
 
-    static get(container: HTMLElement): CommentsById | undefined {
-        return this.COMMENTS.get(container);
+    static get(container: HTMLElement): CommentViewModel {
+        return this.COMMENTS.get(container)!;
     }
 }
 

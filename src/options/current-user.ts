@@ -43,5 +43,5 @@ export interface CurrentUser {
      * };
      * ```
      */
-    currentUserId?: string;
+    currentUserId: string;
 }

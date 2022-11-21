@@ -1,48 +1,42 @@
-import {CommentFieldMappings, CommentsOptions} from './api.js';
-import {OptionsProvider} from './provider.js';
+import {CommentModel} from './api.js';
+import {CommentModelEnriched} from './comments-by-id.js';
+import {isNil} from './util.js';
 
 export class CommentTransformer {
 
-    private readonly options: CommentsOptions;
-
-    constructor(private readonly container: HTMLElement) {
-        this.options = OptionsProvider.get(container)!;
+    constructor(container: HTMLElement) {
     }
 
-    toCommentModel(commentJSON: Record<string, any>): Record<string, any> {
-        const commentModel: Record<string, any> = this.applyInternalMappings(commentJSON);
-        commentModel.childs = [];
-        commentModel.hasAttachments = () => commentModel.attachments.length > 0;
-        return commentModel;
+    deplete(comment: CommentModelEnriched): CommentModel {
+        const result: Partial<CommentModelEnriched> = Object.assign({}, comment);
+        delete result.childIds;
+        delete result.hasAttachments;
+        return result as CommentModel;
     }
 
-    applyInternalMappings(commentJSON: Record<string, any>): Record<string, any> {
-        // Inverting field mappings
-        const invertedMappings: Record<string, string> = {};
-        const mappings: CommentFieldMappings = this.options.fieldMappings;
-        for (const prop in mappings) {
-            if (mappings.hasOwnProperty(prop)) {
-                invertedMappings[mappings[prop as keyof CommentFieldMappings] as string] = prop;
-            }
+    enrich(comments: CommentModel[]): CommentModelEnriched[] {
+        const rootCommentsById: Record<string, CommentModelEnriched> = comments.filter(c => isNil(c.parentId))
+            .reduce<Record<string, CommentModelEnriched>>((acc, c) => {
+                acc[c.id] = this.enrichOne(c);
+                return acc;
+            }, {});
+
+        comments.forEach(c => {
+            c = this.enrichOne(c);
+            if (c.parentId) rootCommentsById[c.parentId].childIds.push(c.id);
+        });
+        return comments as CommentModelEnriched[];
+    }
+
+    enrichOne(comment: CommentModel): CommentModelEnriched {
+        const commentModel: CommentModelEnriched = Object.assign({} as CommentModelEnriched, comment);
+        if (isNil(commentModel.childIds)) {
+            commentModel.childIds = [];
+            commentModel.hasAttachments = function () {
+                return this.attachments?.length as number > 0
+            };
         }
 
-        return CommentTransformer.applyMappings(invertedMappings, commentJSON);
-    }
-
-    applyExternalMappings(commentJSON: Record<string, any>): Record<string, any> {
-        const mappings: CommentFieldMappings = this.options.fieldMappings;
-        return CommentTransformer.applyMappings(mappings as any, commentJSON);
-    }
-
-    private static applyMappings(mappings: Record<string, string>, commentJSON: Record<string, any>): Record<string, any> {
-        const result: Record<string, any> = {};
-
-        for (let key1 in commentJSON) {
-            if (key1 in mappings) {
-                const key2: string = mappings[key1];
-                result[key2] = commentJSON[key1];
-            }
-        }
-        return result;
+        return commentModel as CommentModelEnriched;
     }
 }

@@ -2,18 +2,19 @@ import {isNil} from '../util.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {WebComponent} from '../web-component.js';
 import {CommentContainerElement} from './comment-container-element.js';
+import {CommentModelEnriched} from '../comments-by-id.js';
 
 @RegisterCustomElement('ax-comment', {extends: 'li'})
 export class CommentElement extends HTMLLIElement implements WebComponent {
 
-    #commentModel!: Record<string, any>;
+    #commentModel!: CommentModelEnriched;
     #initialized: boolean = false;
 
-    get commentModel(): Record<string, any> {
+    get commentModel(): CommentModelEnriched {
         return this.#commentModel;
     }
 
-    set commentModel(newValue: Record<string, any>) {
+    set commentModel(newValue: CommentModelEnriched) {
         this.#commentModel = newValue;
     }
 
@@ -28,14 +29,14 @@ export class CommentElement extends HTMLLIElement implements WebComponent {
         this.#initialized = true;
     }
 
-    #initElement(commentModel: Record<string, any> = this.#commentModel): void {
+    #initElement(): void {
         this.classList.add('comment');
-        this.setAttribute('data-id', commentModel.id);
+        this.setAttribute('data-id', this.#commentModel.id);
 
-        if (commentModel.createdByCurrentUser) {
+        if (this.#commentModel.createdByCurrentUser) {
             this.classList.add('by-current-user');
         }
-        if (commentModel.createdByAdmin) {
+        if (this.#commentModel.createdByAdmin) {
             this.classList.add('by-admin');
         }
 
@@ -44,17 +45,12 @@ export class CommentElement extends HTMLLIElement implements WebComponent {
         childComments.classList.add('child-comments');
 
         // Comment container
-        const commentContainer: CommentContainerElement = CommentContainerElement.create({commentModel: commentModel});
+        const commentContainer: CommentContainerElement = CommentContainerElement.create({commentModel: this.#commentModel});
 
         this.append(commentContainer);
-        if (isNil(commentModel.parent)) {
+        if (isNil(this.#commentModel.parentId)) {
             this.append(childComments);
         }
-    }
-
-    reRenderUpvotes(): void {
-        const commentContainer: CommentContainerElement = this.querySelector('ax-comment-container')!;
-        commentContainer.reRenderUpvotes();
     }
 
     reRenderCommentActionBar(): void {

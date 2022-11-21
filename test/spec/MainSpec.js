@@ -651,7 +651,7 @@ describe('Basic features', function() {
             var commentId = 3;
             var ownComment = $('#comment-list li.comment[data-id="'+commentId+'"]');
 
-            var childComments = comments.commentsById[commentId].childs.slice();
+            var childComments = comments.commentsById[commentId].childIds.slice();
             expect(childComments.length).toBe(2);
             var commentCountBeforeDelete = comments.getComments().length;
 
@@ -668,7 +668,7 @@ describe('Basic features', function() {
             run(function() {
                 expect(comments.getComments().length).toBe(commentCountBeforeDelete - 3);
 
-                // Expect childs to be deleted
+                // Expect childIds to be deleted
                 $(childComments).each(function(index, id) {
                     expect(comments.commentsById[id]).toBe(undefined);
                     expect($('#comment-list li.comment[data-id="'+id+'"]').length).toBe(0);
@@ -689,7 +689,7 @@ describe('Basic features', function() {
 
             // Check the child count
             expect(toggleAllButton.text()).toBe('View all 5 replies');
-            expect(comments.commentsById[outermostParent.attr('data-id')].childs.length).toBe(5);
+            expect(comments.commentsById[outermostParent.attr('data-id')].childIds.length).toBe(5);
 
             var editButton = ownComment.find('.edit');
             editButton.click();
@@ -710,7 +710,7 @@ describe('Basic features', function() {
 
                 // Check the child count
                 expect(toggleAllButton.text()).toBe('View all 4 replies');
-                expect(comments.commentsById[outermostParent.attr('data-id')].childs.length).toBe(4);
+                expect(comments.commentsById[outermostParent.attr('data-id')].childIds.length).toBe(4);
             });
         });
 
@@ -724,7 +724,7 @@ describe('Basic features', function() {
 
             // Check the child count
             expect(toggleAllButton.text()).toBe('View all 5 replies');
-            expect(comments.commentsById[outermostParent.attr('data-id')].childs.length).toBe(5);
+            expect(comments.commentsById[outermostParent.attr('data-id')].childIds.length).toBe(5);
 
             var editButton = ownComment.find('.edit');
             editButton.click();
@@ -751,7 +751,7 @@ describe('Basic features', function() {
 
                 // Check the child count
                 expect(outermostParent.find('.toggle-all').length).toBe(0);
-                expect(comments.commentsById[outermostParent.attr('data-id')].childs.length).toBe(2);
+                expect(comments.commentsById[outermostParent.attr('data-id')].childIds.length).toBe(2);
             });
         });
 

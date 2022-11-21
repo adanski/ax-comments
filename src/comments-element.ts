@@ -3,14 +3,14 @@ import {isMobileBrowser, isNil} from './util.js';
 import {getDefaultOptions} from './default-options-factory.js';
 import {CommentTransformer} from './comment-transformer.js';
 import {EVENT_HANDLERS_MAP} from './events.js';
-import {CommentsOptions} from './api.js';
-import {CommentsById} from './comments-by-id.js';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider.js';
+import {CommentModel, CommentsOptions, SortKey} from './api.js';
+import {CommentsById, CommentModelEnriched} from './comments-by-id.js';
+import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from './provider.js';
 import {CommentsElementEventHandler, ElementEventHandler} from './element-event-handler.js';
-import {CommentSorter, SortKey} from './comment-sorter.js';
+import {CommentSorter} from './comment-sorter.js';
 import {NavigationFactory} from './subcomponent/navigation-factory.js';
 import {SpinnerFactory} from './subcomponent/spinner-factory.js';
-import {CommentUtil} from './comment-util.js';
+import {CommentViewModel} from './comment-view-model.js';
 import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util.js';
 import {STYLE_SHEET} from './css/ax-comments.js';
 import {RegisterCustomElement} from './register-custom-element.js';
@@ -24,16 +24,15 @@ import EventEmitter from 'EventEmitter3';
 export class CommentsElement extends HTMLElement implements WebComponent {
     private container!: HTMLElement;
 
-    readonly #options: CommentsOptions = {} as CommentsOptions;
-    readonly #commentsById: CommentsById = {};
+    readonly #options: Required<CommentsOptions> = {} as Required<CommentsOptions>;
 
+    #commentViewModel!: CommentViewModel;
     #elementEventHandlerEmitter!: EventEmitter<'navigationElementClicked' | 'postComment'>;
     #elementEventHandler!: ElementEventHandler;
     #mutationObserver!: MutationObserver;
 
     #commentTransformer!: CommentTransformer;
     #commentSorter!: CommentSorter;
-    #commentUtil!: CommentUtil;
     #navigationFactory!: NavigationFactory;
     #spinnerFactory!: SpinnerFactory;
 
@@ -60,28 +59,17 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.container.innerHTML = '';
     }
 
-    get options(): CommentsOptions {
+    get options(): Required<CommentsOptions> {
         return this.#options;
     }
 
-    set options(options: CommentsOptions) {
+    set options(options: Required<CommentsOptions>) {
         if (Object.keys(this.#options).length) {
-            console.warn('[ax-comments] Options already set, component can not be reinitialized.');
+            console.warn(`<ax-comments> Options already set, component can not be reinitialized.`);
             return;
         }
         Object.assign(this.#options, getDefaultOptions(), options);
         Object.freeze(this.#options);
-    }
-
-    private get commentsById(): CommentsById {
-        return this.#commentsById;
-    }
-
-    private set commentsById(newValue: CommentsById) {
-        Object.keys(this.commentsById).forEach(id => {
-            delete this.commentsById[id];
-        });
-        Object.assign(this.#commentsById, newValue);
     }
 
     /**
@@ -98,7 +86,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
     #initServices(): void {
         OptionsProvider.set(this.container, this.#options);
-        CommentsProvider.set(this.container, this.#commentsById);
+        this.#commentViewModel = CommentViewModelProvider.set(this.container, {});
         this.#elementEventHandlerEmitter = new EventEmitter();
         this.#elementEventHandler = new CommentsElementEventHandler(this.container, this.#elementEventHandlerEmitter);
         this.#mutationObserver = new MutationObserver(() => {
@@ -113,7 +101,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         });
         this.#commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
         this.#commentSorter = ServiceProvider.get(this.container, CommentSorter);
-        this.#commentUtil = ServiceProvider.get(this.container, CommentUtil);
         this.#navigationFactory = ServiceProvider.get(this.container, NavigationFactory);
         this.#spinnerFactory = ServiceProvider.get(this.container, SpinnerFactory);
     }
@@ -132,20 +119,19 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#elementEventHandler.currentSortKey = this.options.defaultNavigationSortKey;
 
         // Create user CSS declarations
-        const userStyle: CSSStyleSheet | undefined = this.options.styles;
-        const allStyles: CSSStyleSheet[] = [createCssDeclarations(this.options)];
-        if (userStyle) {
-            allStyles.push(userStyle);
+        let allStyles: CSSStyleSheet[] = [createCssDeclarations(this.options)];
+        if (this.options.styles) {
+            allStyles = allStyles.concat(this.options.styles);
         }
-        this.shadowRoot!.adoptedStyleSheets = this.shadowRoot!.adoptedStyleSheets.concat(allStyles);
+        this.shadowRoot!.adoptedStyleSheets = allStyles;
 
         // Fetching data and rendering
         this.#fetchDataAndRender();
     }
 
     #initEmitterListeners(): void {
-        this.#elementEventHandlerEmitter.on('postComment', commentJSON => {
-            this.#createComment(commentJSON);
+        this.#elementEventHandlerEmitter.on('postComment', (comment: CommentModel) => {
+            this.#createComment(comment);
         });
         this.#elementEventHandlerEmitter.on('navigationElementClicked', (sortKey: SortKey) => {
             // Create attachments if necessary
@@ -186,34 +172,27 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     }
 
     #fetchDataAndRender(): void {
-        this.commentsById = {};
-
         this.container.innerHTML = '';
         this.#createHTML();
 
         // Comments
         // ========
 
-        this.options.getComments((commentsArray: Record<string, any>[]) => {
+        const success: (comments: CommentModel[]) => void = comments => {
+            // Convert comments to enriched data model
+            const commentModels: CommentModelEnriched[] = this.#commentTransformer.enrich([...comments]);
 
-            // Convert comments to custom data model
-            const commentModels: Record<string, any>[] = commentsArray
-                .map(commentsJSON => this.#commentTransformer.toCommentModel(commentsJSON));
-
-            // Sort comments by date (oldest first so that they can be appended to the data model
-            // without caring dependencies)
-            this.#commentSorter.sortComments(commentModels, SortKey.OLDEST);
-
-            commentModels.forEach(commentModel => {
-                this.#addCommentToDataModel(commentModel);
-            });
+            this.#commentViewModel.initComments(commentModels);
 
             // Mark data as fetched
             this.#dataFetched = true;
 
             // Render
             this.#render();
-        });
+        };
+        const error: () => void = () => {};
+
+        this.options.getComments(success, error);
     }
 
     #fetchNext(): void {
@@ -221,9 +200,9 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         const spinner = this.#spinnerFactory.createSpinner();
         this.container.querySelector('ul#comment-list')!.append(spinner);
 
-        const success: (commentModels: Record<string, any>[]) => void = commentModels => {
-            commentModels.forEach(commentModel => {
-                this.#createComment(commentModel);
+        const success: (comments: CommentModel[]) => void = comments => {
+            comments.forEach(comment => {
+                this.#createComment(comment);
             });
             spinner.remove();
         };
@@ -233,18 +212,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         };
 
         this.options.getComments(success, error);
-    }
-
-    #addCommentToDataModel(commentModel: Record<string, any>): void {
-        if (!(commentModel.id in this.commentsById)) {
-            this.commentsById[commentModel.id] = commentModel;
-
-            // Update child array of the parent (append childs to the array of outer most parent)
-            if (commentModel.parent) {
-                const outermostParent = this.#commentUtil.getOutermostParent(commentModel.parent);
-                outermostParent.childs.push(commentModel.id);
-            }
-        }
     }
 
     #render(): void {
@@ -285,26 +252,26 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         commentList.id = 'comment-list';
         commentList.classList.add('main');
 
-        // Divide comments into main level comments and replies
-        const mainLevelComments: Record<string, any>[] = [];
-        const replies: Record<string, any>[] = [];
-        this.#commentUtil.getComments().forEach(commentModel => {
-            if (commentModel.parent == null) {
-                mainLevelComments.push(commentModel);
+        // Divide comments into top level comments and replies
+        const rootComments: CommentModelEnriched[] = [];
+        const replies: CommentModelEnriched[] = [];
+        this.#commentViewModel.getComments().forEach(commentModel => {
+            if (isNil(commentModel.parentId)) {
+                rootComments.push(commentModel);
             } else {
                 replies.push(commentModel);
             }
         });
 
 
-        this.#commentSorter.sortComments(mainLevelComments, this.#elementEventHandler.currentSortKey);
+        this.#commentSorter.sortComments(rootComments, this.#elementEventHandler.currentSortKey);
         this.#commentSorter.sortComments(replies, SortKey.OLDEST);
 
         // Append list to DOM
         this.container.querySelector('[data-container="comments"]')!.prepend(commentList);
 
-        // Append sorted main level comments
-        mainLevelComments.forEach(commentModel => {
+        // Append sorted top level comments
+        rootComments.forEach(commentModel => {
             this.#addComment(commentModel, commentList);
         });
 
@@ -321,7 +288,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         attachmentList.id = 'attachment-list';
         attachmentList.classList.add('main');
 
-        const attachments = this.#commentUtil.getAttachments();
+        const attachments = this.#commentViewModel.getAttachments();
         this.#commentSorter.sortComments(attachments, SortKey.NEWEST);
         attachments.forEach(commentModel => {
             this.#addAttachment(commentModel, attachmentList);
@@ -331,11 +298,11 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.container.querySelector('[data-container="attachments"]')!.prepend(attachmentList);
     }
 
-    #addComment(commentModel: Record<string, any>, commentList: HTMLElement = this.container.querySelector('#comment-list')!, prependComment: boolean = false): void {
+    #addComment(commentModel: CommentModelEnriched, commentList: HTMLElement = this.container.querySelector('#comment-list')!, prependComment: boolean = false): void {
         const commentEl: CommentElement = CommentElement.create({commentModel: commentModel});
 
-        if (commentModel.parent) { // Case: reply
-            const directParentEl: CommentElement = commentList.querySelector(`li.comment[data-id="${commentModel.parent}"]`)!;
+        if (commentModel.parentId) { // Case: reply
+            const directParentEl: CommentElement = commentList.querySelector(`li.comment[data-id="${commentModel.parentId}"]`)!;
 
             // Re-render action bar of direct parent element
             directParentEl.reRenderCommentActionBar();
@@ -366,7 +333,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         }
     }
 
-    #addAttachment(commentModel: Record<string, any>, commentList: HTMLElement = this.container.querySelector('#attachment-list')!): void {
+    #addAttachment(commentModel: CommentModelEnriched, commentList: HTMLElement = this.container.querySelector('#attachment-list')!): void {
         const commentEl: CommentElement = CommentElement.create({commentModel: commentModel});
         commentList.prepend(commentEl);
     }
@@ -395,17 +362,17 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#showActiveContainer();
     }
 
-    #createComment(commentJSON: Record<string, any>): void {
-        const commentModel: Record<string, any> = this.#commentTransformer.toCommentModel(commentJSON);
-        this.#addCommentToDataModel(commentModel);
+    #createComment(comment: CommentModel): void {
+        const commentEnriched: CommentModelEnriched = this.#commentTransformer.enrichOne(comment);
+        this.#commentViewModel.addComment(commentEnriched)
 
         // Add comment element
         const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
         const prependComment = this.#elementEventHandler.currentSortKey === SortKey.NEWEST;
-        this.#addComment(commentModel, commentList, prependComment);
+        this.#addComment(commentEnriched, commentList, prependComment);
 
-        if (this.#elementEventHandler.currentSortKey === SortKey.ATTACHMENTS && commentModel.hasAttachments()) {
-            this.#addAttachment(commentModel);
+        if (this.#elementEventHandler.currentSortKey === SortKey.ATTACHMENTS && commentEnriched.hasAttachments()) {
+            this.#addAttachment(commentEnriched);
         }
     }
 
@@ -435,7 +402,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         // "No comments" placeholder
         const noComments: HTMLElement = document.createElement('div');
         noComments.classList.add('no-comments', 'no-data');
-        noComments.textContent = this.options.textFormatter(this.options.noCommentsText);
+        noComments.textContent = this.options.noCommentsText;
         const noCommentsIcon = document.createElement('i');
         noCommentsIcon.classList.add('fa', 'fa-comments', 'fa-2x');
         if (this.options.noCommentsIconURL.length) {
@@ -456,7 +423,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             // "No attachments" placeholder
             const noAttachments = document.createElement('div');
             noAttachments.classList.add('no-attachments', 'no-data');
-            noAttachments.textContent = this.options.textFormatter(this.options.noAttachmentsText);
+            noAttachments.textContent = this.options.noAttachmentsText;
             const noAttachmentsIcon: HTMLElement = document.createElement('i');
             noAttachmentsIcon.classList.add('fa', 'fa-paperclip', 'fa-2x');
             if (this.options.attachmentIconURL.length) {
@@ -485,7 +452,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             }
 
             const dropAttachmentText: HTMLDivElement = document.createElement('div');
-            dropAttachmentText.textContent = this.options.textFormatter(this.options.attachmentDropText);
+            dropAttachmentText.textContent = this.options.attachmentDropText;
             droppable.append(uploadIcon);
             droppable.append(dropAttachmentText);
             droppableContainer.append(droppable);
@@ -499,3 +466,5 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     }
 
 }
+
+export * from './api.js';

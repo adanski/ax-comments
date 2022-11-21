@@ -1,20 +1,21 @@
 import {ButtonElement} from './button-element.js';
 import {CommentsOptions} from '../api.js';
 import {OptionsProvider} from '../provider.js';
+import {CommentingFieldElement} from './commenting-field-element.js';
+import {findParentsBySelector} from '../html-util.js';
 
 export class TagFactory {
 
-    private readonly options: CommentsOptions;
+    readonly #options: Required<CommentsOptions>;
 
     constructor(private readonly container: HTMLElement) {
-        this.options = OptionsProvider.get(container)!;
+        this.#options = OptionsProvider.get(container)!;
     }
 
     createTagElement(text: string, extraClasses: string, value: string, extraAttributes?: Record<string, any>): HTMLElement {
         const tagEl: HTMLInputElement = document.createElement('input');
         tagEl.classList.add('tag');
         tagEl.type = 'button';
-        tagEl.setAttribute('data-role', 'none');
         if (extraClasses) {
             tagEl.classList.add(extraClasses);
         }
@@ -29,16 +30,11 @@ export class TagFactory {
         return tagEl;
     }
 
-    createAttachmentTagElement(attachment: Record<string, any>, deletable?: boolean): HTMLAnchorElement {
+    createAttachmentTagElement(attachment: Record<string, any>, onDeleted?: () => void): HTMLAnchorElement {
         // Tag element
         const attachmentTag: HTMLAnchorElement = document.createElement('a');
         attachmentTag.classList.add('tag', 'attachment');
         attachmentTag.target = '_blank';
-
-        // Set href attribute if not deletable
-        if (!deletable) {
-            attachmentTag.setAttribute('href', attachment.file);
-        }
 
         // Bind data
         attachmentTag.setAttribute('id', attachment.id);
@@ -63,8 +59,8 @@ export class TagFactory {
         // Attachment icon
         const attachmentIcon: HTMLElement = document.createElement('i');
         attachmentIcon.classList.add('fa', 'fa-paperclip');
-        if (this.options.attachmentIconURL.length) {
-            attachmentIcon.style.backgroundImage = `url("${this.options.attachmentIconURL}")`;
+        if (this.#options.attachmentIconURL.length) {
+            attachmentIcon.style.backgroundImage = `url("${this.#options.attachmentIconURL}")`;
             attachmentIcon.classList.add('image');
         }
 
@@ -72,14 +68,25 @@ export class TagFactory {
         attachmentTag.append(attachmentIcon, fileName);
 
         // Add delete button if deletable
-        if (deletable) {
+        if (onDeleted) {
             attachmentTag.classList.add('deletable');
 
             // Append close button
-            const closeButton: ButtonElement = ButtonElement.createCloseButton(this.options, 'delete');
+            const closeButton: ButtonElement = ButtonElement.createCloseButton({
+                inline: false,
+                onclick: e => {
+                    // Delete attachment tag
+                    (e.currentTarget as HTMLElement).parentElement!.remove();
+                    // Execute callback
+                    onDeleted();
+                }
+            }, 'delete');
             attachmentTag.append(closeButton);
+        } else { // Set href attribute if not deletable
+            attachmentTag.setAttribute('href', attachment.file);
         }
 
         return attachmentTag;
     }
+
 }

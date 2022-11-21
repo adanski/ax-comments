@@ -4,15 +4,18 @@ import {OptionsProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {getHostContainer} from '../html-util.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
+import {PingableUser, UserDisplayNamesById} from '../options/models.js';
 
 @RegisterCustomElement('ax-textarea', {extends: 'textarea'})
 export class TextareaElement extends HTMLTextAreaElement implements WebComponent {
 
-    readonly pingedUsers: PingedUser[] = [];
-    readonly usedHashtags: string[] = [];
+    parentId: string | null = null;
+    existingCommentId: string | null = null;
 
-    #container!: HTMLElement;
-    #options!: CommentsOptions;
+    readonly pingedUsers: PingableUser[] = [];
+    readonly referencedHashtags: string[] = [];
+
+    #options!: Required<CommentsOptions>;
 
     connectedCallback(): void {
         this.#initServices();
@@ -20,20 +23,21 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
     }
 
     #initServices(): void {
-        this.#container = getHostContainer(this);
-        this.#options = OptionsProvider.get(this.#container)!;
+        const container: HTMLElement = getHostContainer(this);
+        this.#options = OptionsProvider.get(container)!;
     }
 
     #initElement(): void {
         this.classList.add('textarea');
-        this.setAttribute('data-placeholder', this.#options.textFormatter(this.#options.textareaPlaceholderText));
+        this.placeholder = this.#options.textareaPlaceholderText;
 
         // Setting the initial height for the textarea
         this.adjustTextareaHeight(false);
     }
 
-    static create(): TextareaElement {
+    static create(options: Pick<TextareaElement, 'existingCommentId' | 'parentId'>): TextareaElement {
         const textarea: TextareaElement = document.createElement('textarea', {is: 'ax-textarea'}) as TextareaElement;
+        Object.assign(textarea, options);
         return textarea;
     }
 
@@ -67,24 +71,11 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
         return normalizeSpaces(this.value ?? '');
     }
 
-    /**
-     * Return pings in format:
-     * {
-     *     id1: userFullname1,
-     *     id2: userFullname2,
-     *     ...
-     * }
-     */
-    getPings(): Record<string, string> {
-        const pings: Record<string, any> = {};
-        this.pingedUsers.forEach(user => pings[user.id] = user.fullname);
-
-        return pings;
+    getPings(): UserDisplayNamesById {
+        return this.pingedUsers.reduce((acc, user) => {
+            acc[user.id] = user.displayName!;
+            return acc;
+        }, {} as UserDisplayNamesById);
     }
 
-}
-
-export interface PingedUser {
-    id: string;
-    fullname: string;
 }

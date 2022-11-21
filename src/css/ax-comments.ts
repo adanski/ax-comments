@@ -87,11 +87,14 @@ const mainStyle: string = `
 	border-color: #2793e6;
 }
 
-.jquery-comments textarea.textarea:empty:not(:focus):before {
-    content:attr(data-placeholder);
+.jquery-comments textarea.textarea:focus::placeholder {
+    color: transparent;
+    resize: vertical;
+}
+
+.jquery-comments textarea.textarea:not(:focus)::placeholder {
     color: #CCC;
-    position: inherit;
-    pointer-events: none;
+    resize: vertical;
 }
 
 .jquery-comments i.fa {
@@ -236,6 +239,7 @@ const mainStyle: string = `
 	outline: 0;
 	overflow-y: auto;
 	overflow-x: hidden;
+	resize: vertical;
 	cursor: text;
 
 	border: 1px solid #CCC;;

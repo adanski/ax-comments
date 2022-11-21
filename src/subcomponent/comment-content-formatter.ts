@@ -1,22 +1,23 @@
 import {TagFactory} from './tag-factory.js';
 import {isNil, normalizeSpaces} from '../util.js';
-import {CommentsOptions} from '../api.js';
 import {OptionsProvider, ServiceProvider} from '../provider.js';
+import {Functionalities} from '../options/functionalities.js';
+import {CommentModelEnriched} from '../comments-by-id.js';
 
 export class CommentContentFormatter {
 
     static readonly PING_REGEXP: RegExp = /(^|\s)@([a-z\u00C0-\u00FF\d-_]+)/gim;
     static readonly HASHTAG_REGEXP: RegExp = /(^|\s)#([a-z\u00C0-\u00FF\d-_]+)/gim;
 
-    private readonly options: CommentsOptions;
-    private readonly tagFactory: TagFactory;
+    readonly #options: Required<Functionalities>;
+    readonly #tagFactory: TagFactory;
 
-    constructor(private readonly container: HTMLElement) {
-        this.options = OptionsProvider.get(container)!;
-        this.tagFactory = ServiceProvider.get(container, TagFactory);
+    constructor(container: HTMLElement) {
+        this.#options = OptionsProvider.get(container);
+        this.#tagFactory = ServiceProvider.get(container, TagFactory);
     }
 
-    getFormattedCommentContent(commentModel: Record<string, any>, replaceNewLines?: boolean): string {
+    getFormattedCommentContent(commentModel: CommentModelEnriched, replaceNewLines?: boolean): string {
         let html: string = this.escape(commentModel.content);
         html = this.linkify(html);
         html = this.highlightTags(commentModel, html);
@@ -70,17 +71,17 @@ export class CommentContentFormatter {
         }
     }
 
-    private highlightTags(commentModel: Record<string, any>, html: string): string {
-        if (this.options.enableHashtags) {
+    private highlightTags(commentModel: CommentModelEnriched, html: string): string {
+        if (this.#options.enableHashtags) {
             html = this.highlightHashtags(commentModel, html);
         }
-        if (this.options.enablePinging) {
+        if (this.#options.enablePinging) {
             html = this.highlightPings(commentModel, html);
         }
         return html;
     }
 
-    private highlightHashtags(commentModel: Record<string, any>, html: string): string {
+    private highlightHashtags(commentModel: CommentModelEnriched, html: string): string {
         if (html.indexOf('#') !== -1) {
             const regex: RegExp = CommentContentFormatter.HASHTAG_REGEXP;
             html = html.replace(regex, ($0, $1, $2) => $1 + this.createHashTag($2));
@@ -89,11 +90,11 @@ export class CommentContentFormatter {
     }
 
     private createHashTag(hashTagText: string): string {
-        const tag: HTMLElement = this.tagFactory.createTagElement('#' + hashTagText, 'hashtag', hashTagText);
+        const tag: HTMLElement = this.#tagFactory.createTagElement('#' + hashTagText, 'hashtag', hashTagText);
         return tag.outerHTML;
     }
 
-    private highlightPings(commentModel: Record<string, any>, html: string): string {
+    private highlightPings(commentModel: CommentModelEnriched, html: string): string {
         if (html.indexOf('@') !== -1) {
             for (const userId in commentModel.pings) {
                 const fullName: string = commentModel.pings[userId];
@@ -105,7 +106,7 @@ export class CommentContentFormatter {
     }
 
     private createUserTag(pingText: string, userId: string): string {
-        const tag: HTMLElement = this.tagFactory.createTagElement(pingText, 'ping', userId, {
+        const tag: HTMLElement = this.#tagFactory.createTagElement(pingText, 'ping', userId, {
             'data-user-id': userId
         });
         return tag.outerHTML;

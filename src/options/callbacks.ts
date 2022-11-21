@@ -1,3 +1,6 @@
+import {CommentModel, PingableUser, ReferenceableHashtag} from './models.js';
+import {Functionalities} from './functionalities.js';
+
 export interface Callbacks {
     /**
      * A callback `function` that is called after the comments have been rendered
@@ -34,11 +37,12 @@ export interface Callbacks {
      * };
      * ```
      */
-    getComments(success: Function, error: Function): void;
+    getComments(success: SuccessFct<CommentModel[]>, error: ErrorFct): void;
     /**
      * A callback `function` that is used for searching users when pinging by typing `@`.
+     * See also {@see Functionalities#enablePinging} for more information.
      * The callback provides both `success` and `error` callbacks which should be called based on the result from the server.
-     * The `success` callback takes the comment array as a parameter.
+     * The `success` callback takes the user array as a parameter.
      *
      * @default noop
      * @example
@@ -55,7 +59,7 @@ export interface Callbacks {
      * };
      * ```
      */
-    searchUsers?(term: string, success: Function, error: Function): void;
+    searchUsers?(term: string, success: SuccessFct<PingableUser[]>, error: ErrorFct): void;
     /**
      * A callback `function` that is used for suggesting trending hashtags when typing `#`.
      * The callback provides both `success` and `error` callbacks which should be called based on the result from the server.
@@ -76,7 +80,7 @@ export interface Callbacks {
      * };
      * ```
      */
-    searchTags?(term: string, success: Function, error: Function): void;
+    searchTags?(term: string, success: SuccessFct<ReferenceableHashtag[]>, error: ErrorFct): void;
     /**
      * A callback `function` that is used to create a new comment to the server.
      * The first parameter of the callback is `comment` that contains the data of the new comment.
@@ -104,7 +108,7 @@ export interface Callbacks {
      * };
      * ```
      */
-    postComment(commentJSON: string, success: Function, error: Function): void;
+    postComment(comment: CommentModel, success: SuccessFct<CommentModel>, error: ErrorFct): void;
     /**
      * A callback `function` that is used to update an existing comment on the server.
      * The first parameter of the callback is `comment` that contains the data of the updated comment.
@@ -132,12 +136,12 @@ export interface Callbacks {
      * };
      * ```
      */
-    putComment?(commentJSON: string, success: Function, error: Function): void;
+    putComment?(comment: CommentModel, success: SuccessFct<CommentModel>, error: ErrorFct): void;
     /**
      * A callback `function` that is used to delete an existing comment on the server.
      * The first parameter of the callback is `comment` that contains the data of the comment to delete.
      * The callback provides both `success` and `error` callbacks which should be called based on the result from the server.
-     * The `success` callback takes no parameters.
+     * The `success` callback takes the updated (with removal reason in `content` property) comment as a parameter.
      *
      * @default noop
      * @example
@@ -160,7 +164,7 @@ export interface Callbacks {
      * };
      * ```
      */
-    deleteComment?(commentJSON: string, success: Function, error: Function): void;
+    deleteComment?(comment: CommentModel, success: SuccessFct<CommentModel>, error: ErrorFct): void;
     /**
      * A callback `function` that is used to upvote an existing comment on the server.
      * The first parameter of the callback is `comment` that contains the data of the comment to upvote.
@@ -190,7 +194,7 @@ export interface Callbacks {
      * };
      * ```
      */
-    upvoteComment?(commentJSON: string, success: Function, error: Function): void;
+    upvoteComment?(comment: CommentModel, success: SuccessFct<CommentModel>, error: ErrorFct): void;
     /**
      * A callback `function` that is used to validate attachments prior uploading them to server.
      * The first parameter of the callback is `attachments` array including all the attachments to be uploaded.
@@ -212,7 +216,7 @@ export interface Callbacks {
      * };
      * ```
      */
-    validateAttachments?(attachments: any[], accept: Function): void;
+    validateAttachments?(attachments: any[], accept: AcceptFct<any[]>): void;
     /**
      * A callback `function` that is called after user has clicked a `#` hashtag
      *
@@ -248,3 +252,9 @@ export interface Callbacks {
      */
     pingClicked?(userId: string): void;
 }
+
+export type SuccessFct<T> = (data: T) => void;
+
+export type AcceptFct<T> = (data: T) => void;
+
+export type ErrorFct = (e: any) => void;

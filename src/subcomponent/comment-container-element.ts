@@ -2,29 +2,30 @@ import {ProfilePictureFactory} from './profile-picture-factory.js';
 import {CommentContentFormatter} from './comment-content-formatter.js';
 import {TagFactory} from './tag-factory.js';
 import {CommentsOptions} from '../api.js';
-import {CommentsById} from '../comments-by-id.js';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider.js';
+import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {getHostContainer} from '../html-util.js';
 import sanitize from 'sanitize-html';
+import {ButtonElement} from './button-element.js';
+import {CommentViewModel} from '../comment-view-model.js';
+import {CommentModelEnriched} from '../comments-by-id.js';
 
 @RegisterCustomElement('ax-comment-container')
 export class CommentContainerElement extends HTMLElement implements WebComponent {
 
-    commentModel!: Record<string, any>;
+    commentModel!: CommentModelEnriched;
 
-    private container!: HTMLElement
-    private options!: CommentsOptions;
-    private commentsById!: CommentsById;
-    private profilePictureFactory!: ProfilePictureFactory;
-    private tagFactory!: TagFactory;
-    private commentContentFormatter!: CommentContentFormatter;
+    #options!: Required<CommentsOptions>;
+    #commentViewModel!: CommentViewModel;
+    #profilePictureFactory!: ProfilePictureFactory;
+    #tagFactory!: TagFactory;
+    #commentContentFormatter!: CommentContentFormatter;
 
     static create(options: Pick<CommentContainerElement, 'commentModel'>): CommentContainerElement {
-        const commentContainerEl: CommentContainerElement = document.createElement('ax-comment-container') as CommentContainerElement;
-        Object.assign(commentContainerEl, options);
-        return commentContainerEl;
+        const commentContainer: CommentContainerElement = document.createElement('ax-comment-container') as CommentContainerElement;
+        Object.assign(commentContainer, options);
+        return commentContainer;
     }
 
     connectedCallback(): void {
@@ -32,26 +33,34 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         this.#initElement();
     }
 
-    #initServices(): void {
-        this.container = getHostContainer(this);
-        this.options = OptionsProvider.get(this.container)!;
-        this.commentsById = CommentsProvider.get(this.container)!;
-        this.profilePictureFactory = ServiceProvider.get(this.container, ProfilePictureFactory);
-        this.tagFactory = ServiceProvider.get(this.container, TagFactory);
-        this.commentContentFormatter = ServiceProvider.get(this.container, CommentContentFormatter);
+    disconnectedCallback(): void {
+        this.innerHTML = '';
     }
 
-    #initElement(commentModel: Record<string, any> = this.commentModel): void {
+    #initServices(): void {
+        if (this.#options) return;
+        const container: HTMLElement = getHostContainer(this);
+        this.#options = OptionsProvider.get(container);
+        this.#commentViewModel = CommentViewModelProvider.get(container);
+        this.#profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
+        this.#tagFactory = ServiceProvider.get(container, TagFactory);
+        this.#commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
+    }
+
+    #initElement(): void {
         const commentWrapper: HTMLDivElement = document.createElement('div');
         commentWrapper.classList.add('comment-wrapper');
 
         // Profile picture
-        const profilePicture: HTMLElement = this.profilePictureFactory.createProfilePictureElement(commentModel.profilePictureURL, commentModel.creator);
+        const profilePicture: HTMLElement = this.#profilePictureFactory.createProfilePictureElement(
+            this.commentModel.creatorUserId,
+            this.commentModel.creatorProfilePictureURL
+        );
 
         // Time
         const time: HTMLTimeElement = document.createElement('time');
-        time.textContent = this.options.timeFormatter(commentModel.created);
-        time.setAttribute('data-original', commentModel.created);
+        time.textContent = this.#options.timeFormatter(this.commentModel.createdAt);
+        time.setAttribute('data-original', this.commentModel.createdAt.toISOString());
 
         // Comment header element
         const commentHeaderEl: HTMLDivElement = document.createElement('div');
@@ -59,32 +68,34 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         // Name element
         const nameEl: HTMLSpanElement = document.createElement('span');
-        nameEl.textContent = commentModel.createdByCurrentUser ? this.options.textFormatter(this.options.youText) : commentModel.fullname;
+        nameEl.textContent = this.commentModel.createdByCurrentUser
+            ? this.#options.youText
+            : (this.commentModel.creatorDisplayName || this.commentModel.creatorUserId);
         nameEl.classList.add('name');
-        nameEl.setAttribute('data-user-id', commentModel.creator);
+        nameEl.setAttribute('data-user-id', this.commentModel.creatorUserId);
         commentHeaderEl.append(nameEl);
 
 
         // Highlight admin names
-        if (commentModel.createdByAdmin) {
+        if (this.commentModel.createdByAdmin) {
             nameEl.classList.add('highlight-font-bold');
         }
 
         // Show reply-to name if parent of parent exists
-        if (commentModel.parent) {
-            const parent = this.commentsById[commentModel.parent];
-            if (parent.parent) {
+        if (this.commentModel.parentId) {
+            const parent = this.#commentViewModel.getComment(this.commentModel.parentId)!;
+            if (parent.parentId) {
                 const replyTo: HTMLSpanElement = document.createElement('span');
-                replyTo.textContent = parent.fullname;
+                replyTo.textContent = parent.creatorDisplayName || parent.creatorUserId;
                 replyTo.classList.add('reply-to');
-                replyTo.setAttribute('data-user-id', parent.creator);
+                replyTo.setAttribute('data-user-id', parent.creatorUserId);
 
                 // reply icon
                 const replyIcon: HTMLElement = document.createElement('i');
                 replyIcon.classList.add('fa', 'fa-share');
 
-                if (this.options.replyIconURL.length) {
-                    replyIcon.style.backgroundImage = `url("${this.options.replyIconURL}")`;
+                if (this.#options.replyIconURL.length) {
+                    replyIcon.style.backgroundImage = `url("${this.#options.replyIconURL}")`;
                     replyIcon.classList.add('image');
                 }
 
@@ -94,10 +105,10 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         }
 
         // New tag
-        if (commentModel.isNew) {
+        if (this.commentModel.isNew) {
             const newTag: HTMLSpanElement = document.createElement('span');
             newTag.classList.add('new', 'highlight-background');
-            newTag.textContent = this.options.textFormatter(this.options.newText);
+            newTag.textContent = this.#options.newText;
             commentHeaderEl.append(newTag);
         }
 
@@ -109,15 +120,15 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         // =======
         const content: HTMLDivElement = document.createElement('div');
         content.classList.add('content');
-        content.innerHTML = sanitize(this.commentContentFormatter.getFormattedCommentContent(commentModel));
+        content.innerHTML = sanitize(this.#commentContentFormatter.getFormattedCommentContent(this.commentModel));
 
         // Edited timestamp
-        if (commentModel.modified && commentModel.modified !== commentModel.created) {
-            const editedTime: string = this.options.timeFormatter(commentModel.modified);
+        if (this.commentModel.modifiedAt && this.commentModel.modifiedAt !== this.commentModel.createdAt) {
+            const editedTime: string = this.#options.timeFormatter(this.commentModel.modifiedAt);
             const edited: HTMLTimeElement = document.createElement('time');
             edited.classList.add('edited');
-            edited.textContent = `${this.options.textFormatter(this.options.editedText)} ${editedTime}`;
-            edited.setAttribute('data-original', commentModel.modified);
+            edited.textContent = `${this.#options.editedText} ${editedTime}`;
+            edited.setAttribute('data-original', this.commentModel.modifiedAt.toISOString());
 
             content.append(edited);
         }
@@ -132,8 +143,8 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         attachmentTags.classList.add('tags');
         attachments.append(attachmentPreviews, attachmentTags);
 
-        if (this.options.enableAttachments && commentModel.hasAttachments()) {
-            commentModel.attachments.forEach((attachment: any) => {
+        if (this.#options.enableAttachments && this.commentModel.hasAttachments()) {
+            this.commentModel.attachments?.forEach((attachment: any) => {
                 let format = undefined;
                 let type = undefined;
 
@@ -174,21 +185,21 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
                 }
 
                 // Tag element
-                const attachmentTag: HTMLElement = this.tagFactory.createAttachmentTagElement(attachment, false);
+                const attachmentTag: HTMLElement = this.#tagFactory.createAttachmentTagElement(attachment);
                 attachmentTags.append(attachmentTag);
             });
         }
 
         // Actions
         // =======
-        const actions: HTMLSpanElement = this.#createActions(commentModel);
+        const actions: HTMLSpanElement = this.#createActions(this.commentModel);
 
         wrapper.append(content, attachments, actions);
         commentWrapper.append(profilePicture, time, commentHeaderEl, wrapper);
         this.appendChild(commentWrapper);
     }
 
-    #createActions(commentModel: Record<string, any>): HTMLSpanElement {
+    #createActions(commentModel: CommentModelEnriched): HTMLSpanElement {
         const actions: HTMLSpanElement = document.createElement('span');
         actions.classList.add('actions');
 
@@ -199,24 +210,24 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         // Append buttons for actions that are enabled
         // Reply
-        if (this.options.enableReplying) {
+        if (this.#options.enableReplying) {
             const reply: HTMLButtonElement = document.createElement('button');
             reply.type = 'button';
             reply.classList.add('action', 'reply');
-            reply.textContent = this.options.textFormatter(this.options.replyText);
+            reply.textContent = this.#options.replyText;
             actions.append(reply);
         }
 
         // Upvotes
-        if (this.options.enableUpvoting) {
-            const upvotes: HTMLElement = this.#createUpvoteElement(commentModel);
+        if (this.#options.enableUpvoting) {
+            const upvotes: ButtonElement = ButtonElement.createUpvoteButton(commentModel);
             actions.append(upvotes);
         }
 
-        if (commentModel.createdByCurrentUser || this.options.currentUserIsAdmin) {
+        if (commentModel.createdByCurrentUser || this.#options.currentUserIsAdmin) {
             const editButton: HTMLButtonElement = document.createElement('button');
             editButton.classList.add('action', 'edit');
-            editButton.textContent = this.options.textFormatter(this.options.editText);
+            editButton.textContent = this.#options.editText;
             actions.append(editButton);
         }
 
@@ -232,35 +243,8 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         return actions;
     }
 
-    #createUpvoteElement(commentModel: Record<string, any>): HTMLElement {
-        // Upvote icon
-        const upvoteIcon: HTMLElement = document.createElement('i');
-        upvoteIcon.classList.add('fa', 'fa-thumbs-up');
-        if (this.options.upvoteIconURL.length) {
-            upvoteIcon.style.backgroundImage = `url("${this.options.upvoteIconURL}")`;
-            upvoteIcon.classList.add('image');
-        }
-
-        // Upvotes
-        const upvoteEl: HTMLButtonElement = document.createElement('button');
-        upvoteEl.classList.add('action', 'upvote', commentModel.userHasUpvoted ? 'highlight-font' : 'not-upvoted');
-        const upvoteCount: HTMLSpanElement = document.createElement('span');
-        upvoteCount.classList.add('upvote-count')
-        upvoteCount.textContent = commentModel.upvoteCount;
-        upvoteEl.append(upvoteCount, upvoteIcon);
-
-        return upvoteEl;
-    }
-
-    reRenderUpvotes(): void {
-        const commentModel: Record<string, any> = this.commentModel;
-        const upvotes: HTMLElement = this.#createUpvoteElement(commentModel);
-
-        this.querySelector('.upvote')!.replaceWith(upvotes);
-    }
-
     reRenderCommentActionBar(): void {
-        const commentModel: Record<string, any> = this.commentModel;
+        const commentModel: CommentModelEnriched = this.commentModel;
         const actions: HTMLSpanElement = this.#createActions(commentModel);
 
         this.querySelector('.actions')!.replaceWith(actions);

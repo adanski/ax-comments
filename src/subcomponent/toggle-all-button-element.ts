@@ -1,14 +1,15 @@
 import {isNil} from '../util.js';
-import {CommentsOptions} from '../api.js';
 import {OptionsProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
-import {getHostContainer} from '../html-util.js';
+import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
+import {Labels} from '../options/labels.js';
+import {Misc} from '../options/misc.js';
 
 @RegisterCustomElement('ax-toggle-all-button', {extends: 'li'})
 export class ToggleAllButtonElement extends HTMLLIElement implements WebComponent {
 
-    #options!: CommentsOptions;
+    #options!: Required<Labels & Misc>;
 
     connectedCallback(): void {
         this.#initServices();
@@ -28,14 +29,14 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
         const caret: HTMLSpanElement = document.createElement('span');
         caret.classList.add('caret');
 
-        // Append toggle button to DOM
         button.append(toggleAllButtonText, caret);
         this.append(button);
+        this.onclick = this.#toggleReplies;
     }
 
-    static updateToggleAllButton(parentEl: HTMLElement, options: CommentsOptions): void {
-        // Don't hide replies if maxRepliesVisible is null or undefined
-        if (isNil(options.maxRepliesVisible)) {
+    static updateToggleAllButton(parentEl: HTMLElement, options: Required<Labels & Misc>): void {
+        // Don't hide replies if maxRepliesVisible is false
+        if (options.maxRepliesVisible === false) {
             return;
         }
 
@@ -55,7 +56,7 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
             togglableReplies = childComments.slice(0, -options.maxRepliesVisible);
         }
 
-        const allRepliesExpanded: boolean = toggleAllButton?.querySelector('span.text')!.textContent === options.textFormatter(options.hideRepliesText);
+        const allRepliesExpanded: boolean = toggleAllButton?.querySelector('span.text')!.textContent === options.hideRepliesText;
 
         // Add identifying class for hidden replies so they can be toggled
         for (let i = 0; i < togglableReplies.length; i++) {
@@ -75,25 +76,32 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
             }
 
             // Update the text of toggle all -button
-            toggleAllButton.setToggleAllButtonText(false);
+            toggleAllButton.#setToggleAllButtonText(false);
 
         } else { // Make sure that toggle all button is not present
             toggleAllButton?.remove();
         }
     }
 
-    setToggleAllButtonText(toggle?: boolean): void {
+    #toggleReplies: (e: UIEvent) => void = e => {
+        const toggleAllButton: ToggleAllButtonElement = e.currentTarget as ToggleAllButtonElement;
+        findSiblingsBySelector(toggleAllButton, '.togglable-reply')
+            .forEach((togglableReply: HTMLElement) => togglableReply.classList.toggle('visible'));
+        toggleAllButton.#setToggleAllButtonText(true);
+    };
+
+    #setToggleAllButtonText(toggle?: boolean): void {
         const textContainer: HTMLElement = this.querySelector('span.text') as HTMLElement;
         const caret: HTMLElement = this.querySelector('.caret') as HTMLElement;
 
         const showExpandingText: () => void = () => {
-            let text: string = this.#options.textFormatter(this.#options.viewAllRepliesText);
+            let text: string = this.#options.viewAllRepliesText;
             const replyCount: number = this.parentElement!.querySelectorAll('.comment:not(.hidden)').length - 1;
             text = text.replace('__replyCount__', replyCount + '');
             textContainer.textContent = text;
         };
 
-        const hideRepliesText: string = this.#options.textFormatter(this.#options.hideRepliesText);
+        const hideRepliesText: string = this.#options.hideRepliesText;
 
         if (toggle) {
             // Toggle text

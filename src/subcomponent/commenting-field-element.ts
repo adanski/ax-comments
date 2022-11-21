@@ -3,14 +3,20 @@ import {ButtonElement} from './button-element.js';
 import {Textcomplete} from '@textcomplete/core';
 import {TagFactory} from './tag-factory.js';
 import {TextareaElement} from './textarea-element.js';
-import {CommentsOptions} from '../api.js';
+import {CommentModel, CommentsOptions} from '../api.js';
 import {areArraysEqual, isStringEmpty} from '../util.js';
-import {CommentsById} from '../comments-by-id.js';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from '../provider.js';
-import {CommentUtil} from '../comment-util.js';
+import {CommentModelEnriched} from '../comments-by-id.js';
+import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../provider.js';
+import {CommentViewModel} from '../comment-view-model.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
-import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
+import {
+    findParentsBySelector,
+    findSiblingsBySelector,
+    getHostContainer,
+    hideElement,
+    showElement
+} from '../html-util.js';
 import {TextcompleteFactory} from './textcomplete-factory.js';
 
 @RegisterCustomElement('ax-commenting-field', {extends: 'li'})
@@ -23,12 +29,11 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
     #textcomplete: Textcomplete | undefined;
 
     private container!: HTMLElement;
-    private options!: CommentsOptions;
-    private commentsById!: CommentsById;
+    private options!: Required<CommentsOptions>;
+    private commentViewModel!: CommentViewModel;
     private profilePictureFactory!: ProfilePictureFactory;
     private textcompleteFactory!: TextcompleteFactory;
     private tagFactory!: TagFactory;
-    private commentUtil!: CommentUtil;
 
     static create(options: Partial<Pick<CommentingFieldElement, 'parentId' | 'existingCommentId' | 'isMain'>>): CommentingFieldElement {
         const commentingFieldEl: CommentingFieldElement = document.createElement('li', {is: 'ax-commenting-field'}) as CommentingFieldElement;
@@ -39,24 +44,31 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
     connectedCallback(): void {
         this.#initServices();
         this.#initElement();
+        this.querySelector<HTMLElement>('.main:scope .textarea')!
+            .addEventListener('click', this.#showMainField);
+        this.querySelector<HTMLElement>('.main:scope .close')!
+            .addEventListener('click', this.#hideMainField);
     }
 
     disconnectedCallback(): void {
         this.#textcomplete?.destroy(true);
+        this.querySelector<HTMLElement>('.main:scope .textarea')!
+            .removeEventListener('click', this.#showMainField);
+        this.querySelector<HTMLElement>('.main:scope .close')!
+            .removeEventListener('click', this.#hideMainField);
     }
 
     #initServices(): void {
         this.container = getHostContainer(this);
         this.options = OptionsProvider.get(this.container)!;
-        this.commentsById = CommentsProvider.get(this.container)!;
+        this.commentViewModel = CommentViewModelProvider.get(this.container);
         this.profilePictureFactory = ServiceProvider.get(this.container, ProfilePictureFactory);
         this.textcompleteFactory = ServiceProvider.get(this.container, TextcompleteFactory);
         this.tagFactory = ServiceProvider.get(this.container, TagFactory);
-        this.commentUtil = ServiceProvider.get(this.container, CommentUtil);
     }
 
     #initElement(): void {
-        let profilePictureURL: string;
+        let profilePictureURL: string | undefined;
         let userId: string;
         let attachments: Record<string, any>[];
 
@@ -67,18 +79,19 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
 
         // Comment was modified, use existing data
         if (this.existingCommentId) {
-            profilePictureURL = this.commentsById[this.existingCommentId].profilePictureURL;
-            userId = this.commentsById[this.existingCommentId].creator;
-            attachments = this.commentsById[this.existingCommentId].attachments;
+            const existingComment = this.commentViewModel.getComment(this.existingCommentId)!;
+            profilePictureURL = existingComment.creatorProfilePictureURL;
+            userId = existingComment.creatorUserId;
+            attachments = existingComment.attachments ?? [];
 
             // New comment was created
         } else {
             profilePictureURL = this.options.profilePictureURL;
-            userId = this.options.creator;
+            userId = this.options.currentUserId;
             attachments = [];
         }
 
-        const profilePicture: HTMLElement = this.profilePictureFactory.createProfilePictureElement(profilePictureURL, userId);
+        const profilePicture: HTMLElement = this.profilePictureFactory.createProfilePictureElement(userId, profilePictureURL);
 
         // New comment
         const textareaWrapper: HTMLDivElement = document.createElement('div');
@@ -89,20 +102,22 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
         controlRow.classList.add('control-row');
 
         // Textarea
-        const textarea: TextareaElement = TextareaElement.create();
+        const textarea: TextareaElement = TextareaElement.create({
+            parentId: this.parentId,
+            existingCommentId: this.existingCommentId
+        });
 
         // Close button
-        const closeButton: ButtonElement = ButtonElement.createCloseButton(this.options);
-        closeButton.classList.add('inline-button');
+        const closeButton: ButtonElement = ButtonElement.createCloseButton({inline: true});
 
         // Save button
-        const saveButton: ButtonElement = ButtonElement.createSaveButton(this.options, this.existingCommentId);
+        const saveButton: ButtonElement = ButtonElement.createSaveButton({}, this.existingCommentId);
         controlRow.append(saveButton);
 
         // Delete button
-        if (this.existingCommentId && this.isAllowedToDelete(this.existingCommentId)) {
+        if (this.existingCommentId && this.#isAllowedToDelete(this.existingCommentId)) {
             // Delete button
-            const deleteButton: HTMLSpanElement = ButtonElement.createDeleteButton(this.options);
+            const deleteButton: HTMLSpanElement = ButtonElement.createDeleteButton({});
             controlRow.append(deleteButton);
         }
 
@@ -111,17 +126,14 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
             // Upload buttons
             // ==============
 
-            const uploadButton: ButtonElement = ButtonElement.createUploadButton(this.options);
-
             // Main upload button
-            const mainUploadButton: ButtonElement = uploadButton.cloneNode(true) as ButtonElement;
+            const mainUploadButton: ButtonElement = ButtonElement.createUploadButton({inline: false});
             mainUploadButton.originalContent = mainUploadButton.children;
             controlRow.append(mainUploadButton);
 
             // Inline upload button for main commenting field
             if (this.isMain) {
-                const inlineUploadButton: ButtonElement = uploadButton.cloneNode(true) as ButtonElement;
-                inlineUploadButton.classList.add('inline-button');
+                const inlineUploadButton: ButtonElement = ButtonElement.createUploadButton({inline: true});
                 textareaWrapper.append(inlineUploadButton);
             }
 
@@ -131,30 +143,25 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
             const attachmentsContainer: HTMLDivElement = document.createElement('div');
             attachmentsContainer.classList.add('attachments');
             attachments.forEach((attachment) => {
-                const attachmentTag = this.tagFactory.createAttachmentTagElement(attachment, true);
+                const attachmentTag = this.tagFactory.createAttachmentTagElement(attachment, this.toggleSaveButton.bind(this));
                 attachmentsContainer.append(attachmentTag);
             });
             controlRow.append(attachmentsContainer);
         }
-
 
         // Populate the element
         textareaWrapper.append(closeButton, textarea, controlRow);
         this.append(profilePicture, textareaWrapper);
 
         if (this.parentId) {
-            // Set the parent id to the field if necessary
-            textarea.setAttribute('data-parent', this.parentId);
-
             // Append reply-to tag if necessary
-            const parentModel = this.commentsById[this.parentId];
-            if (parentModel.parent) {
-
+            const parentModel = this.commentViewModel.getComment(this.parentId)!;
+            if (parentModel.parentId) {
                 // Creating the reply-to tag
-                textarea.value = '@' + parentModel.fullname + ' ';
+                textarea.value = '@' + parentModel.creatorUserId + ' ';
                 textarea.pingedUsers.push({
-                    id: this.parentId,
-                    fullname: parentModel.fullname
+                    id: parentModel.creatorUserId,
+                    displayName: parentModel.creatorDisplayName
                 });
             }
         }
@@ -165,16 +172,16 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
         }
     }
 
-    private isAllowedToDelete(commentId: string): boolean {
+    #isAllowedToDelete(commentId: string): boolean {
         if (!this.options.enableDeleting) {
             return false;
         }
 
         let isAllowedToDelete = true;
         if (!this.options.enableDeletingCommentWithReplies) {
-            const comments: Record<string, any>[] = this.commentUtil.getComments();
+            const comments: CommentModelEnriched[] = this.commentViewModel.getComments();
             for (let i = 0; i < comments.length; i++) {
-                if (comments[i].parent === commentId) {
+                if (comments[i].parentId === commentId) {
                     isAllowedToDelete = false;
                     break;
                 }
@@ -183,28 +190,82 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
         return isAllowedToDelete;
     }
 
-    createCommentJSON(): Record<string, any> {
-        const textarea: TextareaElement = this.querySelector('.textarea') as TextareaElement;
-        const time: string = new Date().toISOString();
+    #showMainField: (e: UIEvent) => void = e => {
+        if (!this.isMain) return;
 
-        const commentJSON = {
-            id: 'c' + (this.commentUtil.getComments().length + 1),   // Temporary id
-            parent: textarea.getAttribute('data-parent') || null,
-            created: time,
-            modified: time,
-            content: textarea.getTextareaContent(),
-            pings: textarea.getPings(),
-            fullname: this.options.textFormatter(this.options.youText),
-            profilePictureURL: this.options.profilePictureURL,
-            createdByCurrentUser: true,
-            upvoteCount: 0,
-            userHasUpvoted: false,
-            attachments: this.getAttachmentsFromCommentingField()
-        };
-        return commentJSON;
+        const mainTextarea: HTMLElement = e.currentTarget as HTMLElement;
+        findSiblingsBySelector(mainTextarea, '.control-row')
+            .forEach(showElement)
+        showElement(mainTextarea.parentElement!.querySelector('.close')!);
+        hideElement(mainTextarea.parentElement!.querySelector('.upload.inline-button')!);
+        mainTextarea.focus();
+    };
+
+    #hideMainField: (e: UIEvent) => void = e => {
+        if (!this.isMain) return;
+
+        const closeButton: ButtonElement = e.currentTarget as ButtonElement;
+        const mainTextarea: TextareaElement = this.querySelector<TextareaElement>('.textarea')!;
+        const mainControlRow: HTMLElement = this.querySelector('.control-row')!;
+
+        // Clear text area
+        mainTextarea.clearTextarea();
+
+        // Clear attachments
+        this.querySelector('.attachments')!.innerHTML = '';
+
+        // Toggle save button
+        this.toggleSaveButton();
+
+        // Adjust height
+        mainTextarea.adjustTextareaHeight(false);
+
+        hideElement(mainControlRow);
+        hideElement(closeButton);
+        showElement(mainTextarea.parentElement!.querySelector('.upload.inline-button')!);
+        mainTextarea.blur();
+    };
+
+    //todo: azi
+    //of(eventOf('click', '.commenting-field:not(.main) .close'), 'removeCommentingField'),
+    #removeCommentingField(e: UIEvent): void {p
+        const closeButton: HTMLElement = e.currentTarget as HTMLElement;
+
+        // Remove edit class from comment if user was editing the comment
+        const textarea: TextareaElement = findSiblingsBySelector<TextareaElement>(closeButton, '.textarea').first()!;
+        if (textarea.existingCommentId) {
+            findParentsBySelector(closeButton, 'li.comment').first()!.classList.remove('edit');
+        }
+
+        // Remove the field
+        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(closeButton, 'li.commenting-field').first()!;
+        commentingField.remove();
     }
 
-    getAttachmentsFromCommentingField(): any[] {
+    getCommentModel(): CommentModel {
+        const textarea: TextareaElement = this.querySelector('.textarea') as TextareaElement;
+        const time: Date = new Date();
+
+        const commentModel: CommentModel = {
+            id: 'c' + (this.commentViewModel.getComments().length + 1),   // Temporary id
+            parentId: textarea.parentId || undefined,
+            createdAt: time,
+            modifiedAt: time,
+            content: textarea.getTextareaContent(),
+            pings: textarea.getPings(),
+            creatorUserId: this.options.currentUserId,
+            createdByAdmin: this.options.currentUserIsAdmin,
+            creatorDisplayName: this.options.youText,
+            creatorProfilePictureURL: this.options.profilePictureURL,
+            createdByCurrentUser: true,
+            upvoteCount: 0,
+            upvotedByCurrentUser: false,
+            attachments: this.getAttachments()
+        };
+        return commentModel;
+    }
+
+    getAttachments(): any[] {
         const attachmentElements: NodeListOf<HTMLAnchorElement> = this.querySelectorAll('.attachments .attachment');
         const attachments: any[] = [];
         for (let i = 0; i < attachmentElements.length; i++) {
@@ -220,28 +281,25 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
             .querySelector('.save')!;
 
         const content = textarea.getTextareaContent();
-        const attachments = this.getAttachmentsFromCommentingField();
+        const attachments = this.getAttachments();
         let enabled: boolean;
 
         // Case: existing comment
-        const commentModel = this.commentsById[textarea.getAttribute('data-comment')!];
+        const commentModel = this.commentViewModel.getComment(textarea.existingCommentId!);
         if (commentModel) {
 
             // Case: parent changed
             const contentChanged = content !== commentModel.content;
-            let parentFromModel: string = '';
-            if (commentModel.parent) {
-                parentFromModel = commentModel.parent.toString();
-            }
+            const parentFromModel: string = commentModel.parentId || '';
 
             // Case: parent changed
-            const parentFromTextarea: string | null = textarea.getAttribute('data-parent');
+            const parentFromTextarea: string | null = textarea.parentId;
             const parentChanged: boolean = !isStringEmpty(parentFromTextarea) && parentFromTextarea !== parentFromModel;
 
             // Case: attachments changed
             let attachmentsChanged = false;
             if (this.options.enableAttachments) {
-                const savedAttachmentIds = commentModel.attachments.map((attachment: any) => attachment.id);
+                const savedAttachmentIds = (commentModel.attachments ?? []).map((attachment: any) => attachment.id);
                 const currentAttachmentIds = attachments.map((attachment: any) => attachment.id);
                 attachmentsChanged = !areArraysEqual(savedAttachmentIds, currentAttachmentIds);
             }

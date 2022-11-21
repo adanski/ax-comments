@@ -1,51 +1,50 @@
-import {CommentsOptions} from './api.js';
+import {SortKey} from './api.js';
 import {OptionsProvider} from './provider.js';
+import {Functionalities} from './options/functionalities.js';
+import {CommentModelEnriched} from './comments-by-id.js';
 
 export class CommentSorter {
 
-    private readonly options: CommentsOptions;
+    readonly #options: Required<Functionalities>;
 
-    constructor(private readonly container: HTMLElement) {
-        this.options = OptionsProvider.get(container)!;
+    constructor(container: HTMLElement) {
+        this.#options = OptionsProvider.get(container)!;
     }
 
-    sortComments(comments: Record<string, any>[], sortKey: SortKey): void {
-        if (sortKey === SortKey.POPULARITY) { // Sort by popularity
-            comments.sort((commentA, commentB) => {
-                let pointsOfA = commentA.childs.length;
-                let pointsOfB = commentB.childs.length;
+    sortComments(comments: CommentModelEnriched[], sortKey: SortKey): CommentModelEnriched[] {
+        return comments.sort(this.getSorter(sortKey));
+    }
 
-                if (this.options.enableUpvoting) {
-                    pointsOfA += commentA.upvoteCount;
-                    pointsOfB += commentB.upvoteCount;
+    getSorter(sortKey: SortKey): (a: CommentModelEnriched, b: CommentModelEnriched) => number {
+        if (sortKey === SortKey.POPULARITY) { // Sort by popularity
+            return (commentA, commentB) => {
+                let pointsOfA = commentA.childIds?.length ?? 0;
+                let pointsOfB = commentB.childIds?.length ?? 0;
+
+                if (this.#options.enableUpvoting) {
+                    pointsOfA += commentA.upvoteCount ?? 0;
+                    pointsOfB += commentB.upvoteCount ?? 0;
                 }
 
                 if (pointsOfB != pointsOfA) {
                     return pointsOfB - pointsOfA;
                 } else {
                     // Return newer if popularity is the same
-                    const createdA = new Date(commentA.created).getTime();
-                    const createdB = new Date(commentB.created).getTime();
+                    const createdA = commentA.createdAt.getTime();
+                    const createdB = commentB.createdAt.getTime();
                     return createdB - createdA;
                 }
-            });
+            };
         } else { // Sort by date
-            comments.sort((commentA, commentB) => {
-                const createdA = new Date(commentA.created).getTime();
-                const createdB = new Date(commentB.created).getTime();
+            return (commentA, commentB) => {
+                const createdA = commentA.createdAt.getTime();
+                const createdB = commentB.createdAt.getTime();
                 if (sortKey == SortKey.OLDEST) {
                     return createdA - createdB;
                 } else {
                     return createdB - createdA;
                 }
-            });
+            };
         }
     }
-}
-
-export enum SortKey {
-    POPULARITY = 'popularity',
-    OLDEST = 'oldest',
-    NEWEST = 'newest',
-    ATTACHMENTS = 'attachments'
 }

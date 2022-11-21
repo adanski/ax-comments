@@ -1,8 +1,8 @@
-import {CommentsById} from './comments-by-id.js';
-import {CommentsOptions} from './api.js';
-import {CommentsProvider, OptionsProvider, ServiceProvider} from './provider.js';
+import {CommentModelEnriched, CommentsById} from './comments-by-id.js';
+import {CommentModel, CommentsOptions, SortKey} from './api.js';
+import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from './provider.js';
 import {TextareaElement} from './subcomponent/textarea-element.js';
-import {CommentUtil} from './comment-util.js';
+import {CommentViewModel} from './comment-view-model.js';
 import {
     findParentsBySelector,
     findSiblingsBySelector,
@@ -18,8 +18,9 @@ import {CommentElement} from './subcomponent/comment-element.js';
 import {CommentContentFormatter} from './subcomponent/comment-content-formatter.js';
 import {TagFactory} from './subcomponent/tag-factory.js';
 import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
-import {CommentSorter, SortKey} from './comment-sorter.js';
+import {CommentSorter} from './comment-sorter.js';
 import EventEmitter from 'EventEmitter3';
+import {ErrorFct, SuccessFct} from './options/callbacks.js';
 
 export interface ElementEventHandler {
     currentSortKey: SortKey;
@@ -31,22 +32,14 @@ export interface ElementEventHandler {
     checkEditableContentForChange(e: Event): void;
     navigationElementClicked(e: MouseEvent): void;
     toggleNavigationDropdown(e: UIEvent): void;
-    showMainCommentingField(e: UIEvent): void;
-    hideMainCommentingField(e: UIEvent): void;
     increaseTextareaHeight(e: Event): void;
     textareaContentChanged(e: Event): void;
-    removeCommentingField(e: UIEvent): void;
     postComment(e: UIEvent): void;
     putComment(e: UIEvent): void;
     deleteComment(e: UIEvent): void;
-    preDeleteAttachment(e: UIEvent): void;
     fileInputChanged(e: Event): void;
-    upvoteComment(e: UIEvent): void;
     hashtagClicked(e: MouseEvent): void;
     pingClicked(e: MouseEvent): void;
-    toggleReplies(e: UIEvent): void;
-    replyButtonClicked(e: MouseEvent): void;
-    editButtonClicked(e: MouseEvent): void;
     showDroppableOverlay(e: UIEvent): void;
     handleDragEnter(e: DragEvent): void;
     handleDragLeaveForOverlay(e: DragEvent): void;
@@ -60,9 +53,8 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     currentSortKey: SortKey = SortKey.NEWEST;
 
-    readonly #options: CommentsOptions;
-    readonly #commentsById: CommentsById;
-    readonly #commentUtil: CommentUtil;
+    readonly #options: Required<CommentsOptions>;
+    readonly #commentViewModel: CommentViewModel;
     readonly #commentTransformer: CommentTransformer;
     readonly #commentSorter: CommentSorter;
     readonly #commentContentFormatter: CommentContentFormatter;
@@ -70,9 +62,8 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
     constructor(private readonly container: HTMLElement,
                 private readonly emitter: EventEmitter<'navigationElementClicked' | 'postComment'>) {
-        this.#options = OptionsProvider.get(container)!;
-        this.#commentsById = CommentsProvider.get(container)!;
-        this.#commentUtil = ServiceProvider.get(container, CommentUtil);
+        this.#options = OptionsProvider.get(container);
+        this.#commentViewModel = CommentViewModelProvider.get(container);
         this.#commentTransformer = ServiceProvider.get(container, CommentTransformer);
         this.#commentSorter = ServiceProvider.get(container, CommentSorter);
         this.#commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
@@ -115,7 +106,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
             }));
 
             // Filter out already added attachments
-            const existingAttachments: any[] = commentingField.getAttachmentsFromCommentingField();
+            const existingAttachments: any[] = commentingField.getAttachments();
             attachments = attachments.filter(attachment => {
                 let duplicate = false;
 
@@ -145,7 +136,10 @@ export class CommentsElementEventHandler implements ElementEventHandler {
                 if (validatedAttachments.length) {
                     // Create attachment tags
                     validatedAttachments.forEach(attachment => {
-                        const attachmentTag: HTMLAnchorElement = this.#tagFactory.createAttachmentTagElement(attachment, true);
+                        const attachmentTag: HTMLAnchorElement = this.#tagFactory.createAttachmentTagElement(attachment, () => {
+                            // Check if save button needs to be enabled
+                            commentingField.toggleSaveButton();
+                        });
                         attachmentsContainer.append(attachmentTag);
                     });
 
@@ -176,15 +170,15 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     }
 
     saveEditableContent(e: Event): void {
-        const el: HTMLElement = e.currentTarget as HTMLElement;
-        (el as any).contentBeforeChange = el.innerHTML;
+        const el: TextareaElement = e.currentTarget as TextareaElement;
+        (el as any).contentBeforeChange = el.value;
     }
 
     checkEditableContentForChange(e: Event): void {
-        const el: HTMLElement = e.currentTarget as HTMLElement;
+        const el: TextareaElement = e.currentTarget as TextareaElement;
 
-        if ((el as any).contentBeforeChange !== el.innerHTML) {
-            (el as any).contentBeforeChange = el.innerHTML;
+        if ((el as any).contentBeforeChange !== el.value) {
+            (el as any).contentBeforeChange = el.value;
             el.dispatchEvent(new Event('change', {bubbles: true}))
         }
     }
@@ -207,12 +201,11 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     #sortAndReArrangeComments(sortKey: SortKey): void {
         const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
 
-        // Get main level comments
-        const mainLevelComments: Record<string, any>[] = this.#commentUtil.getComments().filter(commentModel => !commentModel.parent);
-        this.#commentSorter.sortComments(mainLevelComments, sortKey);
+        // Get top level comments
+        const rootComments: CommentModelEnriched[] = this.#commentViewModel.getRootComments(this.#commentSorter.getSorter(sortKey));
 
-        // Rearrange the main level comments
-        mainLevelComments.forEach(commentModel => {
+        // Rearrange top level comments
+        rootComments.forEach(commentModel => {
             const commentEl: HTMLElement = commentList.querySelector(`:scope > li.comment[data-id=${commentModel.id}]`)!;
             commentList.append(commentEl);
         });
@@ -224,39 +217,6 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
         const dropdown: HTMLElement = (e.currentTarget as HTMLElement).querySelector('~ .dropdown')!;
         toggleElementVisibility(dropdown);
-    }
-
-    showMainCommentingField(e: UIEvent): void {
-        const mainTextarea: HTMLElement = e.currentTarget as HTMLElement;
-        findSiblingsBySelector(mainTextarea, '.control-row')
-            .forEach(showElement)
-        showElement(mainTextarea.parentElement!.querySelector('.close')!);
-        hideElement(mainTextarea.parentElement!.querySelector('.upload.inline-button')!);
-        mainTextarea.focus();
-    }
-
-    hideMainCommentingField(e: UIEvent): void {
-        const closeButton: HTMLElement = e.currentTarget as HTMLElement;
-        const commentingField: CommentingFieldElement = this.container.querySelector('li.commenting-field.main')!
-        const mainTextarea: TextareaElement = commentingField.querySelector<TextareaElement>('.textarea')!;
-        const mainControlRow: HTMLElement = commentingField.querySelector('.control-row')!;
-
-        // Clear text area
-        mainTextarea.clearTextarea();
-
-        // Clear attachments
-        commentingField.querySelector('.attachments')!.innerHTML = '';
-
-        // Toggle save button
-        commentingField.toggleSaveButton();
-
-        // Adjust height
-        mainTextarea.adjustTextareaHeight(false);
-
-        hideElement(mainControlRow);
-        hideElement(closeButton);
-        showElement(mainTextarea.parentElement!.querySelector('.upload.inline-button')!);
-        mainTextarea.blur();
     }
 
     increaseTextareaHeight(e: Event): void {
@@ -272,20 +232,11 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
         // Update parent id if reply-to tag was removed
         if (!(isMain || textarea.pingedUsers.length)) {
-            const commentId = textarea.getAttribute('data-comment');
+            const commentId = textarea.existingCommentId;
 
-            // Case: editing comment
-            if (commentId) {
-                const parentComments: HTMLElement[] = findParentsBySelector(textarea, 'li.comment');
-                if (parentComments.length > 1) {
-                    const parentId: string = parentComments[parentComments.length - 1].getAttribute('data-id')!;
-                    textarea.setAttribute('data-parent', parentId);
-                }
-
-                // Case: new comment
-            } else {
-                const parentId: string = findParentsBySelector(textarea, 'li.comment').last()!.getAttribute('data-id')!;
-                textarea.setAttribute('data-parent', parentId);
+            // Case: new comment
+            if (!commentId) {
+                textarea.parentId = findParentsBySelector(textarea, 'li.comment').last()!.getAttribute('data-id');
             }
         }
 
@@ -302,20 +253,6 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         commentingField.toggleSaveButton();
     }
 
-    removeCommentingField(e: UIEvent): void {
-        const closeButton: HTMLElement = e.currentTarget as HTMLElement;
-
-        // Remove edit class from comment if user was editing the comment
-        const textarea: HTMLElement = findSiblingsBySelector(closeButton, '.textarea').first()!;
-        if (textarea.getAttribute('data-comment')) {
-            findParentsBySelector(closeButton, 'li.comment').first()!.classList.remove('edit');
-        }
-
-        // Remove the field
-        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(closeButton, 'li.commenting-field').first()!;
-        commentingField.remove();
-    }
-
     postComment(e: UIEvent): void {
         const sendButton: ButtonElement = e.currentTarget as ButtonElement;
         const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(sendButton, 'li.commenting-field').first()!;
@@ -323,14 +260,11 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         // Set button state to loading
         sendButton.setButtonState(false, true);
 
-        // Create comment JSON
-        let commentJSON = commentingField.createCommentJSON();
+        // Get comment
+        const comment: CommentModel = commentingField.getCommentModel();
 
-        // Reverse mapping
-        commentJSON = this.#commentTransformer.applyExternalMappings(commentJSON);
-
-        const success: (commentJSON: Record<string, any>) => void = commentJSON => {
-            this.emitter.emit('postComment', commentJSON);
+        const success: (postedComment: CommentModel) => void = postedComment => {
+            this.emitter.emit('postComment', postedComment);
             commentingField.querySelector<HTMLElement>('.close')!.click();
 
             // Reset button state
@@ -342,7 +276,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
             sendButton.setButtonState(true, false);
         };
 
-        this.#options.postComment(commentJSON, success, error);
+        this.#options.postComment(comment, success, error);
     }
 
     putComment(e: UIEvent): void {
@@ -353,53 +287,42 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         // Set button state to loading
         saveButton.setButtonState(false, true);
 
-        // Use a clone of the existing model and update the model after succesfull update
-        let commentJSON = Object.assign({}, this.#commentsById[textarea.getAttribute('data-comment')!]);
-        Object.assign(commentJSON, {
-            parent: textarea.getAttribute('data-parent'),
-            content: textarea.getTextareaContent(),
-            pings: textarea.getPings(),
-            modified: new Date().getTime(),
-            attachments: commentingField.getAttachmentsFromCommentingField()
-        });
+        // Use a clone of the existing model and update the model after successful update
+        const commentEnriched: CommentModelEnriched = Object.assign<object, CommentModelEnriched, Partial<CommentModel>>(
+            {},
+            this.#commentViewModel.getComment(textarea.existingCommentId!)!,
+            {
+                parentId: textarea.parentId as string,
+                content: textarea.getTextareaContent(),
+                pings: textarea.getPings(),
+                modifiedAt: new Date(),
+                attachments: commentingField.getAttachments()
+            }
+        );
 
-        // Reverse mapping
-        commentJSON = this.#commentTransformer.applyExternalMappings(commentJSON);
-
-        const success: (commentJSON: Record<string, any>) => void = commentJSON => {
-            // The outermost parent can not be changed by editing the comment so the childs array
-            // of parent does not require an update
-
-            const commentModel = this.#commentTransformer.toCommentModel(commentJSON);
-
-            // Delete childs array from new comment model since it doesn't need an update
-            delete commentModel.childs;
-            this.updateCommentModel(commentModel);
+        const success: SuccessFct<CommentModel> = updatedComment => {
+            this.#commentViewModel.updateComment(updatedComment);
 
             // Close the editing field
             commentingField.querySelector<HTMLElement>('.close')!.click();
 
             // Re-render the comment
-            this.reRenderComment(commentModel.id);
+            this.reRenderComment(updatedComment.id);
 
             // Reset button state
             saveButton.setButtonState(false, false);
         };
 
-        const error: () => void = () => {
+        const error: ErrorFct = () => {
             // Reset button state
             saveButton.setButtonState(true, false);
         };
 
-        this.#options.putComment(commentJSON, success, error);
-    }
-
-    private updateCommentModel(commentModel: Record<string, any>): void {
-        Object.assign(this.#commentsById[commentModel.id], commentModel);
+        this.#options.putComment(this.#commentTransformer.deplete(commentEnriched), success, error);
     }
 
     private reRenderComment(id: string): void {
-        const commentModel: Record<string, any> = this.#commentsById[id];
+        const commentModel: CommentModelEnriched = this.#commentViewModel.getComment(id)!;
         const commentElement: CommentElement = this.container.querySelector(`li.comment[data-id="${commentModel.id}"]`)!;
 
         commentElement.reRenderCommentContainer();
@@ -408,23 +331,18 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     deleteComment(e: UIEvent): void {
         const deleteButton: ButtonElement = e.currentTarget as ButtonElement;
         const commentEl: HTMLElement = findParentsBySelector(deleteButton, '.comment').first()!;
-        let commentJSON: Record<string, any> = Object.assign({}, this.#commentsById[commentEl.getAttribute('data-id')!]);
-        const commentId: string = commentJSON.id;
-        const parentId: string = commentJSON.parent;
+        const commentEnriched: CommentModelEnriched = Object.assign({}, this.#commentViewModel.getComment(commentEl.getAttribute('data-id')!));
 
         // Set button state to loading
         deleteButton.setButtonState(false, true);
 
-        // Reverse mapping
-        commentJSON = this.#commentTransformer.applyExternalMappings(commentJSON);
+        const success: SuccessFct<CommentModel> = deletedComment => {
+            // Just to be sure
+            deletedComment.isDeleted = true;
+            this.#commentViewModel.updateComment(deletedComment);
 
-        const success: () => void = () => {
-            this.removeComment(commentId);
-            if (parentId) {
-                findParentsBySelector<CommentElement>(commentEl, `li.comment[data-id="${parentId}"]`)
-                    .first()!
-                    .reRenderCommentActionBar();
-            }
+            // Re-render the comment
+            this.reRenderComment(deletedComment.id);
 
             // Reset button state
             deleteButton.setButtonState(false, false);
@@ -435,24 +353,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
             deleteButton.setButtonState(true, false);
         };
 
-        this.#options.deleteComment(commentJSON, success, error);
-    }
-
-    private removeComment(commentId: string): void {
-        this.#commentUtil.removeComment(commentId, parentEl => {
-            // Update the toggle all button
-            ToggleAllButtonElement.updateToggleAllButton(parentEl, this.#options);
-        });
-    }
-
-    preDeleteAttachment(e: UIEvent) {
-        const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(e.currentTarget as HTMLElement, 'li.commenting-field')
-            .first()!;
-        const attachmentEl: HTMLElement = findParentsBySelector(e.currentTarget as HTMLElement, '.attachment').first()!;
-        attachmentEl.remove();
-
-        // Check if save button needs to be enabled
-        commentingField.toggleSaveButton();
+        this.#options.deleteComment(this.#commentTransformer.deplete(commentEnriched), success, error);
     }
 
     fileInputChanged(e: Event): void {
@@ -460,51 +361,6 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         const files = input.files!;
         const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(input, 'li.commenting-field').first()!;
         this.preSaveAttachments(files, commentingField);
-    }
-
-    upvoteComment(e: UIEvent): void {
-        const commentEl: CommentElement = findParentsBySelector<CommentElement>(e.currentTarget as HTMLElement, 'li.comment').first()!;
-        const commentModel = commentEl.commentModel;
-
-        // Check whether user upvoted the comment or revoked the upvote
-        const previousUpvoteCount = commentModel.upvoteCount;
-        let newUpvoteCount;
-        if (commentModel.userHasUpvoted) {
-            newUpvoteCount = previousUpvoteCount - 1;
-        } else {
-            newUpvoteCount = previousUpvoteCount + 1;
-        }
-
-        // Show changes immediately
-        commentModel.userHasUpvoted = !commentModel.userHasUpvoted;
-        commentModel.upvoteCount = newUpvoteCount;
-        this.reRenderUpvotes(commentModel.id);
-
-        // Reverse mapping
-        let commentJSON = Object.assign({}, commentModel);
-        commentJSON = this.#commentTransformer.applyExternalMappings(commentJSON);
-
-        const success: (commentJSON: Record<string, any>) => void = commentJSON => {
-            const commentModel = this.#commentTransformer.toCommentModel(commentJSON);
-            this.updateCommentModel(commentModel);
-            this.reRenderUpvotes(commentModel.id);
-        };
-
-        const error: () => void = () => {
-            // Revert changes
-            commentModel.userHasUpvoted = !commentModel.userHasUpvoted;
-            commentModel.upvoteCount = previousUpvoteCount;
-            this.reRenderUpvotes(commentModel.id);
-        };
-
-        this.#options.upvoteComment(commentJSON, success, error);
-    }
-
-    private reRenderUpvotes(id: string): void {
-        const commentModel: Record<string, any> = this.#commentsById[id];
-        const commentElement: CommentElement = this.container.querySelector(`li.comment[data-id="${commentModel.id}"]`)!;
-
-        commentElement.reRenderUpvotes();
     }
 
     hashtagClicked(e: MouseEvent): void {
@@ -519,13 +375,6 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         this.#options.pingClicked(value);
     }
 
-    toggleReplies(e: UIEvent): void {
-        const toggleAllButton: ToggleAllButtonElement = (e.currentTarget as HTMLButtonElement).parentElement as ToggleAllButtonElement;
-        findSiblingsBySelector(toggleAllButton, '.togglable-reply')
-            .forEach((togglableReply: HTMLElement) => togglableReply.classList.toggle('visible'));
-        toggleAllButton.setToggleAllButtonText(true);
-    }
-
     replyButtonClicked(e: MouseEvent): void {
         const replyButton: HTMLElement = e.currentTarget as HTMLElement;
         const outermostParent: HTMLElement = findParentsBySelector(replyButton, 'li.comment').last()!;
@@ -535,7 +384,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         let replyField: CommentingFieldElement | null = outermostParent.querySelector('.child-comments > .commenting-field');
         let previousParentId: string | null = null;
         if (replyField) {
-            previousParentId = replyField.querySelector('.textarea')!.getAttribute('data-parent');
+            previousParentId = replyField.querySelector<TextareaElement>('.textarea')!.parentId;
             replyField.remove();
         }
 
@@ -588,19 +437,18 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     editButtonClicked(e: MouseEvent): void {
         const editButton: HTMLElement = e.currentTarget as HTMLElement;
         const commentEl: CommentElement = findParentsBySelector<CommentElement>(editButton, 'li.comment').first()!;
-        const commentModel: Record<string, any> = commentEl.commentModel;
+        const commentModel: CommentModelEnriched = commentEl.commentModel;
         commentEl.classList.add('edit');
 
         // Create the editing field
         const editField: CommentingFieldElement = CommentingFieldElement.create({
-            parentId: commentModel.parent,
+            parentId: commentModel.parentId,
             existingCommentId: commentModel.id
         });
         commentEl.querySelector('.comment-wrapper')!.append(editField);
 
         // Append original content
         const textarea: HTMLElement = editField.querySelector('.textarea')!;
-        textarea.setAttribute('data-comment', commentModel.id);
 
         // Escaping HTML
         textarea.append(this.#commentContentFormatter.getFormattedCommentContent(commentModel, true));

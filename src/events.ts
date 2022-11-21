@@ -18,30 +18,22 @@ export const EVENT_HANDLERS_MAP: Map<ElementEvent, ElementEventHandlerNames> = n
     of(eventOf('click', '.navigation li[data-sort-key]'), 'navigationElementClicked'),
     of(eventOf('click', '.navigation li.title'), 'toggleNavigationDropdown'),
 
-    // Main comenting field
-    of(eventOf('click', '.commenting-field.main .textarea'), 'showMainCommentingField'),
-    of(eventOf('click', '.commenting-field.main .close'), 'hideMainCommentingField'),
-
     // All commenting fields
     of(eventOf('click', '.commenting-field .textarea'), 'increaseTextareaHeight'),
     of(eventOf('change', '.commenting-field .textarea'), 'increaseTextareaHeight', 'textareaContentChanged'),
-    of(eventOf('click', '.commenting-field:not(.main) .close'), 'removeCommentingField'),
 
     // Edit mode actions
     of(eventOf('click', '.commenting-field .send.enabled'), 'postComment'),
     of(eventOf('click', '.commenting-field .update.enabled'), 'putComment'),
     of(eventOf('click', '.commenting-field .delete.enabled'), 'deleteComment'),
-    of(eventOf('click', '.commenting-field .attachments .attachment .delete'), 'preDeleteAttachment'),
     of(eventOf('change', '.commenting-field .upload.enabled input[type="file"]'), 'fileInputChanged'),
 
     // Other actions
-    of(eventOf('click', 'li.comment button.upvote'), 'upvoteComment'),
     of(eventOf('click', 'li.comment button.delete.enabled'), 'deleteComment'),
     of(eventOf('click', 'li.comment .hashtag'), 'hashtagClicked'),
     of(eventOf('click', 'li.comment .ping'), 'pingClicked'),
 
     // Other
-    of(eventOf('click', 'li.comment ul.child-comments .toggle-all'), 'toggleReplies'),
     of(eventOf('click', 'li.comment button.reply'), 'replyButtonClicked'),
     of(eventOf('click', 'li.comment button.edit'), 'editButtonClicked'),
 
