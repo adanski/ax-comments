@@ -3,13 +3,15 @@ import {isNil, normalizeSpaces} from '../util.js';
 import {OptionsProvider, ServiceProvider} from '../provider.js';
 import {Functionalities} from '../options/functionalities.js';
 import {CommentModelEnriched} from '../comments-by-id.js';
+import {Callbacks} from '../options/callbacks.js';
+import sanitize from 'sanitize-html';
 
 export class CommentContentFormatter {
 
     static readonly PING_REGEXP: RegExp = /(^|\s)@([a-z\u00C0-\u00FF\d-_]+)/gim;
     static readonly HASHTAG_REGEXP: RegExp = /(^|\s)#([a-z\u00C0-\u00FF\d-_]+)/gim;
 
-    readonly #options: Required<Functionalities>;
+    readonly #options: Required<Functionalities & Callbacks>;
     readonly #tagFactory: TagFactory;
 
     constructor(container: HTMLElement) {
@@ -17,21 +19,27 @@ export class CommentContentFormatter {
         this.#tagFactory = ServiceProvider.get(container, TagFactory);
     }
 
-    getFormattedCommentContent(commentModel: CommentModelEnriched, replaceNewLines?: boolean): string {
-        let html: string = this.escape(commentModel.content);
+    getFormattedCommentContent(commentModel: CommentModelEnriched, replaceNewLines?: boolean): HTMLElement {
+        let html: string = this.escape(sanitize(commentModel.content));
         html = this.linkify(html);
         html = this.highlightTags(commentModel, html);
         if (replaceNewLines) {
             html = html.replace(/(?:\n)/g, '<br>');
         }
-        return html;
+        const content: HTMLSpanElement = document.createElement('span');
+        content.innerHTML = html;
+        content.querySelectorAll<HTMLElement>('.hashtag')
+            .forEach(hashtag => hashtag.onclick = this.#hashtagClicked);
+        content.querySelectorAll<HTMLElement>('.ping')
+            .forEach(hashtag => hashtag.onclick = this.#pingClicked);
+
+        return content;
     }
 
     private escape(inputText: string): string {
         const escaped: HTMLPreElement = document.createElement('pre');
         escaped.textContent = normalizeSpaces(inputText);
-
-        return escaped.outerHTML;
+        return escaped.innerHTML;
     }
 
     private linkify(inputText: string): string {
@@ -111,4 +119,16 @@ export class CommentContentFormatter {
         });
         return tag.outerHTML;
     }
+
+    #hashtagClicked: (e: MouseEvent) => void = e => {
+        const el: HTMLElement = e.currentTarget as HTMLElement;
+        const value: string = el.getAttribute('data-value')!;
+        this.#options.hashtagClicked(value);
+    };
+
+    #pingClicked: (e: MouseEvent) => void = e => {
+        const el: HTMLElement = e.currentTarget as HTMLElement;
+        const value: string = el.getAttribute('data-value')!;
+        this.#options.pingClicked(value);
+    };
 }

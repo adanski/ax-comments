@@ -30,12 +30,6 @@ export const EVENT_HANDLERS_MAP: Map<ElementEvent, ElementEventHandlerNames> = n
 
     // Other actions
     of(eventOf('click', 'li.comment button.delete.enabled'), 'deleteComment'),
-    of(eventOf('click', 'li.comment .hashtag'), 'hashtagClicked'),
-    of(eventOf('click', 'li.comment .ping'), 'pingClicked'),
-
-    // Other
-    of(eventOf('click', 'li.comment button.reply'), 'replyButtonClicked'),
-    of(eventOf('click', 'li.comment button.edit'), 'editButtonClicked'),
 
     // Drag & dropping attachments
     of(eventOf('dragenter'), 'showDroppableOverlay'),

@@ -1,10 +1,11 @@
 import {normalizeSpaces} from '../util.js';
 import {CommentsOptions} from '../api.js';
-import {OptionsProvider} from '../provider.js';
+import {CommentViewModelProvider, OptionsProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {getHostContainer} from '../html-util.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {PingableUser, UserDisplayNamesById} from '../options/models.js';
+import {CommentViewModel} from '../comment-view-model.js';
 
 @RegisterCustomElement('ax-textarea', {extends: 'textarea'})
 export class TextareaElement extends HTMLTextAreaElement implements WebComponent {
@@ -16,6 +17,7 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
     readonly referencedHashtags: string[] = [];
 
     #options!: Required<CommentsOptions>;
+    #commentViewModel!: CommentViewModel;
 
     connectedCallback(): void {
         this.#initServices();
@@ -25,17 +27,22 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
     #initServices(): void {
         const container: HTMLElement = getHostContainer(this);
         this.#options = OptionsProvider.get(container)!;
+        this.#commentViewModel = CommentViewModelProvider.get(container);
     }
 
     #initElement(): void {
         this.classList.add('textarea');
         this.placeholder = this.#options.textareaPlaceholderText;
+        if (this.existingCommentId) {
+            const existingComment = this.#commentViewModel.getComment(this.existingCommentId)!;
+            this.value = existingComment.content;
+        }
 
         // Setting the initial height for the textarea
         this.adjustTextareaHeight(false);
     }
 
-    static create(options: Pick<TextareaElement, 'existingCommentId' | 'parentId'>): TextareaElement {
+    static create(options: Pick<TextareaElement, 'existingCommentId' | 'parentId' | 'onclick'>): TextareaElement {
         const textarea: TextareaElement = document.createElement('textarea', {is: 'ax-textarea'}) as TextareaElement;
         Object.assign(textarea, options);
         return textarea;

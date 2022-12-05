@@ -34,12 +34,7 @@ export interface ElementEventHandler {
     toggleNavigationDropdown(e: UIEvent): void;
     increaseTextareaHeight(e: Event): void;
     textareaContentChanged(e: Event): void;
-    postComment(e: UIEvent): void;
-    putComment(e: UIEvent): void;
-    deleteComment(e: UIEvent): void;
     fileInputChanged(e: Event): void;
-    hashtagClicked(e: MouseEvent): void;
-    pingClicked(e: MouseEvent): void;
     showDroppableOverlay(e: UIEvent): void;
     handleDragEnter(e: DragEvent): void;
     handleDragLeaveForOverlay(e: DragEvent): void;
@@ -361,103 +356,6 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         const files = input.files!;
         const commentingField: CommentingFieldElement = findParentsBySelector<CommentingFieldElement>(input, 'li.commenting-field').first()!;
         this.preSaveAttachments(files, commentingField);
-    }
-
-    hashtagClicked(e: MouseEvent): void {
-        const el: HTMLElement = e.currentTarget as HTMLElement;
-        const value: string = el.getAttribute('data-value')!;
-        this.#options.hashtagClicked(value);
-    }
-
-    pingClicked(e: MouseEvent): void {
-        const el: HTMLElement = e.currentTarget as HTMLElement;
-        const value: string = el.getAttribute('data-value')!;
-        this.#options.pingClicked(value);
-    }
-
-    replyButtonClicked(e: MouseEvent): void {
-        const replyButton: HTMLElement = e.currentTarget as HTMLElement;
-        const outermostParent: HTMLElement = findParentsBySelector(replyButton, 'li.comment').last()!;
-        const parentId: string | null = findParentsBySelector(replyButton, '.comment').first()!.getAttribute('data-id');
-
-        // Remove existing field
-        let replyField: CommentingFieldElement | null = outermostParent.querySelector('.child-comments > .commenting-field');
-        let previousParentId: string | null = null;
-        if (replyField) {
-            previousParentId = replyField.querySelector<TextareaElement>('.textarea')!.parentId;
-            replyField.remove();
-        }
-
-        // Create the reply field (do not re-create)
-        if (previousParentId !== parentId) {
-            replyField = CommentingFieldElement.create({parentId: parentId});
-            outermostParent.querySelector('.child-comments')!.append(replyField);
-
-            // Move cursor to end
-            const textarea: HTMLElement = replyField.querySelector('.textarea')!;
-            this.moveCursorToEnd(textarea);
-
-            // Ensure element stays visible
-            this.ensureElementStaysVisible(replyField);
-        }
-    }
-
-    private moveCursorToEnd(element: HTMLElement): void {
-        // Trigger input to adjust size
-        element.dispatchEvent(new InputEvent('input'));
-
-        // Scroll to bottom
-        element.scrollTop = element.scrollHeight;
-
-        // Move cursor to end
-        const range: Range = document.createRange();
-        range.selectNodeContents(element);
-        range.collapse(false);
-        const sel: Selection = getSelection() as Selection;
-        sel.removeAllRanges();
-        sel.addRange(range);
-
-        // Focus
-        element.focus();
-    }
-
-    private ensureElementStaysVisible(el: HTMLElement): void {
-        const scrollContainer: HTMLElement = this.container;
-        const maxScrollTop: number = el.offsetTop;
-        const minScrollTop: number = el.offsetTop + el.offsetHeight - scrollContainer.offsetHeight;
-
-        if (scrollContainer.scrollTop > maxScrollTop) { // Case: element hidden above scroll area
-            scrollContainer.scrollTop = maxScrollTop;
-        } else if (scrollContainer.scrollTop < minScrollTop) { // Case: element hidden below srcoll area
-            scrollContainer.scrollTop = minScrollTop;
-        }
-
-    }
-
-    editButtonClicked(e: MouseEvent): void {
-        const editButton: HTMLElement = e.currentTarget as HTMLElement;
-        const commentEl: CommentElement = findParentsBySelector<CommentElement>(editButton, 'li.comment').first()!;
-        const commentModel: CommentModelEnriched = commentEl.commentModel;
-        commentEl.classList.add('edit');
-
-        // Create the editing field
-        const editField: CommentingFieldElement = CommentingFieldElement.create({
-            parentId: commentModel.parentId,
-            existingCommentId: commentModel.id
-        });
-        commentEl.querySelector('.comment-wrapper')!.append(editField);
-
-        // Append original content
-        const textarea: HTMLElement = editField.querySelector('.textarea')!;
-
-        // Escaping HTML
-        textarea.append(this.#commentContentFormatter.getFormattedCommentContent(commentModel, true));
-
-        // Move cursor to end
-        this.moveCursorToEnd(textarea);
-
-        // Ensure element stays visible
-        this.ensureElementStaysVisible(editField);
     }
 
     showDroppableOverlay(e: UIEvent): void {

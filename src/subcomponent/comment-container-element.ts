@@ -5,11 +5,13 @@ import {CommentsOptions} from '../api.js';
 import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
-import {getHostContainer} from '../html-util.js';
-import sanitize from 'sanitize-html';
+import {findParentsBySelector, getHostContainer} from '../html-util.js';
 import {ButtonElement} from './button-element.js';
 import {CommentViewModel} from '../comment-view-model.js';
 import {CommentModelEnriched} from '../comments-by-id.js';
+import {CommentingFieldElement} from './commenting-field-element.js';
+import {TextareaElement} from './textarea-element.js';
+import {CommentElement} from './comment-element.js';
 
 @RegisterCustomElement('ax-comment-container')
 export class CommentContainerElement extends HTMLElement implements WebComponent {
@@ -120,7 +122,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         // =======
         const content: HTMLDivElement = document.createElement('div');
         content.classList.add('content');
-        content.innerHTML = sanitize(this.#commentContentFormatter.getFormattedCommentContent(this.commentModel));
+        content.append(this.#commentContentFormatter.getFormattedCommentContent(this.commentModel));
 
         // Edited timestamp
         if (this.commentModel.modifiedAt && this.commentModel.modifiedAt !== this.commentModel.createdAt) {
@@ -211,10 +213,9 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         // Append buttons for actions that are enabled
         // Reply
         if (this.#options.enableReplying) {
-            const reply: HTMLButtonElement = document.createElement('button');
-            reply.type = 'button';
-            reply.classList.add('action', 'reply');
-            reply.textContent = this.#options.replyText;
+            const reply: ButtonElement = ButtonElement.createActionButton('reply', this.#options.replyText, {
+                onclick: this.#replyButtonClicked
+            });
             actions.append(reply);
         }
 
@@ -225,9 +226,9 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         }
 
         if (commentModel.createdByCurrentUser || this.#options.currentUserIsAdmin) {
-            const editButton: HTMLButtonElement = document.createElement('button');
-            editButton.classList.add('action', 'edit');
-            editButton.textContent = this.#options.editText;
+            const editButton: ButtonElement = ButtonElement.createActionButton('edit', this.#options.editText, {
+                onclick: this.#editButtonClicked
+            });
             actions.append(editButton);
         }
 
@@ -241,6 +242,65 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         }
 
         return actions;
+    }
+
+    #replyButtonClicked: (e: MouseEvent) => void = e => {
+        const replyButton: HTMLElement = e.currentTarget as HTMLElement;
+        const outermostParent: HTMLElement = findParentsBySelector(replyButton, 'li.comment').last()!;
+        const parentId: string | null = findParentsBySelector(replyButton, '.comment').first()!.getAttribute('data-id');
+
+        // Remove existing field
+        let replyField: CommentingFieldElement | null = outermostParent.querySelector('.child-comments > .commenting-field');
+        let previousParentId: string | null = null;
+        if (replyField) {
+            previousParentId = replyField.querySelector<TextareaElement>('.textarea')!.parentId;
+            replyField.remove();
+        }
+
+        // Create the reply field (do not re-create)
+        if (previousParentId !== parentId) {
+            replyField = CommentingFieldElement.create({parentId: parentId});
+            outermostParent.querySelector('.child-comments')!.append(replyField);
+
+            // Move cursor to end
+            const textarea: TextareaElement = replyField.querySelector('.textarea')!;
+            this.moveCursorToEnd(textarea);
+
+            // Ensure element stays visible
+            replyField.scrollIntoView(false);
+        }
+    };
+
+    #editButtonClicked: (e: MouseEvent) => void = e => {
+        const editButton: HTMLElement = e.currentTarget as HTMLElement;
+        const commentEl: CommentElement = findParentsBySelector<CommentElement>(editButton, 'li.comment').first()!;
+        const commentModel: CommentModelEnriched = commentEl.commentModel;
+        commentEl.classList.add('edit');
+
+        // Create the editing field
+        const editField: CommentingFieldElement = CommentingFieldElement.create({
+            parentId: commentModel.parentId,
+            existingCommentId: commentModel.id,
+            onClosed: () => {
+                commentEl.classList.remove('edit');
+            }
+        });
+        commentEl.querySelector('.comment-wrapper')!.append(editField);
+
+        // Move cursor to end
+        const textarea: HTMLElement = editField.querySelector('.textarea')!;
+        this.moveCursorToEnd(textarea);
+
+        // Ensure element stays visible
+        editField.scrollIntoView(false);
+    };
+
+    private moveCursorToEnd(element: HTMLElement): void {
+        // Trigger input to adjust size
+        element.dispatchEvent(new InputEvent('input'));
+
+        // Focus
+        element.focus();
     }
 
     reRenderCommentActionBar(): void {

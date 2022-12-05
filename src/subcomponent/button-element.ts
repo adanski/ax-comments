@@ -106,10 +106,10 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
         return uploadButton;
     }
 
-    static createActionButton(className: string, label: string): ButtonElement {
+    static createActionButton(className: string, label: string, options: Pick<ButtonElement, 'onclick'>): ButtonElement {
         const actionButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         actionButton.classList.add('action', className);
-        actionButton.textContent = this.#options.replyText;
+        actionButton.textContent = label;
 
         return actionButton;
     }
