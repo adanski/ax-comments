@@ -2,7 +2,7 @@ import {normalizeSpaces} from '../util.js';
 import {CommentsOptions} from '../api.js';
 import {CommentViewModelProvider, OptionsProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
-import {getHostContainer} from '../html-util.js';
+import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {PingableUser, UserDisplayNamesById} from '../options/models.js';
 import {CommentViewModel} from '../comment-view-model.js';
@@ -12,6 +12,7 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
 
     parentId: string | null = null;
     existingCommentId: string | null = null;
+    valueBeforeChange: string = '';
 
     readonly pingedUsers: PingableUser[] = [];
     readonly referencedHashtags: string[] = [];
@@ -22,6 +23,14 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
     connectedCallback(): void {
         this.#initServices();
         this.#initElement();
+    }
+
+    disconnectedCallback(): void {
+        this.removeEventListener('keydown', this.#addOnKeydown);
+        this.removeEventListener('input', this.#saveEditedValue);
+        this.removeEventListener('input', this.#checkEditedValueForChange);
+        this.removeEventListener('click', this.#increaseTextareaHeight);
+        this.removeEventListener('change', this.#increaseTextareaHeight);
     }
 
     #initServices(): void {
@@ -40,6 +49,12 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
 
         // Setting the initial height for the textarea
         this.adjustTextareaHeight(false);
+
+        this.addEventListener('keydown', this.#addOnKeydown);
+        this.addEventListener('input', this.#saveEditedValue);
+        this.addEventListener('input', this.#checkEditedValueForChange);
+        this.addEventListener('click', this.#increaseTextareaHeight);
+        this.addEventListener('change', this.#increaseTextareaHeight);
     }
 
     static create(options: Pick<TextareaElement, 'existingCommentId' | 'parentId' | 'onclick'>): TextareaElement {
@@ -47,6 +62,39 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
         Object.assign(textarea, options);
         return textarea;
     }
+
+    #addOnKeydown: (e: KeyboardEvent) => void = e => {
+        // Save comment on cmd/ctrl + enter
+        if (e.keyCode === 13) {
+            const metaKey = e.metaKey || e.ctrlKey;
+            if (this.#options.postCommentOnEnter || metaKey) {
+                const el: HTMLElement = e.currentTarget as HTMLElement;
+                findSiblingsBySelector(el, '.control-row').querySelector('.save')!.click();
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        }
+    };
+
+    #saveEditedValue: (e: Event) => void = e => {
+        const el: TextareaElement = e.currentTarget as TextareaElement;
+        el.valueBeforeChange = el.value;
+    };
+
+    #checkEditedValueForChange: (e: Event) => void = e => {
+        const el: TextareaElement = e.currentTarget as TextareaElement;
+
+        if (el.valueBeforeChange !== el.value) {
+            el.valueBeforeChange = el.value;
+            el.dispatchEvent(new Event('change', {bubbles: true}))
+        }
+    };
+
+    #increaseTextareaHeight: (e: Event) => void = e => {
+        const textarea: TextareaElement = e.currentTarget as TextareaElement;
+        textarea.adjustTextareaHeight(true);
+        textarea.parentElement!.classList.toggle('textarea-scrollable', textarea.scrollHeight > textarea.clientHeight);
+    };
 
     adjustTextareaHeight(focus?: boolean): void {
         const textareaBaseHeight: number = 2.2;

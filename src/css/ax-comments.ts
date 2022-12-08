@@ -209,7 +209,7 @@ const mainStyle: string = `
 	opacity: 1;
 }
 
-.jquery-comments:not(.mobile) .commenting-field-scrollable .textarea-wrapper .inline-button {
+.jquery-comments:not(.mobile) .textarea-wrapper.textarea-scrollable .inline-button {
 	margin-right: 15px;	/* Because of scrollbar */
 }
 
@@ -250,7 +250,7 @@ const mainStyle: string = `
 	padding-right: 2em;
 }
 
-.jquery-comments:not(.mobile) .commenting-field-scrollable .textarea-wrapper .textarea {
+.jquery-comments:not(.mobile) .textarea-wrapper.textarea-scrollable .textarea {
 	padding-right: calc(2em + 15px);	/* Because of scrollbar */
 }
 

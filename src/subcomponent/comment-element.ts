@@ -57,11 +57,4 @@ export class CommentElement extends HTMLLIElement implements WebComponent {
         const commentContainer: CommentContainerElement = this.querySelector('ax-comment-container')!;
         commentContainer.reRenderCommentActionBar();
     }
-
-    reRenderCommentContainer(): void {
-        // Comment container
-        const commentContainer: CommentContainerElement = CommentContainerElement.create({commentModel: this.#commentModel});
-
-        this.querySelector('ax-comment-container')!.replaceWith(commentContainer);
-    }
 }

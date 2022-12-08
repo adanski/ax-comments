@@ -4,13 +4,13 @@ import {getDefaultOptions} from './default-options-factory.js';
 import {CommentTransformer} from './comment-transformer.js';
 import {EVENT_HANDLERS_MAP} from './events.js';
 import {CommentModel, CommentsOptions, SortKey} from './api.js';
-import {CommentsById, CommentModelEnriched} from './comments-by-id.js';
+import {CommentModelEnriched} from './comments-by-id.js';
 import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from './provider.js';
 import {CommentsElementEventHandler, ElementEventHandler} from './element-event-handler.js';
 import {CommentSorter} from './comment-sorter.js';
 import {NavigationFactory} from './subcomponent/navigation-factory.js';
 import {SpinnerFactory} from './subcomponent/spinner-factory.js';
-import {CommentViewModel} from './comment-view-model.js';
+import {CommentViewModel, CommentViewModelEvent} from './comment-view-model.js';
 import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util.js';
 import {STYLE_SHEET} from './css/ax-comments.js';
 import {RegisterCustomElement} from './register-custom-element.js';
@@ -27,9 +27,8 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     readonly #options: Required<CommentsOptions> = {} as Required<CommentsOptions>;
 
     #commentViewModel!: CommentViewModel;
-    #elementEventHandlerEmitter!: EventEmitter<'navigationElementClicked' | 'postComment'>;
+    #elementEventHandlerEmitter!: EventEmitter<'navigationElementClicked'>;
     #elementEventHandler!: ElementEventHandler;
-    #mutationObserver!: MutationObserver;
 
     #commentTransformer!: CommentTransformer;
     #commentSorter!: CommentSorter;
@@ -53,9 +52,9 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     }
 
     disconnectedCallback(): void {
+        this.#commentViewModel.unsubscribeAll();
         this.#elementEventHandlerEmitter.removeAllListeners();
-        this.#undelegateEvents();
-        this.#mutationObserver.disconnect();
+        this.#unsubscribeEvents();
         this.container.innerHTML = '';
     }
 
@@ -89,16 +88,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#commentViewModel = CommentViewModelProvider.set(this.container, {});
         this.#elementEventHandlerEmitter = new EventEmitter();
         this.#elementEventHandler = new CommentsElementEventHandler(this.container, this.#elementEventHandlerEmitter);
-        this.#mutationObserver = new MutationObserver(() => {
-            this.#undelegateEvents(true);
-            this.#delegateEvents(true);
-        });
-        this.#mutationObserver.observe(this.container, {
-            attributes: false,
-            characterData: false,
-            childList: true,
-            subtree: true
-        });
         this.#commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
         this.#commentSorter = ServiceProvider.get(this.container, CommentSorter);
         this.#navigationFactory = ServiceProvider.get(this.container, NavigationFactory);
@@ -130,7 +119,8 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     }
 
     #initEmitterListeners(): void {
-        this.#elementEventHandlerEmitter.on('postComment', (comment: CommentModel) => {
+        this.#commentViewModel.subscribe(CommentViewModelEvent.COMMENT_ADDED, commentId => {
+            const comment: CommentModelEnriched = this.#commentViewModel.getComment(commentId)!;
             this.#createComment(comment);
         });
         this.#elementEventHandlerEmitter.on('navigationElementClicked', (sortKey: SortKey) => {
@@ -143,18 +133,16 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         });
     }
 
-    #delegateEvents(forChildrenOnly: boolean = false): void {
-        this.#toggleEventHandlers('addEventListener', forChildrenOnly);
+    #subscribeEvents(): void {
+        this.#toggleEventHandlers('addEventListener');
     }
 
-    #undelegateEvents(forChildrenOnly: boolean = false): void {
-        this.#toggleEventHandlers('removeEventListener', forChildrenOnly);
+    #unsubscribeEvents(): void {
+        this.#toggleEventHandlers('removeEventListener');
     }
 
-    #toggleEventHandlers(bindFunction: 'addEventListener' | 'removeEventListener', forChildrenOnly: boolean) {
+    #toggleEventHandlers(bindFunction: 'addEventListener' | 'removeEventListener') {
         EVENT_HANDLERS_MAP.forEach((handlerNames, event) => {
-            if (forChildrenOnly && isNil(event.selector)) return;
-
             handlerNames.forEach(handlerName => {
                 const method: (e: Event) => void = <(e: Event) => void>this.#elementEventHandler[handlerName]
                     .bind(this.#elementEventHandler);
@@ -202,7 +190,9 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
         const success: (comments: CommentModel[]) => void = comments => {
             comments.forEach(comment => {
-                this.#createComment(comment);
+                const commentEnriched: CommentModelEnriched = this.#commentTransformer.enrichOne(comment);
+                this.#commentViewModel.addComment(commentEnriched)
+                this.#createComment(commentEnriched);
             });
             spinner.remove();
         };
@@ -227,7 +217,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#createComments();
         if (this.options.enableAttachments) this.#createAttachments();
 
-        this.#delegateEvents();
+        this.#subscribeEvents();
 
         // Remove spinner
         this.container.querySelectorAll(':scope > .spinner')
@@ -362,17 +352,14 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#showActiveContainer();
     }
 
-    #createComment(comment: CommentModel): void {
-        const commentEnriched: CommentModelEnriched = this.#commentTransformer.enrichOne(comment);
-        this.#commentViewModel.addComment(commentEnriched)
-
+    #createComment(comment: CommentModelEnriched): void {
         // Add comment element
         const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
         const prependComment = this.#elementEventHandler.currentSortKey === SortKey.NEWEST;
-        this.#addComment(commentEnriched, commentList, prependComment);
+        this.#addComment(comment, commentList, prependComment);
 
-        if (this.#elementEventHandler.currentSortKey === SortKey.ATTACHMENTS && commentEnriched.hasAttachments()) {
-            this.#addAttachment(commentEnriched);
+        if (this.#elementEventHandler.currentSortKey === SortKey.ATTACHMENTS && comment.hasAttachments()) {
+            this.#addAttachment(comment);
         }
     }
 

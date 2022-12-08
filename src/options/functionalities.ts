@@ -128,7 +128,7 @@ export interface Functionalities {
      */
     enablePinging?: boolean;
     /**
-     * A `boolean` value determining whether user is allowed to delete own comment that has replies (replies will be deleted as well)
+     * A `boolean` value determining whether user is allowed to delete own comment that has replies (replies will NOT be deleted)
      *
      * @default false
      * @example

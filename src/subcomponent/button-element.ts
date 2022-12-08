@@ -69,21 +69,6 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
         return saveButton;
     }
 
-    static createDeleteButton(options: Pick<ButtonElement, 'onclick'>): ButtonElement {
-        const deleteButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
-        Object.assign(deleteButton, options);
-        deleteButton.classList.add('delete', 'enabled');
-
-        deleteButton.onInitialized = button => {
-            const deleteButtonText: string = button.#options.deleteText;
-            button.style.backgroundColor = button.#options.deleteButtonColor;
-            button.originalContent = deleteButtonText;
-            button.textContent = deleteButtonText;
-        };
-
-        return deleteButton;
-    }
-
     static createUploadButton(options: Pick<ButtonElement, 'inline' | 'onclick'>): ButtonElement {
         const uploadButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         Object.assign(uploadButton, options);
@@ -108,10 +93,25 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
 
     static createActionButton(className: string, label: string, options: Pick<ButtonElement, 'onclick'>): ButtonElement {
         const actionButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
+        Object.assign(actionButton, options);
         actionButton.classList.add('action', className);
         actionButton.textContent = label;
 
         return actionButton;
+    }
+
+    static createDeleteButton(options: Pick<ButtonElement, 'onclick'>): ButtonElement {
+        const deleteButton: ButtonElement = ButtonElement.createActionButton('delete', '', options);
+        deleteButton.classList.add('enabled');
+
+        deleteButton.onInitialized = button => {
+            const deleteButtonText: string = button.#options.deleteText;
+            button.style.backgroundColor = button.#options.deleteButtonColor;
+            button.originalContent = deleteButtonText;
+            button.textContent = deleteButtonText;
+        };
+
+        return deleteButton;
     }
 
     static createUpvoteButton(commentModel: CommentModelEnriched): ButtonElement {

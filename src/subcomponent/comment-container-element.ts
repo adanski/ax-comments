@@ -1,28 +1,33 @@
 import {ProfilePictureFactory} from './profile-picture-factory.js';
 import {CommentContentFormatter} from './comment-content-formatter.js';
 import {TagFactory} from './tag-factory.js';
-import {CommentsOptions} from '../api.js';
+import {CommentModel, CommentsOptions} from '../api.js';
 import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {findParentsBySelector, getHostContainer} from '../html-util.js';
 import {ButtonElement} from './button-element.js';
-import {CommentViewModel} from '../comment-view-model.js';
+import {CommentViewModel, CommentViewModelEvent, CommentViewModelEventSubscription} from '../comment-view-model.js';
 import {CommentModelEnriched} from '../comments-by-id.js';
 import {CommentingFieldElement} from './commenting-field-element.js';
 import {TextareaElement} from './textarea-element.js';
 import {CommentElement} from './comment-element.js';
+import {SuccessFct} from '../options/callbacks.js';
+import {CommentTransformer} from '../comment-transformer.js';
 
 @RegisterCustomElement('ax-comment-container')
 export class CommentContainerElement extends HTMLElement implements WebComponent {
 
     commentModel!: CommentModelEnriched;
 
+    #subscriptions: CommentViewModelEventSubscription[] = [];
+
     #options!: Required<CommentsOptions>;
     #commentViewModel!: CommentViewModel;
+    #commentTransformer!: CommentTransformer;
+    #commentContentFormatter!: CommentContentFormatter;
     #profilePictureFactory!: ProfilePictureFactory;
     #tagFactory!: TagFactory;
-    #commentContentFormatter!: CommentContentFormatter;
 
     static create(options: Pick<CommentContainerElement, 'commentModel'>): CommentContainerElement {
         const commentContainer: CommentContainerElement = document.createElement('ax-comment-container') as CommentContainerElement;
@@ -33,10 +38,19 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
     connectedCallback(): void {
         this.#initServices();
         this.#initElement();
+        this.#subscriptions.push(this.#commentViewModel.subscribe(CommentViewModelEvent.COMMENT_UPDATED, commentId => {
+            if (commentId !== this.commentModel.id) {
+                return;
+            }
+            // Re-render the comment
+            this.innerHTML = '';
+            this.#initElement();
+        }));
     }
 
     disconnectedCallback(): void {
-        this.innerHTML = '';
+        this.#subscriptions.forEach(s => s.unsubscribe());
+        this.#subscriptions = [];
     }
 
     #initServices(): void {
@@ -44,9 +58,10 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         const container: HTMLElement = getHostContainer(this);
         this.#options = OptionsProvider.get(container);
         this.#commentViewModel = CommentViewModelProvider.get(container);
+        this.#commentTransformer = ServiceProvider.get(container, CommentTransformer);
+        this.#commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
         this.#profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
         this.#tagFactory = ServiceProvider.get(container, TagFactory);
-        this.#commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
     }
 
     #initElement(): void {
@@ -225,11 +240,20 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
             actions.append(upvotes);
         }
 
+        // Edit
         if (commentModel.createdByCurrentUser || this.#options.currentUserIsAdmin) {
             const editButton: ButtonElement = ButtonElement.createActionButton('edit', this.#options.editText, {
                 onclick: this.#editButtonClicked
             });
             actions.append(editButton);
+        }
+
+        // Delete
+        if (this.#isAllowedToDelete(commentModel)) {
+            const deleteButton: HTMLSpanElement = ButtonElement.createDeleteButton({
+                onclick: this.#deleteButtonClicked
+            });
+            actions.append(deleteButton);
         }
 
         // Append separators between the actions
@@ -293,6 +317,42 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         // Ensure element stays visible
         editField.scrollIntoView(false);
+    };
+
+    #isAllowedToDelete(commentModel: CommentModelEnriched): boolean {
+        if (!commentModel.createdByCurrentUser || !this.#options.enableDeleting) {
+            return false;
+        } else {
+            return !this.#options.enableDeletingCommentWithReplies || !commentModel.childIds.length;
+        }
+    }
+
+    #deleteButtonClicked: (e: MouseEvent) => void = e => {
+        const deleteButton: ButtonElement = e.currentTarget as ButtonElement;
+        if (!deleteButton.classList.contains('enabled')) {
+            return;
+        }
+        const commentEnriched: CommentModelEnriched = Object.assign({}, this.commentModel);
+
+        // Set button state to loading
+        deleteButton.setButtonState(false, true);
+
+        const success: SuccessFct<CommentModel> = deletedComment => {
+            // Just to be sure
+            deletedComment.isDeleted = true;
+            // Notify about update and re-render the comment
+            this.#commentViewModel.updateComment(deletedComment);
+
+            // Reset button state
+            deleteButton.setButtonState(false, false);
+        };
+
+        const error: () => void = () => {
+            // Reset button state
+            deleteButton.setButtonState(true, false);
+        };
+
+        this.#options.deleteComment(this.#commentTransformer.deplete(commentEnriched), success, error);
     };
 
     private moveCursorToEnd(element: HTMLElement): void {

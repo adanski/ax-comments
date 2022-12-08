@@ -55,12 +55,19 @@ export class CommentViewModel {
         return parentComment;
     }
 
-    addEventListener(type: CommentViewModelEvent, listener: (commentId: CommentId) => void): void {
+    subscribe(type: CommentViewModelEvent, listener: (commentId: CommentId) => void): CommentViewModelEventSubscription {
         this.#eventEmitter.addListener(type, listener);
+        return {
+            unsubscribe: () => this.unsubscribe(type, listener)
+        };
     }
 
-    removeEventListener(type: CommentViewModelEvent, listener: (commentId: CommentId) => void): void {
+    unsubscribe(type: CommentViewModelEvent, listener: (commentId: CommentId) => void): void {
         this.#eventEmitter.removeListener(type, listener);
+    }
+
+    unsubscribeAll(type?: CommentViewModelEvent): void {
+        this.#eventEmitter.removeAllListeners(type);
     }
 
     addComment(comment: CommentModelEnriched): void {
@@ -101,6 +108,10 @@ export enum CommentViewModelEvent {
     COMMENT_ADDED = 'COMMENT_ADDED',
     COMMENT_UPDATED = 'COMMENT_UPDATED',
     COMMENT_DELETED = 'COMMENT_DELETED',
+}
+
+export interface CommentViewModelEventSubscription {
+    unsubscribe(): void;
 }
 
 type CommentId = string;

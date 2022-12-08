@@ -11,13 +11,14 @@ import {CommentViewModel} from '../comment-view-model.js';
 import {WebComponent} from '../web-component.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {
-    findParentsBySelector,
     findSiblingsBySelector,
     getHostContainer,
     hideElement,
     showElement
 } from '../html-util.js';
 import {TextcompleteFactory} from './textcomplete-factory.js';
+import {ErrorFct, SuccessFct} from '../options/callbacks.js';
+import {CommentTransformer} from '../comment-transformer.js';
 
 @RegisterCustomElement('ax-commenting-field', {extends: 'li'})
 export class CommentingFieldElement extends HTMLLIElement implements WebComponent {
@@ -31,6 +32,7 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
 
     #options!: Required<CommentsOptions>;
     #commentViewModel!: CommentViewModel;
+    #commentTransformer!: CommentTransformer;
     #profilePictureFactory!: ProfilePictureFactory;
     #textcompleteFactory!: TextcompleteFactory;
     #tagFactory!: TagFactory;
@@ -54,6 +56,7 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
         const container: HTMLElement = getHostContainer(this);
         this.#options = OptionsProvider.get(container)!;
         this.#commentViewModel = CommentViewModelProvider.get(container);
+        this.#commentTransformer = ServiceProvider.get(container, CommentTransformer);
         this.#profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
         this.#textcompleteFactory = ServiceProvider.get(container, TextcompleteFactory);
         this.#tagFactory = ServiceProvider.get(container, TagFactory);
@@ -107,15 +110,10 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
         });
 
         // Save button
-        const saveButton: ButtonElement = ButtonElement.createSaveButton({}, this.existingCommentId);
+        const saveButton: ButtonElement = ButtonElement.createSaveButton({
+            onclick: this.existingCommentId ? this.#updateComment : this.#addComment
+        }, this.existingCommentId);
         controlRow.append(saveButton);
-
-        // Delete button
-        if (this.existingCommentId && this.#isAllowedToDelete(this.existingCommentId)) {
-            // Delete button
-            const deleteButton: HTMLSpanElement = ButtonElement.createDeleteButton({});
-            controlRow.append(deleteButton);
-        }
 
         if (this.#options.enableAttachments) {
 
@@ -123,13 +121,19 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
             // ==============
 
             // Main upload button
-            const mainUploadButton: ButtonElement = ButtonElement.createUploadButton({inline: false});
+            const mainUploadButton: ButtonElement = ButtonElement.createUploadButton({
+                inline: false,
+                onclick: this.#fileInputChanged
+            });
             mainUploadButton.originalContent = mainUploadButton.children;
             controlRow.append(mainUploadButton);
 
             // Inline upload button for main commenting field
             if (this.isMain) {
-                const inlineUploadButton: ButtonElement = ButtonElement.createUploadButton({inline: true});
+                const inlineUploadButton: ButtonElement = ButtonElement.createUploadButton({
+                    inline: true,
+                    onclick: this.#fileInputChanged
+                });
                 textareaWrapper.append(inlineUploadButton);
             }
 
@@ -166,24 +170,6 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
         if (this.#options.enablePinging) {
             this.#textcomplete = this.#textcompleteFactory.createTextcomplete(textarea);
         }
-    }
-
-    #isAllowedToDelete(commentId: string): boolean {
-        if (!this.#options.enableDeleting) {
-            return false;
-        }
-
-        let isAllowedToDelete = true;
-        if (!this.#options.enableDeletingCommentWithReplies) {
-            const comments: CommentModelEnriched[] = this.#commentViewModel.getComments();
-            for (let i = 0; i < comments.length; i++) {
-                if (comments[i].parentId === commentId) {
-                    isAllowedToDelete = false;
-                    break;
-                }
-            }
-        }
-        return isAllowedToDelete;
     }
 
     #showMainField: (e: UIEvent) => void = e => {
@@ -230,6 +216,86 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
 
         // Remove the field
         this.remove();
+    };
+
+    #addComment: (e: UIEvent) => void = e => {
+        const addButton: ButtonElement = e.currentTarget as ButtonElement;
+        if (!addButton.classList.contains('enabled')) {
+            return;
+        }
+
+        // Set button state to loading
+        addButton.setButtonState(false, true);
+
+        // Get comment
+        const comment: CommentModel = this.getCommentModel();
+
+        const success: (postedComment: CommentModel) => void = postedComment => {
+            this.#commentViewModel.addComment(this.#commentTransformer.enrichOne(postedComment));
+
+            // Close the editing field
+            this.querySelector<HTMLElement>('.close')!.click();
+
+            // Reset button state
+            addButton.setButtonState(false, false);
+        };
+
+        const error: () => void = () => {
+            // Reset button state
+            addButton.setButtonState(true, false);
+        };
+
+        this.#options.postComment(comment, success, error);
+    };
+
+    #updateComment: (e: UIEvent) => void = e => {
+        const updateButton: ButtonElement = e.currentTarget as ButtonElement;
+        if (!updateButton.classList.contains('enabled')) {
+            return;
+        }
+        const textarea: TextareaElement = this.querySelector('.textarea')!;
+
+        // Set button state to loading
+        updateButton.setButtonState(false, true);
+
+        // Use a clone of the existing model and update the model after successful update
+        const commentEnriched: CommentModelEnriched = Object.assign<object, CommentModelEnriched, Partial<CommentModel>>(
+            {},
+            this.#commentViewModel.getComment(this.existingCommentId!)!,
+            {
+                parentId: textarea.parentId as string,
+                content: textarea.getTextareaContent(),
+                pings: textarea.getPings(),
+                modifiedAt: new Date(),
+                attachments: this.getAttachments()
+            }
+        );
+
+        const success: SuccessFct<CommentModel> = updatedComment => {
+            this.#commentViewModel.updateComment(updatedComment);
+
+            // Close the editing field
+            this.querySelector<HTMLElement>('.close')!.click();
+
+            // Reset button state
+            updateButton.setButtonState(false, false);
+        };
+
+        const error: ErrorFct = () => {
+            // Reset button state
+            updateButton.setButtonState(true, false);
+        };
+
+        this.#options.putComment(this.#commentTransformer.deplete(commentEnriched), success, error);
+    };
+
+    #fileInputChanged: (e: Event) => void = e => {
+        const uploadButton: ButtonElement = e.currentTarget as ButtonElement;
+        if (!uploadButton.classList.contains('enabled')) {
+            return;
+        }
+        const input: HTMLInputElement = uploadButton.querySelector('input[type="file"]')!;
+        this.preSaveAttachments(input.files!);
     };
 
     getCommentModel(): CommentModel {
@@ -302,5 +368,68 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
         }
 
         saveButton.classList.toggle('enabled', enabled);
+    }
+
+    preSaveAttachments(files: FileList): void {
+        // Elements
+        const uploadButton: ButtonElement = this.querySelector('.control-row .upload')!;
+        const attachmentsContainer: HTMLElement = this.querySelector('.control-row .attachments')!;
+
+        if (files.length) {
+            // Create attachment models
+            let attachments: any[] = [...files].map(file => ({
+                mime_type: file.type,
+                file: file
+            }));
+
+            // Filter out already added attachments
+            const existingAttachments: any[] = this.getAttachments();
+            attachments = attachments.filter(attachment => {
+                let duplicate = false;
+
+                // Check if the attachment name and size matches with an already added attachment
+                for (let i = 0; i < existingAttachments.length; i++) {
+                    const existingAttachment = existingAttachments[i];
+                    if (attachment.file.name === existingAttachment.file.name && attachment.file.size === existingAttachment.file.size) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+
+                return !duplicate;
+            });
+
+            // Ensure that the main commenting field is shown if attachments were added to that
+            if (this.classList.contains('main')) {
+                this.querySelector('.textarea')!.dispatchEvent(new MouseEvent('click'));
+            }
+
+            // Set button state to loading
+            uploadButton.setButtonState(false, true);
+
+            // Validate attachments
+            this.#options.validateAttachments(attachments, (validatedAttachments: any[]) => {
+
+                if (validatedAttachments.length) {
+                    // Create attachment tags
+                    validatedAttachments.forEach(attachment => {
+                        const attachmentTag: HTMLAnchorElement = this.#tagFactory.createAttachmentTagElement(attachment, () => {
+                            // Check if save button needs to be enabled
+                            this.toggleSaveButton();
+                        });
+                        attachmentsContainer.append(attachmentTag);
+                    });
+
+                    // Check if save button needs to be enabled
+                    this.toggleSaveButton();
+                }
+
+                // Reset button state
+                uploadButton.setButtonState(true, false);
+            });
+        }
+
+        // Clear the input field
+        uploadButton.querySelector('input')!.value = '';
     }
 }
