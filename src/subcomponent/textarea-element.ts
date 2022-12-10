@@ -97,24 +97,8 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
     };
 
     adjustTextareaHeight(focus?: boolean): void {
-        const textareaBaseHeight: number = 2.2;
-        const lineHeight: number = 1.45;
-
-        const setRows: (rows: number) => void = rows => {
-            const height: number = textareaBaseHeight + (rows - 1) * lineHeight;
-            this.style.height = height + 'em';
-        };
-
         let rowCount = focus ? this.#options.textareaRowsOnFocus : this.#options.textareaRows;
-        let isAreaScrollable: boolean;
-        let maxRowsUsed: boolean;
-        do {
-            setRows(rowCount);
-            rowCount++;
-            isAreaScrollable = this.scrollHeight > this.offsetHeight;
-            maxRowsUsed = this.#options.textareaMaxRows == false ?
-                false : rowCount > this.#options.textareaMaxRows;
-        } while (isAreaScrollable && !maxRowsUsed);
+        this.rows = rowCount;
     }
 
     clearTextarea(): void {

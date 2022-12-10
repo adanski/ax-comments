@@ -235,6 +235,7 @@ const mainStyle: string = `
 }
 
 .jquery-comments .textarea-wrapper .textarea {
+	width: 100%;
 	margin: 0;
 	outline: 0;
 	overflow-y: auto;
@@ -258,7 +259,7 @@ const mainStyle: string = `
 	padding-top: .3em;
 }
 
-.jquery-comments .textarea-wrapper .control-row > span {
+.jquery-comments .textarea-wrapper .control-row > button {
 	float: right;
 	line-height: 1.6em;
 	margin-top: .4em;
@@ -269,24 +270,24 @@ const mainStyle: string = `
 	opacity: .5;
 }
 
-.jquery-comments .textarea-wrapper .control-row > span:not(:first-child) {
+.jquery-comments .textarea-wrapper .control-row > button:not(:first-child) {
 	margin-right: .5em;
 }
 
-.jquery-comments .textarea-wrapper .control-row > span.enabled {
+.jquery-comments .textarea-wrapper .control-row > button.enabled {
 	opacity: 1;
 	cursor: pointer;
 }
 
-.jquery-comments .textarea-wrapper .control-row > span:not(.enabled) {
+.jquery-comments .textarea-wrapper .control-row > button:not(.enabled) {
 	pointer-events: none;
 }
 
-.jquery-comments .textarea-wrapper .control-row > span.enabled:hover {
+.jquery-comments .textarea-wrapper .control-row > button.enabled:hover {
 	opacity: .9;
 }
 
-.jquery-comments .textarea-wrapper .control-row > span.upload {
+.jquery-comments .textarea-wrapper .control-row > button.upload {
 	position: relative;
 	overflow: hidden;
 	background-color: #999;

@@ -105,9 +105,9 @@ export class CommentContentFormatter {
     private highlightPings(commentModel: CommentModelEnriched, html: string): string {
         if (html.indexOf('@') !== -1) {
             for (const userId in commentModel.pings) {
-                const fullName: string = commentModel.pings[userId];
-                const pingText: string = '@' + fullName;
-                html = html.replace(new RegExp(pingText, 'g'), this.createUserTag(pingText, userId));
+                const displayName: string = commentModel.pings[userId] || userId;
+                const pingText: string = '@' + userId;
+                html = html.replace(new RegExp(pingText, 'g'), this.createUserTag(`@${displayName}`, userId));
             }
         }
         return html;

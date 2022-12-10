@@ -76,8 +76,7 @@ export function getDefaultOptions(): Required<CommentsOptions> {
 
         roundProfilePictures: false,
         textareaRows: 2,
-        textareaRowsOnFocus: 2,
-        textareaMaxRows: 5,
+        textareaRowsOnFocus: 3,
         maxRepliesVisible: 2,
     };
 

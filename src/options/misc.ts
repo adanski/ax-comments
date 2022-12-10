@@ -103,23 +103,7 @@ export interface Misc {
      * };
      * ```
      */
-    textareaRowsOnFocus?: 2,
-    /**
-     * An `integer` or a `boolean` value determining the maximum amount of rows in commenting fields as they increase when typing.
-     * If set to false, commenting fields will increase infinitely.
-     *
-     * @default 5
-     * @example
-     * ```javascript
-     * const commentsElement = document.createElement('ax-comments');
-     * commentsElement.options = {
-     *     // ...
-     *     textareaMaxRows: false,
-     *     // ...
-     * };
-     * ```
-     */
-    textareaMaxRows?: number | false,
+    textareaRowsOnFocus?: number,
     /**
      * An `integer` or a `boolean` value determining the maximum amount of replies that are visibile intially under a comment.
      * The hidden replies can be shown by clicking the button with a text set in `viewAllRepliesText` option.

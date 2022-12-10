@@ -106,7 +106,7 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
 
         deleteButton.onInitialized = button => {
             const deleteButtonText: string = button.#options.deleteText;
-            button.style.backgroundColor = button.#options.deleteButtonColor;
+            button.style.color = button.#options.deleteButtonColor;
             button.originalContent = deleteButtonText;
             button.textContent = deleteButtonText;
         };
