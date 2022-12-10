@@ -231,7 +231,7 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
         const comment: CommentModel = this.getCommentModel();
 
         const success: (postedComment: CommentModel) => void = postedComment => {
-            this.#commentViewModel.addComment(this.#commentTransformer.enrichOne(postedComment));
+            this.#commentViewModel.addComment(this.#commentTransformer.enrich(postedComment));
 
             // Close the editing field
             this.querySelector<HTMLElement>('.close')!.click();

@@ -1,5 +1,4 @@
-import {CommentsById, CommentModelEnriched} from './comments-by-id.js';
-import {isNil} from './util.js';
+import {CommentsById, CommentModelEnriched, CommentId} from './comments-by-id.js';
 import EventEmitter from 'EventEmitter3';
 import {CommentModel} from './options/models.js';
 
@@ -43,16 +42,6 @@ export class CommentViewModel {
 
     getAttachments(): CommentModelEnriched[] {
         return this.getComments().filter(comment => comment.hasAttachments());
-    }
-
-    getOutermostParent(directParentId: CommentId): CommentModelEnriched {
-        let parentId: string | undefined = directParentId;
-        let parentComment: CommentModelEnriched;
-        do {
-            parentComment = this.#commentsById[parentId!];
-            parentId = parentComment.parentId;
-        } while (!isNil(parentComment.parentId));
-        return parentComment;
     }
 
     subscribe(type: CommentViewModelEvent, listener: (commentId: CommentId) => void): CommentViewModelEventSubscription {
@@ -113,5 +102,3 @@ export enum CommentViewModelEvent {
 export interface CommentViewModelEventSubscription {
     unsubscribe(): void;
 }
-
-type CommentId = string;

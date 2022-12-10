@@ -158,7 +158,7 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
             const commentTransformer = ServiceProvider.get(getHostContainer(upvoteButton), CommentTransformer);
 
             const success: SuccessFct<CommentModel> = updatedComment => {
-                const commentModel = commentTransformer.enrichOne(updatedComment);
+                const commentModel = commentTransformer.enrich(updatedComment);
                 Object.assign(commentModel, commentModel);
                 reRenderUpvotes();
             };

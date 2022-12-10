@@ -1,5 +1,5 @@
 import {CommentModel} from './api.js';
-import {CommentModelEnriched} from './comments-by-id.js';
+import {CommentId, CommentModelEnriched} from './comments-by-id.js';
 import {isNil} from './util.js';
 
 export class CommentTransformer {
@@ -14,21 +14,30 @@ export class CommentTransformer {
         return result as CommentModel;
     }
 
-    enrich(comments: CommentModel[]): CommentModelEnriched[] {
-        const rootCommentsById: Record<string, CommentModelEnriched> = comments.filter(c => isNil(c.parentId))
-            .reduce<Record<string, CommentModelEnriched>>((acc, c) => {
-                acc[c.id] = this.enrichOne(c);
-                return acc;
-            }, {});
-
+    enrichMany(comments: CommentModel[]): CommentModelEnriched[] {
+        const commentsById: Record<CommentId, CommentModelEnriched> = {};
+        const rootCommentsById: Record<CommentId, CommentModelEnriched> = {};
+        const childCommentsById: Record<CommentId, CommentModelEnriched> = {};
         comments.forEach(c => {
-            c = this.enrichOne(c);
-            if (c.parentId) rootCommentsById[c.parentId].childIds.push(c.id);
+            const enriched: CommentModelEnriched = this.enrich(c);
+            commentsById[enriched.id] = enriched;
+            if (enriched.parentId) {
+                childCommentsById[enriched.id] = enriched;
+            } else {
+                rootCommentsById[enriched.id] = enriched;
+            }
+        });
+
+        Object.values(childCommentsById).forEach(c => {
+            this.#getOutermostParent(c.parentId!, commentsById).childIds.push(c.id);
+            if (!rootCommentsById[c.parentId!].childIds.includes(c.id)) {
+                rootCommentsById[c.parentId!].childIds.push(c.id);
+            }
         });
         return comments as CommentModelEnriched[];
     }
 
-    enrichOne(comment: CommentModel): CommentModelEnriched {
+    enrich(comment: CommentModel): CommentModelEnriched {
         const commentModel: CommentModelEnriched = Object.assign({} as CommentModelEnriched, comment);
         if (isNil(commentModel.childIds)) {
             commentModel.childIds = [];
@@ -38,5 +47,15 @@ export class CommentTransformer {
         }
 
         return commentModel as CommentModelEnriched;
+    }
+
+    #getOutermostParent(directParentId: CommentId, commentsById: Record<CommentId, CommentModelEnriched>): CommentModelEnriched {
+        let parentId: CommentId | undefined = directParentId;
+        let parentComment: CommentModelEnriched;
+        do {
+            parentComment = commentsById[parentId!];
+            parentId = parentComment.parentId;
+        } while (!isNil(parentId));
+        return parentComment;
     }
 }

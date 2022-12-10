@@ -1,10 +1,12 @@
 import {CommentModel} from './options/models.js';
 
 export interface CommentsById {
-    [id: string]: CommentModelEnriched;
+    [id: CommentId]: CommentModelEnriched;
 }
 
+export type CommentId = string;
+
 export interface CommentModelEnriched extends CommentModel {
-    childIds: string[];
+    childIds: CommentId[];
     hasAttachments(): boolean;
 }

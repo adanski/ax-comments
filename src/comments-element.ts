@@ -168,7 +168,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
         const success: (comments: CommentModel[]) => void = comments => {
             // Convert comments to enriched data model
-            const commentModels: CommentModelEnriched[] = this.#commentTransformer.enrich([...comments]);
+            const commentModels: CommentModelEnriched[] = this.#commentTransformer.enrichMany([...comments]);
 
             this.#commentViewModel.initComments(commentModels);
 
@@ -190,7 +190,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
         const success: (comments: CommentModel[]) => void = comments => {
             comments.forEach(comment => {
-                const commentEnriched: CommentModelEnriched = this.#commentTransformer.enrichOne(comment);
+                const commentEnriched: CommentModelEnriched = this.#commentTransformer.enrich(comment);
                 this.#commentViewModel.addComment(commentEnriched)
                 this.#createComment(commentEnriched);
             });
