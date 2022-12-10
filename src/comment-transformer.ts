@@ -30,11 +30,11 @@ export class CommentTransformer {
 
         Object.values(childCommentsById).forEach(c => {
             this.#getOutermostParent(c.parentId!, commentsById).childIds.push(c.id);
-            if (!rootCommentsById[c.parentId!].childIds.includes(c.id)) {
-                rootCommentsById[c.parentId!].childIds.push(c.id);
+            if (!commentsById[c.parentId!].childIds.includes(c.id)) {
+                commentsById[c.parentId!].childIds.push(c.id);
             }
         });
-        return comments as CommentModelEnriched[];
+        return Object.values(commentsById);
     }
 
     enrich(comment: CommentModel): CommentModelEnriched {

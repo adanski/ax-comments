@@ -86,7 +86,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
         // Rearrange top level comments
         rootComments.forEach(commentModel => {
-            const commentEl: HTMLElement = commentList.querySelector(`:scope > li.comment[data-id=${commentModel.id}]`)!;
+            const commentEl: HTMLElement = commentList.querySelector(`:scope > li.comment[data-id="${commentModel.id}"]`)!;
             commentList.append(commentEl);
         });
     }
