@@ -299,7 +299,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
                 childCommentsEl.append(commentEl);
             }
 
-            // Update toggle all -button
+            // Update toggle all button
             ToggleAllButtonElement.updateToggleAllButton(outerMostParent, this.options);
         } else { // Case: main level comment
             if (prependComment) {

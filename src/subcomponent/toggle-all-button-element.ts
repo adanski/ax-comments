@@ -32,8 +32,13 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
         caret.classList.add('caret');
 
         button.append(toggleAllButtonText, caret);
-        this.append(button);
         this.onclick = this.#toggleReplies;
+        this.#setToggleAllButtonText(false);
+        this.append(button);
+    }
+
+    private static create(): ToggleAllButtonElement {
+        return document.createElement('li', {is: 'ax-toggle-all-button'}) as ToggleAllButtonElement;
     }
 
     static updateToggleAllButton(parentEl: HTMLElement, options: Required<Labels & Misc>): void {
@@ -73,11 +78,11 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
         if (childComments.length > options.maxRepliesVisible) { // Make sure that toggle all button is present
             // Append button to toggle all replies if necessary
             if (isNil(toggleAllButton)) {
-                toggleAllButton = document.createElement('li', {is: 'ax-toggle-all-button'}) as ToggleAllButtonElement;
+                toggleAllButton = ToggleAllButtonElement.create();
                 childCommentsEl.prepend(toggleAllButton);
             }
 
-            // Update the text of toggle all -button
+            // Update the text of toggle all button
             toggleAllButton.#setToggleAllButtonText(false);
 
         } else { // Make sure that toggle all button is not present
