@@ -274,7 +274,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         const parentId: string | null = findParentsBySelector(replyButton, '.comment').first()!.getAttribute('data-id');
 
         // Remove existing field
-        let replyField: CommentingFieldElement | null = outermostParent.querySelector('.child-comments > .commenting-field');
+        let replyField: HTMLLIElement | null = outermostParent.querySelector('.child-comments > .commenting-field-wrapper');
         let previousParentId: string | null = null;
         if (replyField) {
             previousParentId = replyField.querySelector<TextareaElement>('.textarea')!.parentId;
@@ -283,12 +283,12 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         // Create the reply field (do not re-create)
         if (previousParentId !== parentId) {
-            replyField = CommentingFieldElement.create({parentId: parentId});
+            replyField = this.#createWrappedCommentingFieldElement({parentId: parentId});
             outermostParent.querySelector('.child-comments')!.append(replyField);
 
             // Move cursor to end
             const textarea: TextareaElement = replyField.querySelector('.textarea')!;
-            this.moveCursorToEnd(textarea);
+            this.#moveCursorToEnd(textarea);
 
             // Ensure element stays visible
             replyField.scrollIntoView(false);
@@ -302,7 +302,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         commentEl.classList.add('edit');
 
         // Create the editing field
-        const editField: CommentingFieldElement = CommentingFieldElement.create({
+        const editField: HTMLLIElement = this.#createWrappedCommentingFieldElement({
             parentId: commentModel.parentId,
             existingCommentId: commentModel.id,
             onClosed: () => {
@@ -313,7 +313,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         // Move cursor to end
         const textarea: HTMLElement = editField.querySelector('.textarea')!;
-        this.moveCursorToEnd(textarea);
+        this.#moveCursorToEnd(textarea);
 
         // Ensure element stays visible
         editField.scrollIntoView(false);
@@ -355,7 +355,14 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         this.#options.deleteComment(this.#commentTransformer.deplete(commentEnriched), success, error);
     };
 
-    private moveCursorToEnd(element: HTMLElement): void {
+    #createWrappedCommentingFieldElement(options: Partial<Pick<CommentingFieldElement, 'parentId' | 'existingCommentId' | 'onClosed'>>): HTMLLIElement {
+        const wrapper: HTMLLIElement = document.createElement('li');
+        wrapper.classList.add('commenting-field-wrapper');
+        wrapper.append(CommentingFieldElement.create(options));
+        return wrapper;
+    }
+
+    #moveCursorToEnd(element: HTMLElement): void {
         // Trigger input to adjust size
         element.dispatchEvent(new InputEvent('input'));
 

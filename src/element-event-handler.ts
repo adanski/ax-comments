@@ -55,7 +55,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         if (files?.length === 1) {
 
             // Select correct commenting field
-            const parentCommentingField: CommentingFieldElement | null = findParentsBySelector<CommentingFieldElement>(e.target as HTMLElement, 'li.commenting-field').first();
+            const parentCommentingField: CommentingFieldElement | null = findParentsBySelector<CommentingFieldElement>(e.target as HTMLElement, 'ax-commenting-field.commenting-field').first();
 
             parentCommentingField?.preSaveAttachments(files);
 
@@ -158,7 +158,7 @@ export class CommentsElementEventHandler implements ElementEventHandler {
 
         // Hide the overlay and upload the files
         this.#hideDroppableOverlay();
-        this.container.querySelector<CommentingFieldElement>('li.commenting-field.main')!
+        this.container.querySelector<CommentingFieldElement>('ax-commenting-field.commenting-field.main')!
             .preSaveAttachments(e.dataTransfer!.files);
     }
 }

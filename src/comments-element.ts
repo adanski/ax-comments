@@ -305,7 +305,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
             // Append element to DOM
             const childCommentsEl: HTMLElement = outerMostParent!.querySelector('.child-comments')!;
-            const commentingField: CommentingFieldElement | null = childCommentsEl.querySelector('li.commenting-field');
+            const commentingField: CommentingFieldElement | null = childCommentsEl.querySelector('ax-commenting-field.commenting-field');
             if (!isNil(commentingField)) {
                 commentingField.before(commentEl);
             } else {

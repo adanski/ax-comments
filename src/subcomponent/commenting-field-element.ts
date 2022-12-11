@@ -20,8 +20,8 @@ import {TextcompleteFactory} from './textcomplete-factory.js';
 import {ErrorFct, SuccessFct} from '../options/callbacks.js';
 import {CommentTransformer} from '../comment-transformer.js';
 
-@RegisterCustomElement('ax-commenting-field', {extends: 'li'})
-export class CommentingFieldElement extends HTMLLIElement implements WebComponent {
+@RegisterCustomElement('ax-commenting-field')
+export class CommentingFieldElement extends HTMLElement implements WebComponent {
 
     parentId: string | null = null;
     existingCommentId: string | null = null;
@@ -38,7 +38,7 @@ export class CommentingFieldElement extends HTMLLIElement implements WebComponen
     #tagFactory!: TagFactory;
 
     static create(options: Partial<Pick<CommentingFieldElement, 'parentId' | 'existingCommentId' | 'isMain' | 'onClosed'>>): CommentingFieldElement {
-        const commentingFieldEl: CommentingFieldElement = document.createElement('li', {is: 'ax-commenting-field'}) as CommentingFieldElement;
+        const commentingFieldEl: CommentingFieldElement = document.createElement('ax-commenting-field') as CommentingFieldElement;
         Object.assign(commentingFieldEl, options);
         return commentingFieldEl;
     }
