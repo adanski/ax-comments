@@ -8,7 +8,7 @@ import {CommentModelEnriched} from './comments-by-id.js';
 import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from './provider.js';
 import {CommentsElementEventHandler, ElementEventHandler} from './element-event-handler.js';
 import {CommentSorter} from './comment-sorter.js';
-import {NavigationFactory} from './subcomponent/navigation-factory.js';
+import {NavigationElement} from './subcomponent/navigation-element.js';
 import {SpinnerFactory} from './subcomponent/spinner-factory.js';
 import {CommentViewModel, CommentViewModelEvent} from './comment-view-model.js';
 import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util.js';
@@ -18,7 +18,6 @@ import {createCssDeclarations} from './dynamic-css-factory.js';
 import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
 import {CommentingFieldElement} from './subcomponent/commenting-field-element.js';
 import {CommentElement} from './subcomponent/comment-element.js';
-import EventEmitter from 'EventEmitter3';
 
 @RegisterCustomElement('ax-comments')
 export class CommentsElement extends HTMLElement implements WebComponent {
@@ -27,14 +26,13 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     readonly #options: Required<CommentsOptions> = {} as Required<CommentsOptions>;
 
     #commentViewModel!: CommentViewModel;
-    #elementEventHandlerEmitter!: EventEmitter<'navigationElementClicked'>;
     #elementEventHandler!: ElementEventHandler;
 
     #commentTransformer!: CommentTransformer;
     #commentSorter!: CommentSorter;
-    #navigationFactory!: NavigationFactory;
     #spinnerFactory!: SpinnerFactory;
 
+    #currentSortKey!: SortKey;
     #dataFetched: boolean = false;
 
     constructor() {
@@ -53,7 +51,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
     disconnectedCallback(): void {
         this.#commentViewModel.unsubscribeAll();
-        this.#elementEventHandlerEmitter.removeAllListeners();
         this.#unsubscribeEvents();
         this.container.innerHTML = '';
     }
@@ -86,11 +83,9 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     #initServices(): void {
         OptionsProvider.set(this.container, this.#options);
         this.#commentViewModel = CommentViewModelProvider.set(this.container, {});
-        this.#elementEventHandlerEmitter = new EventEmitter();
-        this.#elementEventHandler = new CommentsElementEventHandler(this.container, this.#elementEventHandlerEmitter);
+        this.#elementEventHandler = new CommentsElementEventHandler(this.container);
         this.#commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
         this.#commentSorter = ServiceProvider.get(this.container, CommentSorter);
-        this.#navigationFactory = ServiceProvider.get(this.container, NavigationFactory);
         this.#spinnerFactory = ServiceProvider.get(this.container, SpinnerFactory);
     }
 
@@ -105,7 +100,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         }
 
         // Set initial sort key
-        this.#elementEventHandler.currentSortKey = this.options.defaultNavigationSortKey;
+        this.#currentSortKey = this.options.defaultNavigationSortKey;
 
         // Create user CSS declarations
         let allStyles: CSSStyleSheet[] = [createCssDeclarations(this.options)];
@@ -122,14 +117,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#commentViewModel.subscribe(CommentViewModelEvent.COMMENT_ADDED, commentId => {
             const comment: CommentModelEnriched = this.#commentViewModel.getComment(commentId)!;
             this.#createComment(comment);
-        });
-        this.#elementEventHandlerEmitter.on('navigationElementClicked', (sortKey: SortKey) => {
-            // Create attachments if necessary
-            if (sortKey === SortKey.ATTACHMENTS) {
-                this.#createAttachments();
-            }
-
-            this.#showActiveSort();
         });
     }
 
@@ -254,7 +241,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         });
 
 
-        this.#commentSorter.sortComments(rootComments, this.#elementEventHandler.currentSortKey);
+        this.#commentSorter.sortComments(rootComments, this.#currentSortKey);
         this.#commentSorter.sortComments(replies, SortKey.OLDEST);
 
         // Append list to DOM
@@ -330,7 +317,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
     #showActiveSort(): void {
         const activeElements: NodeListOf<HTMLElement> = this.container
-            .querySelectorAll(`.navigation li[data-sort-key="${this.#elementEventHandler.currentSortKey}"]`);
+            .querySelectorAll(`.navigation li[data-sort-key="${this.#currentSortKey}"]`);
 
         // Indicate active sort
         this.container.querySelectorAll('.navigation li')
@@ -339,7 +326,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
         // Update title for dropdown
         const titleEl: HTMLElement = this.container.querySelector('.navigation .title')!;
-        if (this.#elementEventHandler.currentSortKey !== SortKey.ATTACHMENTS) {
+        if (this.#currentSortKey !== SortKey.ATTACHMENTS) {
             titleEl.classList.add('active');
             titleEl.querySelector('header')!.innerHTML = activeElements.item(0).innerHTML;
         } else {
@@ -355,10 +342,10 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     #createComment(comment: CommentModelEnriched): void {
         // Add comment element
         const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
-        const prependComment = this.#elementEventHandler.currentSortKey === SortKey.NEWEST;
+        const prependComment = this.#currentSortKey === SortKey.NEWEST;
         this.#addComment(comment, commentList, prependComment);
 
-        if (this.#elementEventHandler.currentSortKey === SortKey.ATTACHMENTS && comment.hasAttachments()) {
+        if (this.#currentSortKey === SortKey.ATTACHMENTS && comment.hasAttachments()) {
             this.#addAttachment(comment);
         }
     }
@@ -374,7 +361,10 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         hideElement(mainCommentingField.querySelector<HTMLElement>('.close')!);
 
         // Navigation bar
-        this.container.append(this.#navigationFactory.createNavigationElement());
+        this.container.append(NavigationElement.create({
+            sortKey: this.#currentSortKey,
+            onSortKeyChanged: this.#navigationSortKeyChanged
+        }));
 
         // Loading spinner
         const spinner: HTMLElement = this.#spinnerFactory.createSpinner();
@@ -450,6 +440,34 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         }
 
         this.#showActiveSort();
+    }
+
+    #navigationSortKeyChanged: (newSortKey: SortKey) => void = newSortKey => {
+        this.#currentSortKey = newSortKey;
+        // Create attachments if necessary
+        if (newSortKey === SortKey.ATTACHMENTS) {
+            this.#createAttachments();
+        }
+
+        // Sort the comments if necessary
+        if (newSortKey !== SortKey.ATTACHMENTS) {
+            this.#sortAndReArrangeComments(newSortKey);
+        }
+
+        this.#showActiveSort();
+    };
+
+    #sortAndReArrangeComments(sortKey: SortKey): void {
+        const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
+
+        // Get top level comments
+        const rootComments: CommentModelEnriched[] = this.#commentViewModel.getRootComments(this.#commentSorter.getSorter(sortKey));
+
+        // Rearrange top level comments
+        rootComments.forEach(commentModel => {
+            const commentEl: HTMLElement = commentList.querySelector(`:scope > li.comment[data-id="${commentModel.id}"]`)!;
+            commentList.append(commentEl);
+        });
     }
 
 }

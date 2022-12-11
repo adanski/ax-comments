@@ -7,10 +7,6 @@ export const EVENT_HANDLERS_MAP: Map<ElementEvent, ElementEventHandlerNames> = n
     // Paste attachments
     of(eventOf('paste'), 'preSavePastedAttachments'),
 
-    // Navigation
-    of(eventOf('click', '.navigation li[data-sort-key]'), 'navigationElementClicked'),
-    of(eventOf('click', '.navigation li.title'), 'toggleNavigationDropdown'),
-
     // Drag & dropping attachments
     of(eventOf('dragenter'), 'showDroppableOverlay'),
 

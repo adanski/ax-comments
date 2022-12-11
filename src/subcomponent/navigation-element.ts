@@ -1,15 +1,45 @@
 import {CommentsOptions, SortKey} from '../api.js';
 import {OptionsProvider} from '../provider.js';
+import {RegisterCustomElement} from '../register-custom-element.js';
+import {WebComponent} from '../web-component.js';
+import {getHostContainer, toggleElementVisibility} from '../html-util.js';
 
-export class NavigationFactory {
+@RegisterCustomElement('ax-navigation')
+export class NavigationElement extends HTMLElement implements WebComponent {
 
-    readonly #options: Required<CommentsOptions>;
+    sortKey: SortKey = SortKey.NEWEST;
+    onSortKeyChanged: (sortKey: SortKey) => void = () => {};
 
-    constructor(private readonly container: HTMLElement) {
+    #options!: Required<CommentsOptions>;
+
+    static create(options: Pick<NavigationElement, 'sortKey' | 'onSortKeyChanged'>): NavigationElement {
+        const navigationEl: NavigationElement = document.createElement('ax-commenting-field') as NavigationElement;
+        Object.assign(navigationEl, options);
+        return navigationEl;
+    }
+
+    connectedCallback() {
+        this.#initServices();
+        this.#initElement();
+        this.querySelectorAll<HTMLElement>('.navigation li[data-sort-key]')
+            .forEach(nav => nav.addEventListener('click', this.#navigationElementClicked));
+        this.querySelector<HTMLElement>('.navigation li.title')!
+            .addEventListener('click', this.#toggleNavigationDropdown);
+    }
+
+    disconnectedCallback(): void {
+        this.querySelectorAll<HTMLElement>('.navigation li[data-sort-key]')
+            .forEach(nav => nav.removeEventListener('click', this.#navigationElementClicked));
+        this.querySelector<HTMLElement>('.navigation li.title')!
+            .removeEventListener('click', this.#toggleNavigationDropdown);
+    }
+
+    #initServices(): void {
+        const container: HTMLElement = getHostContainer(this);
         this.#options = OptionsProvider.get(container);
     }
 
-    createNavigationElement(): HTMLElement {
+    #initElement(): void {
         const navigationEl: HTMLUListElement = document.createElement('ul');
         navigationEl.classList.add('navigation');
         const navigationWrapper: HTMLDivElement = document.createElement('div');
@@ -79,12 +109,29 @@ export class NavigationFactory {
         }
 
         if (this.#options.forceResponsive) {
-            this.forceResponsive();
+            this.#forceResponsive();
         }
-        return navigationEl;
+
+        this.append(navigationEl);
     }
 
-    private forceResponsive(): void {
-        this.container.classList.add('responsive');
+    #navigationElementClicked: (e: MouseEvent) => void = e => {
+        const navigationEl: HTMLElement = e.currentTarget as HTMLElement;
+        const sortKey: SortKey = navigationEl.getAttribute('data-sort-key') as SortKey;
+
+        this.sortKey = sortKey;
+        this.onSortKeyChanged(sortKey);
+    };
+
+    #toggleNavigationDropdown: (e: UIEvent) => void = e => {
+        // Prevent closing immediately
+        e.stopPropagation();
+
+        const dropdown: HTMLElement = (e.currentTarget as HTMLElement).querySelector('~ .dropdown')!;
+        toggleElementVisibility(dropdown);
+    };
+
+    #forceResponsive(): void {
+        getHostContainer(this).classList.add('responsive');
     }
 }
