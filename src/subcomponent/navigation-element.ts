@@ -13,7 +13,7 @@ export class NavigationElement extends HTMLElement implements WebComponent {
     #options!: Required<CommentsOptions>;
 
     static create(options: Pick<NavigationElement, 'sortKey' | 'onSortKeyChanged'>): NavigationElement {
-        const navigationEl: NavigationElement = document.createElement('ax-commenting-field') as NavigationElement;
+        const navigationEl: NavigationElement = document.createElement('ax-navigation') as NavigationElement;
         Object.assign(navigationEl, options);
         return navigationEl;
     }

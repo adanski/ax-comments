@@ -43,7 +43,6 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
                 return;
             }
             // Re-render the comment
-            this.innerHTML = '';
             this.#initElement();
         }));
     }
@@ -65,6 +64,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
     }
 
     #initElement(): void {
+        this.innerHTML = '';
         const commentWrapper: HTMLDivElement = document.createElement('div');
         commentWrapper.classList.add('comment-wrapper');
 

@@ -37,6 +37,8 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     #textcompleteFactory!: TextcompleteFactory;
     #tagFactory!: TagFactory;
 
+    #initialized: boolean = false;
+
     static create(options: Partial<Pick<CommentingFieldElement, 'parentId' | 'existingCommentId' | 'isMain' | 'onClosed'>>): CommentingFieldElement {
         const commentingFieldEl: CommentingFieldElement = document.createElement('ax-commenting-field') as CommentingFieldElement;
         Object.assign(commentingFieldEl, options);
@@ -44,8 +46,13 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     }
 
     connectedCallback(): void {
+        if (this.#initialized) {
+            this.#removeElement();
+            return;
+        }
         this.#initServices();
         this.#initElement();
+        this.#initialized = true;
     }
 
     disconnectedCallback(): void {
@@ -209,7 +216,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         this.onClosed();
     };
 
-    #removeElement: (e: UIEvent) => void = e => {
+    #removeElement: () => void = () => {
         if (this.isMain) return;
         // Execute callback
         this.onClosed();
