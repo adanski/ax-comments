@@ -17,11 +17,13 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
     }
 
     #initServices(): void {
+        if (this.#options) return;
         const container: HTMLElement = getHostContainer(this);
         this.#options = OptionsProvider.get(container)!;
     }
 
     #initElement(): void {
+        this.innerHTML = '';
         const button: HTMLButtonElement = document.createElement('button');
         button.classList.add('toggle-all', 'highlight-font-bold');
         const toggleAllButtonText: HTMLSpanElement = document.createElement('span');

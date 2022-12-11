@@ -25,9 +25,11 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
         this.#initServices();
         this.type = 'button';
         this.onInitialized(this);
+        this.onInitialized = () => {};
     }
 
     #initServices(): void {
+        if (this.#options) return;
         const container: HTMLElement = getHostContainer(this);
         this.#options = OptionsProvider.get(container)!;
         this.#spinnerFactory = ServiceProvider.get(container, SpinnerFactory);

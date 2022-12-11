@@ -25,9 +25,8 @@ export class CommentElement extends HTMLLIElement implements WebComponent {
     }
 
     connectedCallback(): void {
-        if (this.#initialized) {
-            return;
-        }
+        if (this.#initialized) return;
+
         this.#initElement();
         this.#initialized = true;
     }

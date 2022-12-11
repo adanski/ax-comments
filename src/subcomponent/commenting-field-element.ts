@@ -47,6 +47,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
 
     connectedCallback(): void {
         if (this.#initialized) {
+            // Don't try to reuse an already existing commenting field
             this.#removeElement();
             return;
         }
