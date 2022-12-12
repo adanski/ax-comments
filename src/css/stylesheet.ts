@@ -14,9 +14,6 @@ const mainStyle: string = `
 }
 
 .jquery-comments .textarea, .jquery-comments input, .jquery-comments button {
-	-webkit-appearance: none;
-	-moz-appearance: none;
-	-ms-appearance: none;
 	appearance: none;
 
 	vertical-align: top;
@@ -122,6 +119,10 @@ const mainStyle: string = `
 	color: #fff;
 }
 
+.jquery-comments .spinner.inline:not(.hidden) ~ * {
+    margin-left: 0.4em;
+}
+
 .jquery-comments ul {
 	list-style: none;
 	padding: 0;
@@ -148,7 +149,7 @@ const mainStyle: string = `
 	border-radius: 50%;
 }
 
-.jquery-comments .commenting-field.main {
+.jquery-comments .commenting-field.main .textarea-wrapper {
 	margin-bottom: 0.75em;
 }
 
@@ -199,9 +200,6 @@ const mainStyle: string = `
 	overflow: hidden;
 	opacity: 0.5;
 
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
 	user-select: none;
 }
 
@@ -243,8 +241,9 @@ const mainStyle: string = `
 	resize: vertical;
 	cursor: text;
 
-	border: 1px solid #CCC;;
+	border: 1px solid #CCC;
 	background: #FFF;
+	font-family: inherit;
 	font-size: 1em;
 	line-height: 1.45em;
 	padding: .25em .8em;
@@ -268,6 +267,10 @@ const mainStyle: string = `
 	padding: 0 1em;
 	font-size: 1em;
 	opacity: .5;
+}
+
+.jquery-comments button .hidden {
+    display: none !important;
 }
 
 .jquery-comments .textarea-wrapper .control-row > button:not(:first-child) {
@@ -314,9 +317,6 @@ const mainStyle: string = `
 	cursor: pointer;
 	text-align: center;
 
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
 	user-select: none;
 }
 
@@ -393,9 +393,6 @@ const mainStyle: string = `
 
 	border: 1px solid #CCC;
 	box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-	-webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-	-moz-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-	-ms-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
 }
 
 .jquery-comments ul.dropdown.autocomplete {
@@ -415,8 +412,9 @@ const mainStyle: string = `
 	background: #EEE;
 }
 
-.jquery-comments ul.dropdown li a {
+.jquery-comments ul.dropdown li .result {
 	display: block;
+	margin: 0;
 	text-decoration: none;
 	color: inherit;
 }
@@ -432,18 +430,30 @@ const mainStyle: string = `
 	display: inline-block;
 }
 
-.jquery-comments ul.dropdown li .name {
-	font-weight: bold;
+.jquery-comments ul.dropdown li .details > span {
+	display: block;
 }
 
 .jquery-comments ul.dropdown li .details.no-email {
 	line-height: 2.4em;
 }
 
+.jquery-comments ul.dropdown li .name {
+	font-weight: bold;
+}
+
 .jquery-comments ul.dropdown li .email {
 	color: #999;
 	font-size: 0.95em;
 	margin-top: 0.1em;
+}
+
+.jquery-comments ul.dropdown .textcomplete-header {
+	display: none;
+}
+
+.jquery-comments ul.dropdown .textcomplete-footer {
+	display: none;
 }
 
 .jquery-comments ul.navigation .navigation-wrapper.responsive ul.dropdown {
@@ -498,7 +508,7 @@ const mainStyle: string = `
 	overflow: hidden;
 }
 
-.jquery-comments ul.main > li.comment:first-child > .comment-wrapper {
+.jquery-comments ul.main > li.comment:first-child > ax-comment-container > .comment-wrapper {
 	border-top: none;
 }
 
@@ -549,12 +559,12 @@ const mainStyle: string = `
 	word-break: normal;
 }
 
-.jquery-comments ul.main li.comment .wrapper{
+.jquery-comments ul.main li.comment .wrapper {
 	line-height: 1.4em;
 	overflow: hidden;
 }
 
-.jquery-comments.mobile ul.main li.comment .child-comments li.comment .wrapper{
+.jquery-comments.mobile ul.main li.comment .child-comments li.comment .wrapper {
 	overflow: visible;
 }
 `;
@@ -623,6 +633,11 @@ const actionsStyle: string = `
 	font-size: 0.9em;
 }
 
+.jquery-comments ul.main li.comment .actions .action.disabled {
+    opacity: 0.5;
+	pointer-events: none;
+}
+
 .jquery-comments ul.main li.comment .actions .action:first-child {
 	margin-left: 0;
 }
@@ -648,16 +663,6 @@ const actionsStyle: string = `
 	color: #666;
 }
 
-.jquery-comments ul.main li.comment .actions .action.delete {
-	opacity: 0.5;
-	pointer-events: none;
-}
-
-.jquery-comments ul.main li.comment .actions .action.delete.enabled {
-	opacity: 1;
-	pointer-events: auto;
-}
-
 .jquery-comments ul#attachment-list li.comment .actions .action:not(.delete) {
 	display: none;
 }
@@ -673,7 +678,7 @@ const actionsStyle: string = `
 
 /* Child comments */
 const childCommentsStyle: string = `
-.jquery-comments ul.main li.comment .child-comments > *:before { /* Margin for second level content */
+.jquery-comments ul.main li.comment .child-comments > *::before, .jquery-comments ul.main li.comment ax-commenting-field::before { /* Margin for second level content */
 	content: "";
 	height: 1px;
 	float: left;
@@ -682,12 +687,12 @@ const childCommentsStyle: string = `
 	max-width: calc(50px + .5em);	/* Profile picture max width plus margin */
 }
 
-.jquery-comments ul.main li.comment .child-comments .profile-picture {
+.jquery-comments ul.main li.comment .child-comments .profile-picture, .jquery-comments ul.main li.comment .child-comments ~ ax-commenting-field .profile-picture {
 	width: 2.4rem;
 	height: 2.4rem;
 }
 
-.jquery-comments ul.main li.comment .child-comments i.profile-picture {
+.jquery-comments ul.main li.comment .child-comments i.profile-picture, .jquery-comments ul.main li.comment .child-comments ~ ax-commenting-field i.profile-picture {
 	font-size: 2.4em;
 }
 
@@ -801,7 +806,7 @@ const readOnlyStyle: string = `
 
 export const STYLE_SHEET: CSSStyleSheet = (() => {
 	const styleSheet: CSSStyleSheet = new CSSStyleSheet();
-	(styleSheet as any).replaceSync(mainStyle
+	styleSheet.replaceSync(mainStyle
 		+ contentStyle
 		+ attachmentsStyle
 		+ actionsStyle

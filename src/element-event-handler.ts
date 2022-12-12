@@ -27,8 +27,12 @@ export class CommentsElementEventHandler implements ElementEventHandler {
     }
 
     closeDropdowns(): void {
-        this.container.querySelectorAll<HTMLElement>('.dropdown')
-            .forEach(hideElement);
+        const escPressEvent = new KeyboardEvent('keydown',{
+            key: 'Escape',
+            keyCode: 27
+        });
+        this.container.querySelectorAll<HTMLElement>('.textarea')
+            .forEach(el => el.dispatchEvent(escPressEvent));
     }
 
     preSavePastedAttachments(e: ClipboardEvent): void {

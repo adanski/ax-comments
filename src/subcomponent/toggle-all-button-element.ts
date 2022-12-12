@@ -33,8 +33,8 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
 
         button.append(toggleAllButtonText, caret);
         this.onclick = this.#toggleReplies;
-        this.#setToggleAllButtonText(false);
         this.append(button);
+        this.#setToggleAllButtonText(false);
     }
 
     private static create(): ToggleAllButtonElement {

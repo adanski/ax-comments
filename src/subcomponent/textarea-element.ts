@@ -29,7 +29,7 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
         this.removeEventListener('keydown', this.#addOnKeydown);
         this.removeEventListener('input', this.#saveEditedValue);
         this.removeEventListener('input', this.#checkEditedValueForChange);
-        this.removeEventListener('click', this.#increaseTextareaHeight);
+        this.removeEventListener('focusin', this.#increaseTextareaHeight);
         this.removeEventListener('change', this.#increaseTextareaHeight);
     }
 
@@ -53,7 +53,7 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
         this.addEventListener('keydown', this.#addOnKeydown);
         this.addEventListener('input', this.#saveEditedValue);
         this.addEventListener('input', this.#checkEditedValueForChange);
-        this.addEventListener('click', this.#increaseTextareaHeight);
+        this.addEventListener('focusin', this.#increaseTextareaHeight);
         this.addEventListener('change', this.#increaseTextareaHeight);
     }
 

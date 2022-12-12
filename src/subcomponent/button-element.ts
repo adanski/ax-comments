@@ -12,20 +12,25 @@ import {isNil} from '../util.js';
 @RegisterCustomElement('ax-button', {extends: 'button'})
 export class ButtonElement extends HTMLButtonElement implements WebComponent {
 
-    originalContent: string | HTMLElement | HTMLCollection = '';
     set inline(value: boolean) {
         if (value) this.classList.add('inline-button');
     }
     onInitialized: (button: ButtonElement) => void = () => {};
 
+    #initialized: boolean = false;
     #options!: Required<CommentsOptions>;
     #spinnerFactory!: SpinnerFactory;
 
     connectedCallback(): void {
         this.#initServices();
         this.type = 'button';
-        this.onInitialized(this);
-        this.onInitialized = () => {};
+        if (!this.#initialized) {
+            const spinner: HTMLElement = this.#spinnerFactory.createSpinner(true);
+            spinner.classList.add('hidden');
+            this.prepend(spinner);
+            this.onInitialized(this);
+            this.#initialized = true;
+        }
     }
 
     #initServices(): void {
@@ -64,8 +69,7 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
                 ? button.#options.saveText
                 : button.#options.sendText;
             saveButton.classList.add(saveButtonClass, 'save', 'highlight-background');
-            saveButton.originalContent = saveButtonText;
-            saveButton.textContent = saveButtonText;
+            saveButton.append(ButtonElement.createLabel(saveButtonText));
         };
 
         return saveButton;
@@ -97,7 +101,7 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
         const actionButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         Object.assign(actionButton, options);
         actionButton.classList.add('action', className);
-        actionButton.textContent = label;
+        actionButton.append(ButtonElement.createLabel(label));
 
         return actionButton;
     }
@@ -108,9 +112,9 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
 
         deleteButton.onInitialized = button => {
             const deleteButtonText: string = button.#options.deleteText;
-            button.style.color = button.#options.deleteButtonColor;
-            button.originalContent = deleteButtonText;
-            button.textContent = deleteButtonText;
+            const label: HTMLElement = button.querySelector('span.label')!;
+            label.style.color = button.#options.deleteButtonColor;
+            label.textContent = deleteButtonText;
         };
 
         return deleteButton;
@@ -119,6 +123,7 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
     static createUpvoteButton(commentModel: CommentModelEnriched): ButtonElement {
         const upvoteButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         upvoteButton.classList.add('action', 'upvote');
+        upvoteButton.classList.toggle("disabled", !!commentModel.createdByCurrentUser);
         const upvoteCount: HTMLSpanElement = document.createElement('span');
         upvoteCount.classList.add('upvote-count');
 
@@ -180,20 +185,17 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
         return upvoteButton;
     }
 
+    private static createLabel(text: string): HTMLSpanElement {
+        const label: HTMLSpanElement = document.createElement('span');
+        label.classList.add('label');
+        label.textContent = text;
+        return label;
+    }
+
     setButtonState(enabled: boolean, loading: boolean): void {
         this.classList.toggle('enabled', enabled);
 
-        if (loading) {
-            this.innerHTML = '';
-            this.append(this.#spinnerFactory.createSpinner(true));
-        } else if (typeof this.originalContent === 'string') {
-            this.innerHTML = this.originalContent;
-        } else if ((this.originalContent as HTMLCollection).length) {
-            this.innerHTML = '';
-            this.append(...this.originalContent as HTMLCollection);
-        } else {
-            this.append(this.originalContent as HTMLElement);
-        }
+        this.querySelector<HTMLElement>('.spinner')!.classList.toggle('hidden', !loading);
     }
 
 }

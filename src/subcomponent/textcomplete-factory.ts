@@ -20,11 +20,12 @@ export class TextcompleteFactory {
 
     createTextcomplete(textarea: TextareaElement): Textcomplete {
         const textcompleteEditor: TextareaEditor = new TextareaEditor(textarea);
+        let startsWithSpace: boolean = false;
         const textcompleteStrategy: StrategyProps<PingableUser | ReferenceableHashtag> = {
             // Starts with '@' or '#' and has at least 3 other characters
-            match: /(^|\s)([@#][^\W_]{3,})$/i,
-            index: 2,
-            search: (term, callback) => {
+            match: /(?:^|\s)([@#][\w-]{3,})$/i,
+            search: (term, callback, match) => {
+                startsWithSpace = match[0].startsWith(' ');
                 term = normalizeSpaces(term);
                 const prefix: string = term[0];
                 term = term.substring(1);
@@ -32,7 +33,10 @@ export class TextcompleteFactory {
                 // Return empty array on error
                 const error: () => void = () => callback([]);
 
-                if (isStringEmpty(term)) error();
+                if (isStringEmpty(term)) {
+                    error();
+                    return;
+                }
 
                 if (prefix === '@') {
                     this.#options.searchUsers(term, callback, error);
@@ -48,8 +52,8 @@ export class TextcompleteFactory {
                     : this.#createHashtagItem(userOrHashtag).outerHTML,
             replace: userOrHashtag =>
                 TextcompleteFactory.#isUser(userOrHashtag)
-                    ? this.#replaceUserPingText(userOrHashtag, textarea)
-                    : this.#replaceHashtagReferenceText(userOrHashtag, textarea),
+                    ? this.#replaceUserPingText(userOrHashtag, textarea, startsWithSpace)
+                    : this.#replaceHashtagReferenceText(userOrHashtag, textarea, startsWithSpace),
             cache: true
         };
         const textcompleteOptions: TextcompleteOption = {
@@ -64,11 +68,12 @@ export class TextcompleteFactory {
     }
 
     #createUserItem(user: PingableUser): HTMLElement {
-        const userItem: HTMLDivElement = document.createElement('div');
+        const userItem: HTMLParagraphElement = document.createElement('p');
+        userItem.classList.add('result');
 
         const profilePicture: HTMLElement = this.#profilePictureFactory.createProfilePictureElement(user.id, user.profilePictureURL);
 
-        const details: HTMLDivElement = document.createElement('div');
+        const details: HTMLSpanElement = document.createElement('span');
         details.classList.add('details');
         const name: HTMLSpanElement = document.createElement('span');
         name.classList.add('name');
@@ -90,24 +95,26 @@ export class TextcompleteFactory {
     }
 
     #createHashtagItem(hashtag: ReferenceableHashtag): HTMLElement {
-        const hashtagItem: HTMLDivElement = document.createElement('div');
+        const hashtagItem: HTMLParagraphElement = document.createElement('p');
+        hashtagItem.classList.add('result');
+
         const name: HTMLSpanElement = document.createElement('span');
         name.classList.add('name');
-        name.textContent = hashtag.tag;
+        name.textContent = `#${hashtag.tag}`;
 
         hashtagItem.append(name);
 
         return hashtagItem;
     }
 
-    #replaceUserPingText(user: PingableUser, textarea: TextareaElement): string {
+    #replaceUserPingText(user: PingableUser, textarea: TextareaElement, startsWithSpace: boolean): string {
         textarea.pingedUsers.push(user);
-        return `@${user.id} `;
+        return `${startsWithSpace ? ' ' : ''}@${user.id} `;
     }
 
-    #replaceHashtagReferenceText(hashtag: ReferenceableHashtag, textarea: TextareaElement): string {
+    #replaceHashtagReferenceText(hashtag: ReferenceableHashtag, textarea: TextareaElement, startsWithSpace: boolean): string {
         textarea.referencedHashtags.push(hashtag.tag);
-        return `#${hashtag.tag}`;
+        return `${startsWithSpace ? ' ' : ''}#${hashtag.tag} `;
     }
 
     static #isUser(obj: any): obj is PingableUser {

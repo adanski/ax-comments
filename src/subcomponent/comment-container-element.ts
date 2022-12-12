@@ -77,7 +77,8 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         // Time
         const time: HTMLTimeElement = document.createElement('time');
         time.textContent = this.#options.timeFormatter(this.commentModel.createdAt);
-        time.setAttribute('data-original', this.commentModel.createdAt.toISOString());
+        time.setAttribute('title', this.commentModel.createdAt.toLocaleString());
+        time.setAttribute('datetime', this.commentModel.createdAt.toISOString());
 
         // Comment header element
         const commentHeaderEl: HTMLDivElement = document.createElement('div');
@@ -145,7 +146,8 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
             const edited: HTMLTimeElement = document.createElement('time');
             edited.classList.add('edited');
             edited.textContent = `${this.#options.editedText} ${editedTime}`;
-            edited.setAttribute('data-original', this.commentModel.modifiedAt.toISOString());
+            edited.setAttribute('title', this.commentModel.modifiedAt.toLocaleString());
+            edited.setAttribute('datetime', this.commentModel.modifiedAt.toISOString());
 
             content.append(edited);
         }
@@ -274,7 +276,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         const parentId: string | null = findParentsBySelector(replyButton, '.comment').first()!.getAttribute('data-id');
 
         // Remove existing field
-        let replyField: HTMLLIElement | null = outermostParent.querySelector('.child-comments > .commenting-field-wrapper');
+        let replyField: CommentingFieldElement | null = outermostParent.querySelector(':scope > .commenting-field');
         let previousParentId: string | null = null;
         if (replyField) {
             previousParentId = replyField.querySelector<TextareaElement>('.textarea')!.parentId;
@@ -283,8 +285,8 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         // Create the reply field (do not re-create)
         if (previousParentId !== parentId) {
-            replyField = this.#createWrappedCommentingFieldElement({parentId: parentId});
-            outermostParent.querySelector('.child-comments')!.append(replyField);
+            replyField = CommentingFieldElement.create({parentId: parentId});
+            outermostParent.append(replyField);
 
             // Move cursor to end
             const textarea: TextareaElement = replyField.querySelector('.textarea')!;
@@ -302,7 +304,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         commentEl.classList.add('edit');
 
         // Create the editing field
-        const editField: HTMLLIElement = this.#createWrappedCommentingFieldElement({
+        const editField: CommentingFieldElement = CommentingFieldElement.create({
             parentId: commentModel.parentId,
             existingCommentId: commentModel.id,
             onClosed: () => {
@@ -354,13 +356,6 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         this.#options.deleteComment(this.#commentTransformer.deplete(commentEnriched), success, error);
     };
-
-    #createWrappedCommentingFieldElement(options: Partial<Pick<CommentingFieldElement, 'parentId' | 'existingCommentId' | 'onClosed'>>): HTMLLIElement {
-        const wrapper: HTMLLIElement = document.createElement('li');
-        wrapper.classList.add('commenting-field-wrapper');
-        wrapper.append(CommentingFieldElement.create(options));
-        return wrapper;
-    }
 
     #moveCursorToEnd(element: HTMLElement): void {
         // Trigger input to adjust size

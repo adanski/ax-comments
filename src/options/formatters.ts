@@ -2,7 +2,7 @@ export interface Formatters {
     /**
      * A callback `function` that is called for timestamps before inserting to DOM. Can be used for relative times for instance.
      *
-     * @default (time) => new Date(time).toLocaleDateString()
+     * @default function returning relative time
      * @example
      * ```javascript
      * const commentsElement = document.createElement('ax-comments');
@@ -15,5 +15,5 @@ export interface Formatters {
      * };
      * ```
      */
-    timeFormatter?(time: number | string | Date): string;
+    timeFormatter?(timestamp: Date): string;
 }

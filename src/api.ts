@@ -13,4 +13,4 @@ export {CommentModel, UserDisplayNamesById, PingableUser, ReferenceableHashtag} 
 
 export {SortKey} from './options/misc.js';
 
-export {STYLE_SHEET} from './css/ax-comments.js'
+export {STYLE_SHEET} from './css/stylesheet.js'

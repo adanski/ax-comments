@@ -37,8 +37,6 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     #textcompleteFactory!: TextcompleteFactory;
     #tagFactory!: TagFactory;
 
-    #initialized: boolean = false;
-
     static create(options: Partial<Pick<CommentingFieldElement, 'parentId' | 'existingCommentId' | 'isMain' | 'onClosed'>>): CommentingFieldElement {
         const commentingFieldEl: CommentingFieldElement = document.createElement('ax-commenting-field') as CommentingFieldElement;
         Object.assign(commentingFieldEl, options);
@@ -46,18 +44,16 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     }
 
     connectedCallback(): void {
-        if (this.#initialized) {
-            // Don't try to reuse an already existing commenting field
-            this.#removeElement();
-            return;
-        }
         this.#initServices();
         this.#initElement();
-        this.#initialized = true;
+        this.querySelector<HTMLElement>('.textarea')!.addEventListener('input', this.#changeSaveButtonState);
     }
 
     disconnectedCallback(): void {
         this.#textcomplete?.destroy(true);
+        this.querySelector<HTMLElement>('.textarea')!.removeEventListener('input', this.#changeSaveButtonState);
+        // Don't try to reuse an already existing commenting field
+        this.#removeElement();
     }
 
     #initServices(): void {
@@ -124,7 +120,6 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         controlRow.append(saveButton);
 
         if (this.#options.enableAttachments) {
-
             // Upload buttons
             // ==============
 
@@ -133,7 +128,6 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
                 inline: false,
                 onclick: this.#fileInputChanged
             });
-            mainUploadButton.originalContent = mainUploadButton.children;
             controlRow.append(mainUploadButton);
 
             // Inline upload button for main commenting field
@@ -164,14 +158,13 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         if (this.parentId) {
             // Append reply-to tag if necessary
             const parentModel = this.#commentViewModel.getComment(this.parentId)!;
-            if (parentModel.parentId) {
-                // Creating the reply-to tag
-                textarea.value = '@' + parentModel.creatorUserId + ' ';
-                textarea.pingedUsers.push({
-                    id: parentModel.creatorUserId,
-                    displayName: parentModel.creatorDisplayName
-                });
-            }
+
+            // Creating the reply-to tag
+            textarea.value = '@' + parentModel.creatorUserId + ' ';
+            textarea.pingedUsers.push({
+                id: parentModel.creatorUserId,
+                displayName: parentModel.creatorDisplayName
+            });
         }
 
         // Pinging users
@@ -304,6 +297,12 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         }
         const input: HTMLInputElement = uploadButton.querySelector('input[type="file"]')!;
         this.preSaveAttachments(input.files!);
+    };
+
+    #changeSaveButtonState: (e: Event) => void = e => {
+        const textarea: TextareaElement = e.currentTarget as TextareaElement;
+        this.querySelector<ButtonElement>('button.save')!
+            .setButtonState(!isStringEmpty(textarea.getTextareaContent()), false);
     };
 
     getCommentModel(): CommentModel {

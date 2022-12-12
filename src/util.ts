@@ -3,7 +3,7 @@ export function isNil(value: any): value is undefined | null {
 }
 
 export function isStringEmpty(value: string | undefined | null): boolean {
-    return !isNil(value) && value!.trim().length !== 0;
+    return isNil(value) || value!.trim().length === 0;
 }
 
 // compares references only

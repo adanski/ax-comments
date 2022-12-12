@@ -12,7 +12,7 @@ import {NavigationElement} from './subcomponent/navigation-element.js';
 import {SpinnerFactory} from './subcomponent/spinner-factory.js';
 import {CommentViewModel, CommentViewModelEvent} from './comment-view-model.js';
 import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util.js';
-import {STYLE_SHEET} from './css/ax-comments.js';
+import {STYLE_SHEET} from './css/stylesheet.js';
 import {RegisterCustomElement} from './register-custom-element.js';
 import {createCssDeclarations} from './dynamic-css-factory.js';
 import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
@@ -292,12 +292,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
             // Append element to DOM
             const childCommentsEl: HTMLElement = outerMostParent!.querySelector('.child-comments')!;
-            const commentingField: CommentingFieldElement | null = childCommentsEl.querySelector('ax-commenting-field.commenting-field');
-            if (!isNil(commentingField)) {
-                commentingField.before(commentEl);
-            } else {
-                childCommentsEl.append(commentEl);
-            }
+            childCommentsEl.append(commentEl);
 
             // Update toggle all button
             ToggleAllButtonElement.updateToggleAllButton(outerMostParent, this.options);

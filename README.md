@@ -37,22 +37,32 @@ import 'ax-comments/comments-element';
 
 const commentsElement = document.createElement('ax-comments');
 commentsElement.options = {
+    // ...
     getComments: (onSuccess, onError) => {
         const commentsArray = [{
             id: 1,
-            created: '2015-10-01',
-            content: 'Lorem ipsum dolort sit amet',
-            fullname: 'Simon Powell',
-            upvote_count: 2,
-            user_has_upvoted: false
+            content: "Lorem ipsum dolor sit amet",
+            creatorUserId: "simon.powell",
+            creatorDisplayName: "Simon Powell",
+            // ...
+            createdByAdmin: false,
+            createdByCurrentUser: false,
+            upvoteCount: 3,
+            upvotedByCurrentUser: false,
+            isNew: false
         }];
         onSuccess(commentsArray);
-    }
+    },
+    // ...
 };
 
 document.body.append(commentsElement);
 ```
+
+See full example [here](https://github.com/adanski/ax-comments/blob/gh-pages/demo/demo.js).
+
 If you are not using Font Awesome for icons, you should replace the icons with custom images by overriding following options when initializing the library:
+
 ```javascript
 spinnerIconURL: '',
 noCommentsIconURL: '',
@@ -82,4 +92,5 @@ Includes Firefox, Edge, Chrome and probably Safari
 
 ## Copyright and license
 Code and documentation copyright 2017-2021 [Viima Solutions Oy](https://www.viima.com/), 2022 [adanski](https://github.com/adanski).
+
 Code released under [the MIT license](https://github.com/Viima/jquery-comments/blob/master/LICENSE).
