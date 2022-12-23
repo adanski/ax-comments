@@ -14,7 +14,7 @@ import {CommentViewModel, CommentViewModelEvent} from './comment-view-model.js';
 import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util.js';
 import {STYLE_SHEET} from './css/stylesheet.js';
 import {RegisterCustomElement} from './register-custom-element.js';
-import {createCssDeclarations} from './dynamic-css-factory.js';
+import {createDynamicStylesheet} from './css/dynamic-stylesheet-factory.js';
 import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
 import {CommentingFieldElement} from './subcomponent/commenting-field-element.js';
 import {CommentElement} from './subcomponent/comment-element.js';
@@ -103,7 +103,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#currentSortKey = this.options.defaultNavigationSortKey;
 
         // Create user CSS declarations
-        let allStyles: CSSStyleSheet[] = [createCssDeclarations(this.options)];
+        let allStyles: CSSStyleSheet[] = [createDynamicStylesheet(this.options)];
         if (this.options.styles) {
             allStyles = allStyles.concat(this.options.styles);
         }

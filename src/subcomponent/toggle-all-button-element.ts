@@ -103,8 +103,8 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
 
         const showExpandingText: () => void = () => {
             let text: string = this.#options.viewAllRepliesText;
-            const replyCount: number = this.parentElement!.querySelectorAll('.comment:not(.hidden)').length - 1;
-            text = text.replace('__replyCount__', replyCount + '');
+            const replyCount: number = this.parentElement!.querySelectorAll('.comment:not(.hidden)').length;
+            text = text.replace('__replyCount__', `${replyCount}`);
             textContainer.textContent = text;
         };
 

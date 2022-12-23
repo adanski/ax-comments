@@ -1,7 +1,7 @@
 # &lt;ax-comments&gt; element
 &lt;ax-comments&gt; is a standalone web component with minimal set of dependencies (no jQuery!) for implementing an out-of-the-box commenting solution to any web application with an existing backend. It provides all the UI functionalities and ties them to callbacks that let you easily define what you want to do with the data. The library is highly customizable and very easy to integrate thanks to a wide variety of settings.
 
-![Screenshot of jquery-comments](screenshot.png?raw=true "Screenshot of jquery-comments")
+![Screenshot of ax-comments](screenshot.png?raw=true "Screenshot of ax-comments")
 
 ## Features
 
@@ -40,7 +40,7 @@ commentsElement.options = {
     // ...
     getComments: (onSuccess, onError) => {
         const commentsArray = [{
-            id: 1,
+            id: '1',
             content: "Lorem ipsum dolor sit amet",
             creatorUserId: "simon.powell",
             creatorDisplayName: "Simon Powell",
@@ -93,4 +93,4 @@ Includes Firefox, Edge, Chrome and probably Safari
 ## Copyright and license
 Code and documentation copyright 2017-2021 [Viima Solutions Oy](https://www.viima.com/), 2022 [adanski](https://github.com/adanski).
 
-Code released under [the MIT license](https://github.com/Viima/jquery-comments/blob/master/LICENSE).
+Code released under [the MIT license](https://github.com/adanski/ax-comments/blob/master/LICENSE).

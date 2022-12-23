@@ -153,7 +153,10 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
 
         // Populate the element
         textareaWrapper.append(closeButton, textarea, controlRow);
-        this.append(profilePicture, textareaWrapper);
+        const container: HTMLElement = document.createElement('div');
+        container.classList.add('commenting-field-container');
+        container.append(profilePicture, textareaWrapper);
+        this.append(container);
 
         if (this.parentId) {
             // Append reply-to tag if necessary

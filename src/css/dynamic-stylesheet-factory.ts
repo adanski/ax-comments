@@ -1,6 +1,6 @@
-import {CommentsOptions} from './api.js';
+import {CommentsOptions} from '../api.js';
 
-export function createCssDeclarations(options: CommentsOptions): CSSStyleSheet {
+export function createDynamicStylesheet(options: CommentsOptions): CSSStyleSheet {
     let css: string = '';
 
     // Navigation underline
