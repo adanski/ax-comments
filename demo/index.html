@@ -1,100 +1,71 @@
 <!doctype html>
-<html>
+<html lang="en">
 	<head>
 		<meta charset=utf-8>
 		<meta name=description content="">
 		<meta name=viewport content="width=device-width, initial-scale=1">
-		<title>Comments Web Component</title>
+		<title>ax-comments element</title>
 
-		<!-- Styles -->
-		<link rel="stylesheet" type="text/css" href="css/jquery-comments.css">
-		<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+		<!-- Font Awesome -->
+		<!--<link rel="stylesheet"
+			  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+			  integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A=="
+			  crossorigin="anonymous"
+			  referrerpolicy="no-referrer"
+		/>-->
 
-		<!-- Data -->
-		<script type="text/javascript" src="data/comments-data.js"></script>
+		<!-- CSS Modules polyfill necessary for Firefox -->
+		<script>
+			esmsInitOptions = {
+				shimMode: false,
+				polyfillEnable: ['css-modules', 'json-modules']
+			}
+		</script>
+		<script async src="https://ga.jspm.io/npm:es-module-shims@1.6.2/dist/es-module-shims.js"></script>
+		<!-- Demo -->
+		<script async type="module" src="demo.js"></script>
 
-		<!-- Libraries -->
-		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
-		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.textcomplete/1.8.0/jquery.textcomplete.js"></script>
-		<script type="text/javascript" src="js/jquery-comments.js"></script>
-
-		<style type="text/css">
+		<style>
 			body {
 				padding: 20px;
 				margin: 0px;
 				font-size: 14px;
 				font-family: "Arial", Georgia, Serif;
 			}
+
+			#snackbar {
+				position: fixed;
+				left: 50%;
+				bottom: 5%;
+				transform: translate(-50%, 0);
+				background-color: #323232;
+				padding: 15px 25px;
+				color: #fff;
+				width: 250px;
+				border-radius: 5px;
+				opacity: 0;
+				visibility: hidden;
+				transition: visibility 0s linear 0.25s, opacity 0.25s;
+			}
+
+			#snackbar.show {
+				opacity: 1;
+				visibility: visible;
+				transition: visibility 0s linear 0s, opacity 0.25s;
+			}
+
+			#snackbar .content {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
 		</style>
-
-		<!-- Init comments-web-component -->
-		<script type="text/javascript">
-			$(function() {
-				var saveComment = function(data) {
-
-					// Convert pings to human readable format
-					$(Object.keys(data.pings)).each(function(index, userId) {
-					    var fullname = data.pings[userId];
-					    var pingText = '@' + fullname;
-					    data.content = data.content.replace(new RegExp('@' + userId, 'g'), pingText);
-					});
-
-					return data;
-				}
-				$('#comments-container').comments({
-					profilePictureURL: 'https://viima-app.s3.amazonaws.com/media/public/defaults/user-icon.png',
-					currentUserId: 1,
-					roundProfilePictures: true,
-					textareaRows: 1,
-					enableAttachments: true,
-					enableHashtags: true,
-					enablePinging: true,
-					scrollContainer: $(window),
-					searchUsers: function(term, success, error) {
-					    setTimeout(function() {
-					        success(usersArray.filter(function(user) {
-					            var containsSearchTerm = user.fullname.toLowerCase().indexOf(term.toLowerCase()) != -1;
-					            var isNotSelf = user.id != 1;
-					            return containsSearchTerm && isNotSelf;
-					        }));
-					    }, 500);
-					},
-					getComments: function(success, error) {
-						setTimeout(function() {
-							success(commentsArray);
-						}, 500);
-					},
-					postComment: function(data, success, error) {
-						setTimeout(function() {
-							success(saveComment(data));
-						}, 500);
-					},
-					putComment: function(data, success, error) {
-						setTimeout(function() {
-							success(saveComment(data));
-						}, 500);
-					},
-					deleteComment: function(data, success, error) {
-						setTimeout(function() {
-							success();
-						}, 500);
-					},
-					upvoteComment: function(data, success, error) {
-						setTimeout(function() {
-							success(data);
-						}, 500);
-					},
-					validateAttachments: function(attachments, callback) {
-						setTimeout(function() {
-							callback(attachments);
-						}, 500);
-					},
-				});
-			});
-		</script>
 
 	</head>
 	<body>
-		<div id="comments-container"></div>
+		<div id="demo-comments"></div>
+		<div id="snackbar">
+			<div class="content">Alert</div>
+		</div>
 	</body>
 </html>
