@@ -25,6 +25,15 @@ export function toggleElementVisibility(element: HTMLElement): void {
     }
 }
 
+// Inspired by jQuery
+export function isElementVisible(element: HTMLElement): boolean {
+    return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
+}
+
+export function isElementHidden(element: HTMLElement): boolean {
+    return !isElementVisible(element);
+}
+
 export function findSiblingsBySelector<E extends HTMLElement = HTMLElement>(element: Element, selectors?: string): QueryableElementArray<E> {
     const siblings: E[] = [];
     for (const sibling of element.parentElement!.children) {
@@ -68,6 +77,7 @@ class QueryableElementArray<E extends HTMLElement> extends Array implements Pick
         }
         return null;
     }
+
     querySelectorAll(selectors: string): E[] {
         const results: E[] = [];
         for (const element of this) {

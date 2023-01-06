@@ -27,7 +27,6 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
 
     disconnectedCallback(): void {
         this.removeEventListener('keydown', this.#addOnKeydown);
-        this.removeEventListener('input', this.#saveEditedValue);
         this.removeEventListener('input', this.#checkEditedValueForChange);
         this.removeEventListener('focusin', this.#increaseTextareaHeight);
         this.removeEventListener('change', this.#increaseTextareaHeight);
@@ -51,7 +50,6 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
         this.adjustTextareaHeight(false);
 
         this.addEventListener('keydown', this.#addOnKeydown);
-        this.addEventListener('input', this.#saveEditedValue);
         this.addEventListener('input', this.#checkEditedValueForChange);
         this.addEventListener('focusin', this.#increaseTextareaHeight);
         this.addEventListener('change', this.#increaseTextareaHeight);
@@ -65,7 +63,7 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
 
     #addOnKeydown: (e: KeyboardEvent) => void = e => {
         // Save comment on cmd/ctrl + enter
-        if (e.keyCode === 13) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
             const metaKey = e.metaKey || e.ctrlKey;
             if (this.#options.postCommentOnEnter || metaKey) {
                 const el: HTMLElement = e.currentTarget as HTMLElement;
@@ -74,11 +72,6 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
                 e.preventDefault();
             }
         }
-    };
-
-    #saveEditedValue: (e: Event) => void = e => {
-        const el: TextareaElement = e.currentTarget as TextareaElement;
-        el.valueBeforeChange = el.value;
     };
 
     #checkEditedValueForChange: (e: Event) => void = e => {

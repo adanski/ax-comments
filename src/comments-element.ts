@@ -40,8 +40,14 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#initShadowDom(this.attachShadow({mode: 'open'}));
     }
 
+    static create(options: Pick<CommentsElement, 'options'>): CommentsElement {
+        const commentsElement: CommentsElement = document.createElement('ax-comments') as CommentsElement;
+        Object.assign(commentsElement, options);
+        return commentsElement;
+    }
+
     connectedCallback(): void {
-        if (!Object.keys(this.options).length) {
+        if (!Object.keys(this.#options).length) {
             throw new Error('ax-comments options not set, element could not be initialized.');
         }
         this.#initServices();
@@ -55,11 +61,11 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.container.innerHTML = '';
     }
 
-    get options(): Required<CommentsOptions> {
+    get options(): CommentsOptions {
         return this.#options;
     }
 
-    set options(options: Required<CommentsOptions>) {
+    set options(options: CommentsOptions) {
         if (Object.keys(this.#options).length) {
             console.warn(`<ax-comments> Options already set, component can not be reinitialized.`);
             return;
@@ -95,17 +101,17 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         }
 
         // Read-only mode
-        if (this.options.readOnly) {
+        if (this.#options.readOnly) {
             this.container.classList.add('read-only');
         }
 
         // Set initial sort key
-        this.#currentSortKey = this.options.defaultNavigationSortKey;
+        this.#currentSortKey = this.#options.defaultNavigationSortKey;
 
         // Create user CSS declarations
-        let allStyles: CSSStyleSheet[] = [createDynamicStylesheet(this.options)];
-        if (this.options.styles) {
-            allStyles = allStyles.concat(this.options.styles);
+        let allStyles: CSSStyleSheet[] = [createDynamicStylesheet(this.#options)];
+        if (this.#options.styles) {
+            allStyles = allStyles.concat(this.#options.styles);
         }
         this.shadowRoot!.adoptedStyleSheets = allStyles;
 
@@ -167,7 +173,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         };
         const error: () => void = () => {};
 
-        this.options.getComments(success, error);
+        this.#options.getComments(success, error);
     }
 
     #fetchNext(): void {
@@ -188,7 +194,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             spinner.remove();
         };
 
-        this.options.getComments(success, error);
+        this.#options.getComments(success, error);
     }
 
     #render(): void {
@@ -202,7 +208,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
         // Create comments and attachments
         this.#createComments();
-        if (this.options.enableAttachments) this.#createAttachments();
+        if (this.#options.enableAttachments) this.#createAttachments();
 
         this.#subscribeEvents();
 
@@ -210,7 +216,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.container.querySelectorAll(':scope > .spinner')
             .forEach(spinner => spinner.remove());
 
-        this.options.refresh();
+        this.#options.refresh();
     }
 
     #showActiveContainer(): void {
@@ -295,7 +301,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             childCommentsEl.append(commentEl);
 
             // Update toggle all button
-            ToggleAllButtonElement.updateToggleAllButton(outerMostParent, this.options);
+            ToggleAllButtonElement.updateToggleAllButton(outerMostParent, this.#options);
         } else { // Case: main level comment
             if (prependComment) {
                 commentList.prepend(commentEl);
@@ -374,18 +380,18 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         // "No comments" placeholder
         const noComments: HTMLElement = document.createElement('div');
         noComments.classList.add('no-comments', 'no-data');
-        noComments.textContent = this.options.noCommentsText;
+        noComments.textContent = this.#options.noCommentsText;
         const noCommentsIcon = document.createElement('i');
         noCommentsIcon.classList.add('fa', 'fa-comments', 'fa-2x');
-        if (this.options.noCommentsIconURL.length) {
-            noCommentsIcon.style.backgroundImage = `url("${this.options.noCommentsIconURL}")`;
+        if (this.#options.noCommentsIconURL.length) {
+            noCommentsIcon.style.backgroundImage = `url("${this.#options.noCommentsIconURL}")`;
             noCommentsIcon.classList.add('image');
         }
         noComments.prepend(document.createElement('br'), noCommentsIcon);
         commentsContainer.append(noComments);
 
         // Attachments
-        if (this.options.enableAttachments) {
+        if (this.#options.enableAttachments) {
             // Attachments container
             const attachmentsContainer = document.createElement('div');
             attachmentsContainer.classList.add('data-container');
@@ -395,11 +401,11 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             // "No attachments" placeholder
             const noAttachments = document.createElement('div');
             noAttachments.classList.add('no-attachments', 'no-data');
-            noAttachments.textContent = this.options.noAttachmentsText;
+            noAttachments.textContent = this.#options.noAttachmentsText;
             const noAttachmentsIcon: HTMLElement = document.createElement('i');
             noAttachmentsIcon.classList.add('fa', 'fa-paperclip', 'fa-2x');
-            if (this.options.attachmentIconURL.length) {
-                noAttachmentsIcon.style.backgroundImage = `url("${this.options.attachmentIconURL}")`;
+            if (this.#options.attachmentIconURL.length) {
+                noAttachmentsIcon.style.backgroundImage = `url("${this.#options.attachmentIconURL}")`;
                 noAttachmentsIcon.classList.add('image');
             }
             noAttachments.prepend(document.createElement('br'), noAttachmentsIcon);
@@ -418,13 +424,13 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             const uploadIcon: HTMLElement = document.createElement('i');
             uploadIcon.classList.add('fa', 'fa-paperclip', 'fa-4x');
 
-            if (this.options.uploadIconURL.length) {
-                uploadIcon.style.backgroundImage = `url("${this.options.uploadIconURL}")`;
+            if (this.#options.uploadIconURL.length) {
+                uploadIcon.style.backgroundImage = `url("${this.#options.uploadIconURL}")`;
                 uploadIcon.classList.add('image');
             }
 
             const dropAttachmentText: HTMLDivElement = document.createElement('div');
-            dropAttachmentText.textContent = this.options.attachmentDropText;
+            dropAttachmentText.textContent = this.#options.attachmentDropText;
             droppable.append(uploadIcon);
             droppable.append(dropAttachmentText);
             droppableContainer.append(droppable);

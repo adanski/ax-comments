@@ -43,9 +43,11 @@ export class CommentsElementEventHandler implements ElementEventHandler {
         if (files?.length === 1) {
 
             // Select correct commenting field
-            const parentCommentingField: CommentingFieldElement | null = findParentsBySelector<CommentingFieldElement>(e.target as HTMLElement, 'ax-commenting-field.commenting-field').first();
+            const parentCommentingField: CommentingFieldElement =
+                findParentsBySelector<CommentingFieldElement>(e.target as HTMLElement, 'ax-commenting-field.commenting-field').first()
+                || this.container.querySelector('ax-commenting-field.commenting-field.main')!;
 
-            parentCommentingField?.preSaveAttachments(files);
+            parentCommentingField.preSaveAttachments(files);
 
             e.preventDefault();
         }

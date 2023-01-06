@@ -215,7 +215,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         wrapper.append(content, attachments, actions);
         commentWrapper.append(profilePicture, time, commentHeaderEl, wrapper);
-        this.appendChild(commentWrapper);
+        this.append(commentWrapper);
     }
 
     #createActions(commentModel: CommentModelEnriched): HTMLSpanElement {
@@ -325,7 +325,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         if (!commentModel.createdByCurrentUser || !this.#options.enableDeleting) {
             return false;
         } else {
-            return !this.#options.enableDeletingCommentWithReplies || !commentModel.childIds.length;
+            return this.#options.enableDeletingCommentWithReplies || !commentModel.childIds.length;
         }
     }
 
@@ -358,9 +358,6 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
     };
 
     #moveCursorToEnd(element: HTMLElement): void {
-        // Trigger input to adjust size
-        element.dispatchEvent(new InputEvent('input'));
-
         // Focus
         element.focus();
     }

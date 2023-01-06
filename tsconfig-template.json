@@ -2,20 +2,19 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "noEmitOnError": true,
-    "lib": ["es2021", "dom", "dom.iterable"],
+    "lib": ["esnext", "dom", "dom.iterable"],
     "strict": true,
     "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "importHelpers": false,
     "outDir": "dist",
     "sourceMap": true,
     "inlineSources": true,
-    "rootDir": "src",
     "declaration": true,
     "incremental": false
-  },
-  "include": ["src/**/*.ts"]
+  }
 }

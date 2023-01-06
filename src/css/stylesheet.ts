@@ -430,15 +430,22 @@ const mainStyle: string = `
     margin-right: 0.5em;
 }
 
-.jquery-comments ul.dropdown li .details {
+.jquery-comments ul.dropdown li .hashtag {
+    float: left;
+    font-size: 2.4em;
+    margin-left: 0.1em;
+    margin-right: 0.25em;
+}
+
+.jquery-comments ul.dropdown li .info {
     display: inline-block;
 }
 
-.jquery-comments ul.dropdown li .details > span {
+.jquery-comments ul.dropdown li .info > span {
     display: block;
 }
 
-.jquery-comments ul.dropdown li .details.no-email {
+.jquery-comments ul.dropdown li .info.no-details {
     line-height: 2.4em;
 }
 
@@ -446,7 +453,7 @@ const mainStyle: string = `
     font-weight: bold;
 }
 
-.jquery-comments ul.dropdown li .email {
+.jquery-comments ul.dropdown li .details {
     color: #999;
     font-size: 0.95em;
     margin-top: 0.1em;

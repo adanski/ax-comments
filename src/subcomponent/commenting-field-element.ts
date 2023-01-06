@@ -76,30 +76,6 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             this.classList.add('main');
         }
 
-        // Comment was modified, use existing data
-        if (this.existingCommentId) {
-            const existingComment = this.#commentViewModel.getComment(this.existingCommentId)!;
-            profilePictureURL = existingComment.creatorProfilePictureURL;
-            userId = existingComment.creatorUserId;
-            attachments = existingComment.attachments ?? [];
-
-            // New comment was created
-        } else {
-            profilePictureURL = this.#options.profilePictureURL;
-            userId = this.#options.currentUserId;
-            attachments = [];
-        }
-
-        const profilePicture: HTMLElement = this.#profilePictureFactory.createProfilePictureElement(userId, profilePictureURL);
-
-        // New comment
-        const textareaWrapper: HTMLDivElement = document.createElement('div');
-        textareaWrapper.classList.add('textarea-wrapper');
-
-        // Control row
-        const controlRow: HTMLDivElement = document.createElement('div');
-        controlRow.classList.add('control-row');
-
         // Textarea
         const textarea: TextareaElement = TextareaElement.create({
             parentId: this.parentId,
@@ -107,22 +83,58 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             onclick: this.isMain ? this.#showMainField : null
         });
 
-        // Close button
+        if (this.existingCommentId) { // Comment was modified, use existing data
+            const existingComment = this.#commentViewModel.getComment(this.existingCommentId)!;
+            profilePictureURL = existingComment.creatorProfilePictureURL;
+            userId = existingComment.creatorUserId;
+            attachments = existingComment.attachments ?? [];
+
+            const pings: [string, string][] = Object.entries(existingComment.pings ?? {});
+            if (this.#options.enablePinging && pings.length) {
+                pings.forEach(ping => {
+                    textarea.pingedUsers.push({
+                        id: ping[0],
+                        displayName: ping[1]
+                    });
+                });
+            }
+        } else { // New comment was created
+            profilePictureURL = this.#options.profilePictureURL;
+            userId = this.#options.currentUserId;
+            attachments = [];
+
+            if (this.#options.enablePinging && this.parentId) {
+                // Append reply-to tag if necessary
+                const parentModel = this.#commentViewModel.getComment(this.parentId)!;
+
+                // Creating the reply-to tag
+                textarea.value = '@' + parentModel.creatorUserId + ' ';
+                textarea.pingedUsers.push({
+                    id: parentModel.creatorUserId,
+                    displayName: parentModel.creatorDisplayName
+                });
+            }
+        }
+
+        const profilePicture: HTMLElement = this.#profilePictureFactory.createProfilePictureElement(userId, profilePictureURL);
+
+        const textareaWrapper: HTMLDivElement = document.createElement('div');
+        textareaWrapper.classList.add('textarea-wrapper');
+
+        const controlRow: HTMLDivElement = document.createElement('div');
+        controlRow.classList.add('control-row');
+
         const closeButton: ButtonElement = ButtonElement.createCloseButton({
             inline: true,
             onclick: this.isMain ? this.#hideMainField : this.#removeElement
         });
 
-        // Save button
         const saveButton: ButtonElement = ButtonElement.createSaveButton({
             onclick: this.existingCommentId ? this.#updateComment : this.#addComment
         }, this.existingCommentId);
         controlRow.append(saveButton);
 
         if (this.#options.enableAttachments) {
-            // Upload buttons
-            // ==============
-
             // Main upload button
             const mainUploadButton: ButtonElement = ButtonElement.createUploadButton({
                 inline: false,
@@ -140,12 +152,10 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             }
 
             // Attachments container
-            // =====================
-
             const attachmentsContainer: HTMLDivElement = document.createElement('div');
             attachmentsContainer.classList.add('attachments');
             attachments.forEach((attachment) => {
-                const attachmentTag = this.#tagFactory.createAttachmentTagElement(attachment, this.toggleSaveButton.bind(this));
+                const attachmentTag = this.#tagFactory.createAttachmentTagElement(attachment, this.#toggleSaveButton.bind(this));
                 attachmentsContainer.append(attachmentTag);
             });
             controlRow.append(attachmentsContainer);
@@ -157,18 +167,6 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         container.classList.add('commenting-field-container');
         container.append(profilePicture, textareaWrapper);
         this.append(container);
-
-        if (this.parentId) {
-            // Append reply-to tag if necessary
-            const parentModel = this.#commentViewModel.getComment(this.parentId)!;
-
-            // Creating the reply-to tag
-            textarea.value = '@' + parentModel.creatorUserId + ' ';
-            textarea.pingedUsers.push({
-                id: parentModel.creatorUserId,
-                displayName: parentModel.creatorDisplayName
-            });
-        }
 
         // Pinging users
         if (this.#options.enablePinging) {
@@ -201,7 +199,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         this.querySelector('.attachments')!.innerHTML = '';
 
         // Toggle save button
-        this.toggleSaveButton();
+        this.#toggleSaveButton();
 
         // Adjust height
         mainTextarea.adjustTextareaHeight(false);
@@ -304,8 +302,12 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
 
     #changeSaveButtonState: (e: Event) => void = e => {
         const textarea: TextareaElement = e.currentTarget as TextareaElement;
+        const currentContent: string = textarea.getTextareaContent();
+        const originalContent: string | null = this.existingCommentId
+            ? this.#commentViewModel.getComment(this.existingCommentId)!.content
+            : null;
         this.querySelector<ButtonElement>('button.save')!
-            .setButtonState(!isStringEmpty(textarea.getTextareaContent()), false);
+            .setButtonState(!isStringEmpty(currentContent) && currentContent !== originalContent, false);
     };
 
     getCommentModel(): CommentModel {
@@ -341,7 +343,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         return attachments;
     }
 
-    toggleSaveButton(): void {
+    #toggleSaveButton(): void {
         const textarea: TextareaElement = this.querySelector('.textarea')!;
         const saveButton: ButtonElement = findSiblingsBySelector<ButtonElement>(textarea, '.control-row')
             .querySelector('.save')!;
@@ -380,64 +382,65 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         saveButton.classList.toggle('enabled', enabled);
     }
 
-    preSaveAttachments(files: FileList): void {
+    preSaveAttachments(files: ArrayLike<File> & Iterable<File>): void {
         // Elements
         const uploadButton: ButtonElement = this.querySelector('.control-row .upload')!;
         const attachmentsContainer: HTMLElement = this.querySelector('.control-row .attachments')!;
 
-        if (files.length) {
-            // Create attachment models
-            let attachments: any[] = [...files].map(file => ({
-                mime_type: file.type,
-                file: file
-            }));
+        if (!files.length) {
+            return;
+        }
+        // Create attachment models
+        let attachments: any[] = [...files].map(file => ({
+            mime_type: file.type,
+            file: file
+        }));
 
-            // Filter out already added attachments
-            const existingAttachments: any[] = this.getAttachments();
-            attachments = attachments.filter(attachment => {
-                let duplicate = false;
+        // Filter out already added attachments
+        const existingAttachments: any[] = this.getAttachments();
+        attachments = attachments.filter(attachment => {
+            let duplicate = false;
 
-                // Check if the attachment name and size matches with an already added attachment
-                for (let i = 0; i < existingAttachments.length; i++) {
-                    const existingAttachment = existingAttachments[i];
-                    if (attachment.file.name === existingAttachment.file.name && attachment.file.size === existingAttachment.file.size) {
-                        duplicate = true;
-                        break;
-                    }
+            // Check if the attachment name and size matches with an already added attachment
+            for (let i = 0; i < existingAttachments.length; i++) {
+                const existingAttachment = existingAttachments[i];
+                if (attachment.file.name === existingAttachment.file.name && attachment.file.size === existingAttachment.file.size) {
+                    duplicate = true;
+                    break;
                 }
-
-                return !duplicate;
-            });
-
-            // Ensure that the main commenting field is shown if attachments were added to that
-            if (this.classList.contains('main')) {
-                this.querySelector('.textarea')!.dispatchEvent(new MouseEvent('click'));
             }
 
-            // Set button state to loading
-            uploadButton.setButtonState(false, true);
+            return !duplicate;
+        });
 
-            // Validate attachments
-            this.#options.validateAttachments(attachments, (validatedAttachments: any[]) => {
-
-                if (validatedAttachments.length) {
-                    // Create attachment tags
-                    validatedAttachments.forEach(attachment => {
-                        const attachmentTag: HTMLAnchorElement = this.#tagFactory.createAttachmentTagElement(attachment, () => {
-                            // Check if save button needs to be enabled
-                            this.toggleSaveButton();
-                        });
-                        attachmentsContainer.append(attachmentTag);
-                    });
-
-                    // Check if save button needs to be enabled
-                    this.toggleSaveButton();
-                }
-
-                // Reset button state
-                uploadButton.setButtonState(true, false);
-            });
+        // Ensure that the main commenting field is shown if attachments were added to that
+        if (this.classList.contains('main')) {
+            this.querySelector('.textarea')!.dispatchEvent(new MouseEvent('click'));
         }
+
+        // Set button state to loading
+        uploadButton.setButtonState(false, true);
+
+        // Validate attachments
+        this.#options.validateAttachments(attachments, (validatedAttachments: any[]) => {
+
+            if (validatedAttachments.length) {
+                // Create attachment tags
+                validatedAttachments.forEach(attachment => {
+                    const attachmentTag: HTMLAnchorElement = this.#tagFactory.createAttachmentTagElement(attachment, () => {
+                        // Check if save button needs to be enabled
+                        this.#toggleSaveButton();
+                    });
+                    attachmentsContainer.append(attachmentTag);
+                });
+
+                // Check if save button needs to be enabled
+                this.#toggleSaveButton();
+            }
+
+            // Reset button state
+            uploadButton.setButtonState(true, false);
+        });
 
         // Clear the input field
         uploadButton.querySelector('input')!.value = '';

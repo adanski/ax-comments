@@ -1,1021 +1,843 @@
-describe('Basic features', function() {
+import {CommentModel, CommentsElement, PingableUser, SortKey} from '../src/comments-element.js';
+import {commentsArray, usersArray} from './data/comments-data.js';
+import {CommentViewModelProvider} from '../src/provider.js';
+import {CommentViewModel} from '../src/comment-view-model.js';
+import {CommentElement} from '../src/subcomponent/comment-element.js';
+import {isNil} from '../src/util.js';
+import {ButtonElement} from '../src/subcomponent/button-element.js';
+import {CommentingFieldElement} from '../src/subcomponent/commenting-field-element.js';
+import {TextareaElement} from '../src/subcomponent/textarea-element.js';
+import {findParentsBySelector} from '../src/html-util.js';
+import {CommentModelEnriched} from '../src/comments-by-id.js';
+import {jest, describe, beforeEach, afterEach, it, expect} from '@jest/globals';
 
-    var comments;
+describe('CommentsElement', () => {
 
-    beforeEach(function() {
-        var commentsContainer = $('<div/>');
+    const multilineText: string = 'This\nis\na\nmultiline\ntext\nexample';
 
-        var saveComment = function(data) {
+    let commentsElement: CommentsElement;
+    let commentContainer: HTMLElement;
+    let commentViewModel: CommentViewModel;
 
-            // Convert pings to human readable format
-            $(Object.keys(data.pings)).each(function(index, userId) {
-                var fullname = data.pings[userId];
-                var pingText = '@' + fullname;
-                data.content = data.content.replace(new RegExp('@' + userId, 'g'), pingText);
-            });
-
-            return data;
-        }
-
-        commentsContainer.comments({
-            profilePictureURL: 'https://viima-app.s3.amazonaws.com/media/public/defaults/user-icon.png',
-            roundProfilePictures: true,
-            enableAttachments: true,
-            enableHashtags: true,
-            enablePinging: true,
-            enableDeletingCommentWithReplies: true,
-            textareaRows: 1,
-            textareaMaxRows: 4,
-            searchUsers: function(term, success, error) {
-                setTimeout(function() {
-                    success(usersArray.filter(function(user) {
-                        var containsSearchTerm = user.fullname.toLowerCase().indexOf(term.toLowerCase()) != -1;
-                        var isNotSelf = user.id != 1;
-                        return containsSearchTerm && isNotSelf;
-                    }));
-                }, 500);
-            },
-            getComments: function(success, error) {
-                success(commentsArray);
-            },
-            postComment: function(data, success, error) {
-                setTimeout(function() {
-                    success(saveComment(data));
-                }, 10);
-            },
-            putComment: function(data, success, error) {
-                setTimeout(function() {
-                    success(saveComment(data));
-                }, 10);
-            },
-            deleteComment: function(data, success, error) {
-                setTimeout(function() {
-                    success();
-                }, 10);
-            },
-            upvoteComment: function(data, success, error) {
-                setTimeout(function() {
-                    success(data);
-                }, 10);
+    beforeEach(() => {
+        commentsElement = CommentsElement.create({
+            options: {
+                profilePictureURL: 'https://viima-app.s3.amazonaws.com/media/public/defaults/user-icon.png',
+                currentUserId: 'current-user',
+                currentUserIsAdmin: false,
+                roundProfilePictures: true,
+                enableAttachments: true,
+                enableHashtags: true,
+                enablePinging: true,
+                enableDeletingCommentWithReplies: true,
+                textareaRows: 1,
+                textareaRowsOnFocus: 4,
+                searchUsers: (term, success, error) => {
+                    setTimeout(() => {
+                        success(usersArray.filter((user: PingableUser) => {
+                            const containsSearchTerm = user.displayName!.toLowerCase().indexOf(term.toLowerCase()) !== -1;
+                            const isNotSelf = user.id !== 'current-user';
+                            return containsSearchTerm && isNotSelf;
+                        }));
+                    }, 188);
+                },
+                getComments: (success, error) => {
+                    success(commentsArray as CommentModel[]);
+                },
+                postComment: (comment, success, error) => {
+                    setTimeout(() => {
+                        success(comment);
+                    }, 12);
+                },
+                putComment: (comment, success, error) => {
+                    setTimeout(() => {
+                        success(comment);
+                    }, 11);
+                },
+                deleteComment: (comment, success, error) => {
+                    setTimeout(() => {
+                        success({
+                            ...comment,
+                            content: 'Deleted'
+                        });
+                    }, 10);
+                },
+                upvoteComment: (comment, success, error) => {
+                    setTimeout(() => {
+                        success(comment);
+                    }, 8);
+                }
             }
         });
 
-        // Append element to DOM
-        $('body').append(commentsContainer);
-
-        // Save the instance to global scope
-        comments = $('.jquery-comments').data().comments;
+        document.body.append(commentsElement);
+        commentContainer = commentsElement.shadowRoot!.querySelector<HTMLElement>('#comments-container')!;
+        commentViewModel = CommentViewModelProvider.get(commentContainer);
     });
 
-    it('Should call the required functions upon refresh', function() {
-        spyOn(comments, 'render').andCallThrough();
-        spyOn(comments, 'fetchDataAndRender').andCallThrough();
-        spyOn(comments, 'createCommentModel').andCallThrough();
-        spyOn(comments, 'addCommentToDataModel').andCallThrough();
-        spyOn(comments, 'sortComments').andCallThrough();
-
-        comments.fetchDataAndRender();
-
-        expect(comments.render.calls.length).toEqual(1);
-        expect(comments.fetchDataAndRender.calls.length).toEqual(1);
-        expect(comments.createCommentModel.calls.length).toEqual(10);
-        expect(comments.addCommentToDataModel.calls.length).toEqual(10);
-        expect(comments.sortComments.calls.length).toBeGreaterThan(1);
-    });
-
-    it('Should have rendered the comments', function() {
-        var commentElements = $('#comment-list li.comment');
+    it('Should render the comments', () => {
+        const commentElements: NodeListOf<CommentElement> = queryCommentsAll('#comment-list li.comment');
         expect(commentElements.length).toEqual(10);
-        commentElements.each(function(index, commentEl) {
-            checkCommentElementData($(commentEl));
+        commentElements.forEach((commentEl) => {
+            checkCommentElementData(commentEl);
         });
-        checkOrder($('ul#comment-list > li.comment'), [3,2,1]);
+        checkOrder(queryCommentsAll('ul#comment-list > li.comment'), ['3', '2', '1']);
 
         // Check reply to -fields
-        expect($('#comment-list li.comment[data-id=8] .comment-header .reply-to').text()).toBe('Jack Hemsworth');
-        expect($('#comment-list li.comment[data-id=9] .comment-header .reply-to').text()).toBe('You');
-        expect($('#comment-list li.comment[data-id=5] .comment-header .reply-to').text()).toBe('Todd Brown');
-        expect($('#comment-list li.comment[data-id=10] .comment-header .reply-to').text()).toBe('Bryan Connery');
+        expect(queryComments('#comment-list li.comment[data-id="8"] .comment-header .reply-to')!.textContent)
+            .toBe('Jack Hemsworth');
+        expect(queryComments('#comment-list li.comment[data-id="9"] .comment-header .reply-to')!.textContent)
+            .toBe('You');
+        expect(queryComments('#comment-list li.comment[data-id="5"] .comment-header .reply-to')!.textContent)
+            .toBe('Todd Brown');
+        expect(queryComments('#comment-list li.comment[data-id="10"] .comment-header .reply-to')!.textContent)
+            .toBe('Bryan Connery');
 
         // Check that other comments do not have the field
-        $('#comment-list li.comment').each(function(index, el) {
-            var el = $(el);
-            if([8,9,5,10].indexOf(el.data().model.id) == -1) {
-                expect(el.find('.name').first().find('.reply-to').length).toBe(0);
+        queryCommentsAll<CommentElement>('#comment-list li.comment').forEach((el) => {
+            if (['8', '9', '5', '10'].indexOf(el.getAttribute('data-id')!) === -1) {
+                expect(el.querySelector('.name .reply-to')).toBe(null);
             }
         });
 
         // Check edited timestamps
-        var editedDateFromUI = new Date($('#comment-list li.comment[data-id=9] .content .edited').attr('data-original'));
-        compareDates(editedDateFromUI, new Date('1/10/2015'));
+        const editedDate = new Date(queryComments('#comment-list li.comment[data-id="4"] > ax-comment-container time.edited')!.getAttribute('datetime')!);
+        compareDates(editedDate, new Date('2016-03-04 11:29'));
 
         // Check that other comments do not have the field
-        $('#comment-list li.comment').each(function(index, el) {
-            var el = $(el);
-            if([9].indexOf(el.data().model.id) == -1) {
-                expect(el.find('.content').first().find('.edited').length).toBe(0);
-            }
-        });
+        queryCommentsAll<CommentElement>('#comment-list li.comment:not([data-id="4"]) > ax-comment-container')
+            .forEach((el) => {
+                expect(el.querySelector('time.edited')).toBe(null);
+            });
     });
 
-    it('Should have appended the child comments under their outermost parent', function() {
-        expect($('#comment-list > li.comment').length).toBe(3);
-        checkOrder($('#comment-list li.comment[data-id=1] .child-comments > li.comment'), [6,7,8,9,10]);
-        checkOrder($('#comment-list li.comment[data-id=2] .child-comments > li.comment'), []);
-        checkOrder($('#comment-list li.comment[data-id=3] .child-comments > li.comment'), [4,5]);
+    it('Should append the child comments under their outermost parent', () => {
+        expect(queryCommentsAll<CommentElement>('#comment-list > li.comment').length).toBe(3);
+        checkOrder(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="1"] .child-comments > li.comment'), ['6', '7', '8', '9', '10']);
+        checkOrder(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="2"] .child-comments > li.comment'), []);
+        checkOrder(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="3"] .child-comments > li.comment'), ['4', '5']);
     });
 
-    it('Should sort the main level comments wihtout affecting the order of child comments', function() {
-        $('li[data-sort-key="popularity"]').click();
-        checkOrder($('#comment-list > li.comment'), [1,3,2]);
-        checkOrder($('#comment-list li.comment[data-id=1] .child-comments > li.comment'), [6,7,8,9,10]);
+    it('Should sort the main level comments without affecting the order of child comments', () => {
+        queryComments(`li[data-sort-key="${SortKey.POPULARITY}"]`)!.click();
+        checkOrder(queryCommentsAll<CommentElement>('#comment-list > li.comment'), ['1', '3', '2']);
+        checkOrder(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="1"] .child-comments > li.comment'), ['6', '7', '8', '9', '10']);
 
-        $('li[data-sort-key="newest"]').click();
-        checkOrder($('#comment-list > li.comment'), [3,2,1]);
-        checkOrder($('#comment-list li.comment[data-id=1] .child-comments > li.comment'), [6,7,8,9,10]);
+        queryComments(`li[data-sort-key="${SortKey.NEWEST}"]`)!.click();
+        checkOrder(queryCommentsAll<CommentElement>('#comment-list > li.comment'), ['3', '2', '1']);
+        checkOrder(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="1"] .child-comments > li.comment'), ['6', '7', '8', '9', '10']);
 
-        $('li[data-sort-key="oldest"]').click();
-        checkOrder($('#comment-list > li.comment'), [1,2,3]);
-        checkOrder($('#comment-list li.comment[data-id=1] .child-comments > li.comment'), [6,7,8,9,10]);
+        queryComments(`li[data-sort-key="${SortKey.OLDEST}"]`)!.click();
+        checkOrder(queryCommentsAll<CommentElement>('#comment-list > li.comment'), ['1', '2', '3']);
+        checkOrder(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="1"] .child-comments > li.comment'), ['6', '7', '8', '9', '10']);
     });
 
 
-    it('Should be able to toggle all replies', function() {
-        var toggleAll = $('#comment-list li.comment[data-id=1]').find('.child-comments button.toggle-all');
-        expect(toggleAll.length).toBe(1);
-        expect(toggleAll.text()).toBe('View all 5 replies');
-        expect($('#comment-list li.comment[data-id=1] li.comment:visible').length).toBe(2);
+    it('Should be possible to toggle all replies', () => {
+        const toggleAll = queryComments('#comment-list li.comment[data-id="1"]')!.querySelector<HTMLElement>('.child-comments button.toggle-all .text')!;
+        expect(isNil(toggleAll)).toBe(false);
+        expect(toggleAll.textContent).toBe('View all 5 replies');
+        expect(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="1"] li.comment.visible').length)
+            .toBe(2);
 
         // Show all replies
         toggleAll.click();
-        expect(toggleAll.text()).toBe('Hide replies');
-        expect($('#comment-list li.comment[data-id=1] li.comment:visible').length).toBe(5);
+        expect(toggleAll.textContent).toBe('Hide replies');
+        expect(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="1"] li.comment.visible').length)
+            .toBe(5);
 
         // Hide replies
         toggleAll.click();
-        expect(toggleAll.text()).toBe('View all 5 replies');
-        expect($('#comment-list li.comment[data-id=1] li.comment:visible').length).toBe(2);
+        expect(toggleAll.textContent).toBe('View all 5 replies');
+        expect(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="1"] li.comment.visible').length)
+            .toBe(2);
     });
 
-    describe('Commenting', function() {
+    describe('Commenting', () => {
 
-        var mainCommentingField;
-        var mainTextarea;
-        var lineHeight;
+        let mainCommentingField: CommentingFieldElement;
+        let mainTextarea: TextareaElement;
 
-        beforeEach(function() {
-            mainCommentingField = $('.commenting-field.main');
-            mainTextarea = mainCommentingField.find('.textarea');
-            lineHeight = parseInt(mainTextarea.css('line-height'));
+        beforeEach(() => {
+            mainCommentingField = queryComments('.commenting-field.main')!;
+            mainTextarea = mainCommentingField.querySelector('.textarea')!;
         });
 
-        it('Should adjust the height of commenting field dynamically', function() {
+        it('Should adjust the height of commenting field dynamically', () => {
 
             // Should have 1 row
-            expect(mainTextarea.outerHeight()).toBeLessThan(2*lineHeight);
-
-            // Should have 2 rows
-            mainTextarea.trigger('click');
-            expect(mainTextarea.outerHeight()).toBeGreaterThan(2*lineHeight);
-            expect(mainTextarea.outerHeight()).toBeLessThan(3*lineHeight);
-
-            // Should have 2 rows
-            mainTextarea.append($('<div>row 1</div>')).trigger('input');
-            mainTextarea.append($('<div>row 2</div>')).trigger('input');
-            expect(mainTextarea.outerHeight()).toBeGreaterThan(2*lineHeight);
-            expect(mainTextarea.outerHeight()).toBeLessThan(3*lineHeight);
-
-            // Should have 3 rows
-            mainTextarea.append($('<div>row 3</div>')).trigger('input');
-            expect(mainTextarea.outerHeight()).toBeGreaterThan(3*lineHeight);
-            expect(mainTextarea.outerHeight()).toBeLessThan(4*lineHeight);
+            expect(mainTextarea.rows).toBe(1);
 
             // Should have 4 rows
-            mainTextarea.append($('<div>row 4</div>')).trigger('input');
-            expect(mainTextarea.outerHeight()).toBeGreaterThan(4*lineHeight);
-            expect(mainTextarea.outerHeight()).toBeLessThan(5*lineHeight);
+            mainTextarea.click();
+            expect(mainTextarea.rows).toBe(4);
 
             // Should have 4 rows as it's the max value
-            mainTextarea.append($('<div>row 5</div>')).trigger('input');
-            expect(mainTextarea.outerHeight()).toBeGreaterThan(4*lineHeight);
-            expect(mainTextarea.outerHeight()).toBeLessThan(5*lineHeight);
-
-            // Should have 3 rows
-            mainTextarea.find('div').last().remove();
-            mainTextarea.find('div').last().remove();
-            mainTextarea.trigger('input');
-            expect(mainTextarea.outerHeight()).toBeGreaterThan(3*lineHeight);
-            expect(mainTextarea.outerHeight()).toBeLessThan(4*lineHeight);
-
-            // Should have 2 rows
-            mainTextarea.find('div').remove();
-            mainTextarea.trigger('input');
-            expect(mainTextarea.outerHeight()).toBeGreaterThan(2*lineHeight);
-            expect(mainTextarea.outerHeight()).toBeLessThan(3*lineHeight);
+            mainTextarea.value = multilineText;
+            mainTextarea.dispatchEvent(new InputEvent('input'));
+            expect(mainTextarea.rows).toBe(4);
 
             // Should have 1 row
-            mainCommentingField.find('.close').click();
-            expect(mainTextarea.outerHeight()).toBeLessThan(2*lineHeight);
+            mainCommentingField.querySelector<HTMLElement>('.close')!.click();
+            expect(mainTextarea.rows).toBe(1);
         });
 
-        it('Should enable control row on click', function() {
-            var controlRow = mainCommentingField.find('.control-row');;
+        it('Should enable control row on click', () => {
+            const controlRow: HTMLElement = mainCommentingField.querySelector('.control-row')!;
 
             // Show on click
-            expect(controlRow.is(':visible')).toBe(false);
-            mainTextarea.trigger('click');
-            expect(controlRow.is(':visible')).toBe(true);
+            expect(isElementHidden(controlRow)).toBe(true);
+            mainTextarea.click();
+            expect(isElementHidden(controlRow)).toBe(false);
 
             // Hide when clicking close icon
-            mainCommentingField.find('.close').click();
-            expect(controlRow.is(':visible')).toBe(false);
+            mainCommentingField.querySelector<HTMLElement>('.close')!.click();
+            expect(isElementHidden(controlRow)).toBe(true);
         });
 
-        it('Should enable send button when texarea is not empty', function() {
-            var sendButton = mainCommentingField.find('.send');
+        it('Should enable send button when textarea is not empty', () => {
+            const sendButton: HTMLElement = mainCommentingField.querySelector('.send')!;
 
-            expect(sendButton.is(':visible')).toBe(false);
-            expect(sendButton.hasClass('enabled')).toBe(false);
+            expect(sendButton.classList.contains('enabled')).toBe(false);
 
             // Show on click
-            mainTextarea.trigger('click');
-            expect(sendButton.is(':visible')).toBe(true);
-            expect(sendButton.hasClass('enabled')).toBe(false);
+            mainTextarea.click();
+            expect(sendButton.classList.contains('enabled')).toBe(false);
 
             // Enable when content
-            mainTextarea.append($('<div>row 1</div>')).trigger('input');
-            expect(sendButton.is(':visible')).toBe(true);
-            expect(sendButton.hasClass('enabled')).toBe(true);
+            mainTextarea.value = multilineText;
+            mainTextarea.dispatchEvent(new InputEvent('input'));
+            expect(sendButton.classList.contains('enabled')).toBe(true);
 
             // Disable when no content
-            mainTextarea.empty().trigger('input');
-            expect(sendButton.is(':visible')).toBe(true);
-            expect(sendButton.hasClass('enabled')).toBe(false);
+            mainTextarea.value = '';
+            mainTextarea.dispatchEvent(new InputEvent('input'));
+            expect(sendButton.classList.contains('enabled')).toBe(false);
 
             // Hide when clicking close icon
-            mainCommentingField.find('.close').click();
-            expect(sendButton.is(':visible')).toBe(false);
-            expect(sendButton.hasClass('enabled')).toBe(false);
+            mainCommentingField.querySelector<HTMLElement>('.close')!.click();
+            expect(sendButton.classList.contains('enabled')).toBe(false);
         });
 
-        it('Should able to add a new main level comment', function() {
-            var newCommentText = 'New main level comment\nwith a new line';
-            mainTextarea.html(newCommentText).trigger('input');
+        it('Should be possible to add a new main level comment', async () => {
+            mainTextarea.value = multilineText;
+            mainTextarea.dispatchEvent(new InputEvent('input'));
 
-            var commentCount = comments.getComments().length;
-            wait(function() {
-                return comments.getComments().length == commentCount + 1;
-            });
+            mainCommentingField.querySelector<HTMLElement>('.send')!.click();
+            jest.runAllTimers();
 
-            mainCommentingField.find('.send').trigger('click');
+            // New comment should always be placed first initially
+            const commentEl = queryComments<CommentElement>('#comment-list li.comment')!;
+            const idOfNewComment = commentEl.commentModel.id;
 
-            run(function() {
-                // New comment should always be placed first initially
-                var commentEl = $('#comment-list li.comment').first();
-                var idOfNewComment = commentEl.data().id;
+            expect(commentEl.querySelector('.content')!.textContent).toBe(multilineText);
+            expect(commentEl.classList.contains('by-current-user')).toBe(true);
+            checkCommentElementData(commentEl);
 
-                expect(commentEl.find('.content').text()).toBe(newCommentText);
-                expect(commentEl.hasClass('by-current-user')).toBe(true);
-                checkCommentElementData(commentEl);
-
-                // Check that sorting works also with the new comment
-                $('li[data-sort-key="popularity"]').click();
-                checkOrder($('#comment-list > li.comment'), [1,3,2,idOfNewComment]);
-                $('li[data-sort-key="oldest"]').click();
-                checkOrder($('#comment-list > li.comment'), [1,2,3,idOfNewComment]);
-                $('li[data-sort-key="newest"]').click();
-                checkOrder($('#comment-list > li.comment'), [idOfNewComment,3,2,1]);
-            });
+            // Check that sorting works also with the new comment
+            queryComments(`li[data-sort-key="${SortKey.POPULARITY}"]`)!.click();
+            checkOrder(queryCommentsAll('#comment-list > li.comment'), ['1', '3', '2', idOfNewComment]);
+            queryComments(`li[data-sort-key="${SortKey.OLDEST}"]`)!.click();
+            checkOrder(queryCommentsAll('#comment-list > li.comment'), ['1', '2', '3', idOfNewComment]);
+            queryComments(`li[data-sort-key="${SortKey.NEWEST}"]`)!.click();
+            checkOrder(queryCommentsAll('#comment-list > li.comment'), [idOfNewComment, '3', '2', '1']);
         });
 
-        it('Should able to add a new main level comment with attachments', function() {
-            var newCommentText = 'New main level comment with attachment';
-            mainTextarea.html(newCommentText).trigger('input');
+        it('Should be possible to add a new main level comment with attachments', async () => {
+            mainTextarea.value = multilineText;
+            mainTextarea.dispatchEvent(new InputEvent('input'));
 
             // Add attachments
-            var files = [new File([], 'test.txt'), new File([], 'test2.png')];
-            comments.preSaveAttachments(files, mainCommentingField);
+            const files = [new File([], 'test.txt'), new File([], 'test2.png')];
+            mainCommentingField.preSaveAttachments(files);
 
             // Verify pre saved attachments
-            var attachmentTags = mainCommentingField.find('.attachments').first().find('.attachment');
+            const attachmentTags = mainCommentingField.querySelector('.attachments')!.querySelectorAll('.attachment');
             expect(attachmentTags.length).toBe(2);
-            expect(attachmentTags.first().text()).toBe('test.txt');
-            expect(attachmentTags.last().text()).toBe('test2.png');
+            expect(attachmentTags[0].textContent).toBe('test.txt');
+            expect(attachmentTags[1].textContent).toBe('test2.png');
 
-            var commentCount = comments.getComments().length;
-            wait(function() {
-                return comments.getComments().length == commentCount + 1;
-            });
+            mainCommentingField.querySelector<HTMLElement>('.send')!.click();
+            jest.runAllTimers();
 
-            mainCommentingField.find('.send').trigger('click');
-
-            run(function() {
-                var commentEl = $('#comment-list li.comment').first();
-                checkCommentElementData(commentEl);
-            });
+            const commentEl: CommentElement = queryComments('#comment-list li.comment')!;
+            checkCommentElementData(commentEl);
         });
     });
 
-    describe('Replying', function() {
+    describe('Replying', () => {
 
-        var mostPopularComment;
+        let mostPopularComment: CommentElement;
 
-        beforeEach(function() {
-            mostPopularComment = $('#comment-list li.comment[data-id=1]');
+        beforeEach(() => {
+            mostPopularComment = queryComments('#comment-list li.comment[data-id="1"]')!;
         });
 
-        it('Should not show the reply field by default', function() {
-            var replyField = mostPopularComment.find('li.commenting-field');
-            expect(replyField.length).toBe(0);
+        it('Should not show the reply field by default', () => {
+            const replyField = mostPopularComment.querySelector('.commenting-field');
+            expect(replyField).toBe(null);
         });
 
-        it('Should be able to reply', function() {
-            mostPopularComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('li.commenting-field');
-            expect(replyField.length).toBe(1);
-            expect(replyField.find('.reply-to.tag').length).toBe(0);
+        it('Should be possible to reply', async () => {
+            mostPopularComment.querySelector<HTMLElement>('.reply')!.click();
+            const replyField: CommentingFieldElement = mostPopularComment.querySelector('.commenting-field')!;
+            expect(isNil(replyField)).toBe(false);
+            expect(replyField.querySelector('.reply-to.tag')).toBe(null);
 
             // Check that the field is last child
-            var lastChild = mostPopularComment.find('.child-comments').children().last();
-            expect(lastChild[0]).toBe(replyField[0]);
+            const lastChild: HTMLElement = mostPopularComment.querySelector('.child-comments ~ .commenting-field')!;
+            expect(lastChild).toBe(replyField);
 
-            var replyText = 'This is a reply\nwith a new line';
-            replyField.find('.textarea').append(replyText).trigger('input');
+            const replyText = 'This is a reply\nwith a new line';
+            const replyFieldTextarea: TextareaElement = replyField.querySelector('.textarea')!;
+            replyFieldTextarea.value = replyText;
+            replyFieldTextarea.dispatchEvent(new InputEvent('input'));
 
-            var commentCount = comments.getComments().length;
-            wait(function() {
-                return comments.getComments().length == commentCount + 1;
-            });
+            replyField.querySelector<HTMLElement>('.send')!.click();
+            jest.runAllTimers();
 
-            replyField.find('.send').trigger('click');
+            // New reply should always be placed last
+            const commentEl: CommentElement = mostPopularComment.querySelector('li.comment:last-of-type')!;
+            const idOfNewComment = commentEl.commentModel.id;
 
-            run(function() {
-                // New reply should always be placed last
-                var commentEl = mostPopularComment.find('li.comment').last();
-                var idOfNewComment = commentEl.data().id;
+            expect(commentEl.querySelector('.content')!.textContent).toBe(replyText);
+            expect(commentEl.classList.contains('by-current-user')).toBe(true);
+            checkCommentElementData(commentEl);
 
-                expect(commentEl.find('.content').text()).toBe(replyText);
-                expect(commentEl.hasClass('by-current-user')).toBe(true);
-                checkCommentElementData(commentEl);
+            // Check position
+            checkOrder(mostPopularComment.querySelectorAll('li.comment')!, ['6', '7', '8', '9', '10', idOfNewComment]);
 
-                // Check position
-                checkOrder(mostPopularComment.find('li.comment'), [6,7,8,9,10,idOfNewComment]);
-
-                var toggleAllText = mostPopularComment.find('button.toggle-all').text();
-                expect(toggleAllText).toBe('View all 6 replies');
-                expect(mostPopularComment.find('li.comment:visible').length).toBe(2);
-            });
+            const toggleAllText = mostPopularComment.querySelector('button.toggle-all .text')!.textContent;
+            expect(toggleAllText).toBe('View all 6 replies');
+            expect(mostPopularComment.querySelectorAll('li.comment.visible').length).toBe(2);
         });
 
-        it('Should be able to reply with attachments', function() {
-            mostPopularComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('li.commenting-field');
+        it('Should be possible to reply with attachments', async () => {
+            mostPopularComment.querySelector<HTMLElement>('.reply')!.click();
+            const replyField: CommentingFieldElement = mostPopularComment.querySelector('.commenting-field')!;
 
-            var replyText = 'This is a reply with attachments';
-            replyField.find('.textarea').append(replyText).trigger('input');
+            const replyText = 'This is a reply with attachments';
+            const replyFieldTextarea: TextareaElement = replyField.querySelector('.textarea')!;
+            replyFieldTextarea.value = replyText;
+            replyFieldTextarea.dispatchEvent(new InputEvent('input'));
 
             // Add attachments
-            var files = [new File([], 'test.txt'), new File([], 'test2.png')];
-            comments.preSaveAttachments(files, replyField);
+            const files = [new File([], 'test.txt'), new File([], 'test2.png')];
+            replyField.preSaveAttachments(files);
 
             // Verify pre saved attachments
-            var attachmentTags = replyField.find('.attachments').first().find('.attachment');
+            const attachmentTags = replyField.querySelector('.attachments')!.querySelectorAll('.attachment');
             expect(attachmentTags.length).toBe(2);
-            expect(attachmentTags.first().text()).toBe('test.txt');
-            expect(attachmentTags.last().text()).toBe('test2.png');
+            expect(attachmentTags[0].textContent).toBe('test.txt');
+            expect(attachmentTags[1].textContent).toBe('test2.png');
 
-            var commentCount = comments.getComments().length;
-            wait(function() {
-                return comments.getComments().length == commentCount + 1;
-            });
+            replyField.querySelector<HTMLElement>('.send')!.click();
+            jest.runAllTimers();
 
-            replyField.find('.send').trigger('click');
-
-            run(function() {
-                var commentEl = mostPopularComment.find('li.comment').last();
-                checkCommentElementData(commentEl);
-            });
+            const commentEl: CommentElement = mostPopularComment.querySelector('li.comment:last-of-type')!;
+            checkCommentElementData(commentEl);
         });
 
-        it('Should close the reply field when clicking the close icon', function() {
-            mostPopularComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('li.commenting-field');
-            expect(replyField.length).toBe(1);
-            replyField.find('.close').click();
+        it('Should close the reply field when clicking the close icon', () => {
+            mostPopularComment.querySelector<HTMLElement>('.reply')!.click();
+            let replyField: CommentingFieldElement = mostPopularComment.querySelector('.commenting-field')!;
+            expect(isNil(replyField)).toBe(false);
+            replyField.querySelector<HTMLElement>('.close')!.click();
 
-            replyField = mostPopularComment.find('li.commenting-field');
-            expect(replyField.length).toBe(0);
+            replyField = mostPopularComment.querySelector('.commenting-field')!;
+            expect(isNil(replyField)).toBe(true);
         });
 
-        it('Should be able to re-reply', function() {
-            var childComment = mostPopularComment.find('.child-comments li.comment[data-id=9]');
-            childComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('li.commenting-field');
-            expect(replyField.find('.reply-to.tag').val()).toBe('@Bryan Connery');
+        it('Should be possible to re-reply', async () => {
+            const childComment: CommentElement = mostPopularComment.querySelector('.child-comments li.comment[data-id="9"]')!;
+            childComment.querySelector<HTMLElement>('.reply')!.click();
+            const replyField: CommentingFieldElement = mostPopularComment.querySelector('.commenting-field')!;
+            const replyFieldTextarea: TextareaElement = replyField.querySelector<TextareaElement>('.textarea')!;
+            expect(replyFieldTextarea.getPings()['bryan_connery']).toBe('Bryan Connery');
+            expect(replyFieldTextarea.getTextareaContent()).toBe('@bryan_connery');
 
             // Check that the field is last child
-            var lastChild = mostPopularComment.find('.child-comments').children().last();
-            expect(lastChild[0]).toBe(replyField[0]);
+            const lastChild: HTMLElement = mostPopularComment.querySelector('.child-comments ~ .commenting-field')!;
+            expect(lastChild).toBe(replyField);
 
-            var replyText = 'This is a re-reply\nwith a new line';
-            replyField.find('.textarea').append(replyText).trigger('input');
+            const replyText = 'This is a re-reply\nwith a new line';
+            replyFieldTextarea.value = replyText;
+            replyFieldTextarea.dispatchEvent(new InputEvent('input'));
 
-            var commentCount = comments.getComments().length;
-            wait(function() {
-                return comments.getComments().length == commentCount + 1;
-            });
+            replyField.querySelector<HTMLElement>('.send')!.click();
+            jest.runAllTimers();
 
-            replyField.find('.send').trigger('click');
+            // New reply should always be placed last
+            const commentEl: CommentElement = mostPopularComment.querySelector('li.comment:last-of-type')!;
+            const idOfNewComment = commentEl.commentModel.id;
 
-            run(function() {
-                // New reply should always be placed last
-                var commentEl = mostPopularComment.find('li.comment').last();
-                var idOfNewComment = commentEl.data().id;
+            expect(commentEl.querySelector('.comment-header .reply-to')!.textContent!.indexOf('Bryan Connery')).not.toBe(-1);
+            expect(commentEl.querySelector('.content')!.textContent).toBe(replyText);
+            expect(commentEl.classList.contains('by-current-user')).toBe(true);
+            checkCommentElementData(commentEl);
 
-                expect(commentEl.find('.comment-header .reply-to').text().indexOf('Bryan Connery')).not.toBe(-1);
-                expect(commentEl.find('.content').text()).toBe(replyText);
-                expect(commentEl.hasClass('by-current-user')).toBe(true);
-                checkCommentElementData(commentEl);
-
-                var toggleAllText = mostPopularComment.find('button.toggle-all').text();
-                expect(toggleAllText).toBe('View all 6 replies');
-                expect(mostPopularComment.find('li.comment:visible').length).toBe(2);
-            });
+            const toggleAllText = mostPopularComment.querySelector('button.toggle-all .text')!.textContent;
+            expect(toggleAllText).toBe('View all 6 replies');
+            expect(mostPopularComment.querySelectorAll('li.comment.visible').length).toBe(2);
         });
 
-        it('Should be able to re-reply to a hidden reply', function() {
-            mostPopularComment.find('.toggle-all').click();
-            var childComment = mostPopularComment.find('.child-comments li.comment').first();
-            childComment.find('.reply').first().click();
+        it('Should be possible to re-reply to a hidden reply', async () => {
+            mostPopularComment.querySelector<HTMLElement>('.toggle-all')!.click();
+            const childComment = mostPopularComment.querySelector('.child-comments li.comment')!;
+            childComment.querySelector<HTMLElement>('.reply')!.click();
 
-            var replyField = mostPopularComment.find('li.commenting-field');
-            expect(replyField.find('.reply-to.tag').val()).toBe('@Jack Hemsworth');
+            const replyField: CommentingFieldElement = mostPopularComment.querySelector('.commenting-field')!;
+            const replyFieldTextarea: TextareaElement = replyField.querySelector('.textarea')!;
+            expect(replyFieldTextarea.getPings()['jack_hemsworth']).toBe('Jack Hemsworth');
+            expect(replyFieldTextarea.getTextareaContent()).toBe('@jack_hemsworth');
 
-            var replyText = 'This is a re-reply\nwith a new line';
-            replyField.find('.textarea').append(replyText).trigger('input');
+            const replyText = 'This is a re-reply\nwith a new line';
+            replyFieldTextarea.value = replyText;
+            replyFieldTextarea.dispatchEvent(new InputEvent('input'));
 
-            var commentCount = comments.getComments().length;
-            wait(function() {
-                return comments.getComments().length == commentCount + 1;
-            });
+            replyField.querySelector<HTMLElement>('.send')!.click();
+            jest.runAllTimers();
 
-            replyField.find('.send').trigger('click');
+            // New reply should always be placed last
+            const commentEl: CommentElement = mostPopularComment.querySelector('li.comment:last-of-type')!;
+            const idOfNewComment = commentEl.commentModel.id;
 
-            run(function() {
-                // New reply should always be placed last
-                var commentEl = mostPopularComment.find('li.comment').last();
-                var idOfNewComment = commentEl.data().id;
+            expect(commentEl.querySelector('.comment-header .reply-to')!.textContent!.indexOf('Jack Hemsworth')).not.toBe(-1);
+            expect(commentEl.querySelector('.content')!.textContent).toBe(replyText);
+            expect(commentEl.classList.contains('by-current-user')).toBe(true);
+            checkCommentElementData(commentEl);
 
-                expect(commentEl.find('.comment-header .reply-to').text().indexOf('Jack Hemsworth')).not.toBe(-1);
-                expect(commentEl.find('.content').text()).toBe(replyText);
-                expect(commentEl.hasClass('by-current-user')).toBe(true);
-                checkCommentElementData(commentEl);
-
-                var toggleAllText = mostPopularComment.find('button.toggle-all').text();
-                expect(toggleAllText).toBe('Hide replies');
-                expect(mostPopularComment.find('li.comment:visible').length).toBe(6);
-            });
-        });
-
-        it('Should reply to original user when erasing the reply-to tag', function() {
-            var childComment = mostPopularComment.find('.child-comments li.comment').last();
-            childComment.find('.reply').first().click();
-            var replyField = mostPopularComment.find('li.commenting-field');
-            var textarea = replyField.find('.textarea');
-            expect(parseInt(textarea.attr('data-parent'))).toBe(childComment.data().model.id);
-
-            textarea.empty().trigger('input');
-            expect(parseInt(textarea.attr('data-parent'))).toBe(1);
-
-            var replyText = 'This is a re-reply to original user';
-            replyField.find('.textarea').append(replyText).trigger('input');
-
-            var commentCount = comments.getComments().length;
-            wait(function() {
-                return comments.getComments().length == commentCount + 1;
-            });
-
-            replyField.find('.send').trigger('click');
-
-            run(function() {
-                var commentEl = mostPopularComment.find('li.comment').last();
-                expect(commentEl.find('.comment-header .reply-to').length).toBe(0);
-            });
+            const toggleAllText = mostPopularComment.querySelector('button.toggle-all .text')!.textContent;
+            expect(toggleAllText).toBe('Hide replies');
+            expect(mostPopularComment.querySelectorAll('li.comment.visible').length).toBe(6);
         });
     });
 
-    describe('Editing', function() {
-        var ownComment;
-        var editButton;
+    describe('Editing', () => {
+        let ownComment: CommentElement;
+        let editButton: ButtonElement;
 
-        beforeEach(function() {
-            ownComment = $('#comment-list li.comment[data-id=3]');
-            editButton = ownComment.find('.edit');
+        beforeEach(() => {
+            ownComment = queryComments('#comment-list li.comment[data-id="3"]')!;
+            editButton = ownComment.querySelector('.edit')!;
         });
 
-        it('Should show the edit button only for own comments', function() {
-            expect(editButton.length).toBe(1);
-            expect($('[data-container="comments"] .edit').length).toBe(3);
+        it('Should show the edit button only for own comments', () => {
+            expect(isNil(editButton)).toBe(false);
+            expect(queryCommentsAll('[data-container="comments"] .edit').length).toBe(3);
         });
 
-        it('Should be able to open and close the edit field', function() {
-            var cloneOfOwnComment = ownComment.clone();
+        it('Should be possible to open and close the edit field', () => {
+            const cloneOfOwnComment = ownComment.cloneNode(true) as CommentElement;
 
             editButton.click();
-            expect(ownComment.hasClass('edit')).toBe(true);
+            expect(ownComment.classList.contains('edit')).toBe(true);
 
             // Check that the edit field exists
-            var editField = ownComment.find('li.commenting-field');
-            var textarea = editField.find('.textarea');
-            expect(editField.is(':visible')).toBe(true);
+            const editField: CommentingFieldElement = ownComment.querySelector('.commenting-field')!;
+            const textarea: TextareaElement = editField.querySelector('.textarea')!;
+            expect(isNil(editField)).toBe(false);
 
             // Check that other content is hidden
-            ownComment.find('> .comment-wrapper > *:not(.commenting-field)').each(function(index, el) {
-                expect($(el).is(':visible')).toBe(false);
+            ownComment.querySelectorAll<HTMLElement>(':scope > .comment-wrapper > *:not(.commenting-field)').forEach((el) => {
+                expect(isElementHidden(el)).toBe(true);
             });
 
             // Check the content
-            var contentFromModel = ownComment.data().model.content;
-            var contentFromUI = comments.getTextareaContent(textarea, true);
+            const contentFromModel = ownComment.commentModel.content;
+            const contentFromUI = textarea.getTextareaContent();
             expect(contentFromModel).toBe(contentFromUI);
 
             // Closing the field
-            editField.find('.close').click();
-            expect(ownComment.hasClass('edit')).toBe(false);
-            expect(editField.is(':visible')).toBe(false);
+            editField.querySelector<HTMLElement>('.close')!.click();
+            expect(ownComment.classList.contains('edit')).toBe(false);
+            expect(isNil(ownComment.querySelector('.commenting-field'))).toBe(true);
 
             // Check that other content is visible
-            ownComment.find('> .comment-wrapper > *:not(.commenting-field)').each(function(index, el) {
-                expect($(el).is(':visible')).toBe(true);
+            ownComment.querySelectorAll<HTMLElement>(':scope > .comment-wrapper > *:not(.commenting-field)').forEach(el => {
+                expect(isElementHidden(el)).toBe(false);
             });
 
             // Check that the comment has not changed
-            expect(ownComment[0].outerHTML).toBe(cloneOfOwnComment[0].outerHTML);
+            expect(ownComment.outerHTML).toBe(cloneOfOwnComment.outerHTML);
         });
 
-        it('Should be able to edit a main level comment', function() {
-            testEditingComment(ownComment.data().model.id);
+        it('Should be possible to edit a main level comment', async () => {
+            await testEditingComment(ownComment.commentModel.id);
         });
 
-        it('Should be able to edit a reply', function() {
-            ownComment.find('.reply').last().click();
-            var replyText = 'This is a re-reply';
+        it('Should be possible to edit a reply', async () => {
+            [...ownComment.querySelectorAll<HTMLElement>('.reply')].at(-1)!.click();
+            const replyText = 'This is a re-reply';
 
-            var replyField = ownComment.find('li.commenting-field');
-            replyField.find('.textarea').append(replyText).trigger('input');
+            const replyField: CommentingFieldElement = ownComment.querySelector('.commenting-field')!;
+            const replyFieldTextarea: TextareaElement = replyField.querySelector('.textarea')!;
+            replyFieldTextarea.value = replyText;
+            replyFieldTextarea.dispatchEvent(new InputEvent('input'));
 
             // Create reply
-            var commentCount = comments.getComments().length;
-            wait(function() {
-                return comments.getComments().length == commentCount + 1;
-            });
-
-            replyField.find('.send').trigger('click');
+            replyField.querySelector<HTMLElement>('.send')!.click();
+            jest.runAllTimers();
 
             // Test editing the reply
-            run(function() {
-                var reply = ownComment.find('.child-comments').children().last();
-                var replyId = reply.data().model.id;
-                testEditingComment(replyId);
-            });
-
-            // Test changing the parent of the reply
-            run(function() {
-                var reply = ownComment.find('.child-comments').children().last();
-                var replyId = reply.data().model.id;
-
-                reply.find('.edit').click();
-                replyField = reply.find('li.commenting-field');
-                var textarea = replyField.find('.textarea');
-                var saveButton = replyField.find('.save');
-
-                // Save button should be disabled
-                textarea.trigger('input');
-                expect(saveButton.hasClass('enabled')).toBe(false);
-
-                // Save button should be enabled
-                textarea.find('.reply-to.tag').remove();
-                textarea.trigger('input');
-                expect(saveButton.hasClass('enabled')).toBe(true);
-
-                var replyModelBefore = $.extend({},comments.commentsById[replyId]);
-                expect(replyModelBefore.parent).toBe('5');
-
-                wait(function() {
-                    return comments.commentsById[replyId].parent != '5';
-                });
-
-                // Save the model
-                saveButton.click();
-
-                run(function() {
-                    expect(comments.commentsById[replyId].parent).toBe('3');
-                });
-            });
+            let reply: CommentElement = [...ownComment.querySelector('.child-comments')!.children].at(-1) as CommentElement;
+            let replyId = reply.commentModel.id;
+            await testEditingComment(replyId);
         });
 
-        it('Should not let the user save the comment if it hasn\'t changed', function() {
+        it(`Should not let the user save the comment if it hasn't changed`, () => {
             editButton.click();
-            var editField = ownComment.find('li.commenting-field');
-            var saveButton = editField.find('.save');
-            expect(saveButton.is(':visible')).toBe(true);
-            expect(saveButton.hasClass('enabled')).toBe(false);
+            const editField: CommentingFieldElement = ownComment.querySelector('.commenting-field')!;
+            const saveButton: ButtonElement = editField.querySelector('.save')!;
+            expect(saveButton.classList.contains('enabled')).toBe(false);
 
-            var textarea = editField.find('.textarea');
-            var originalHTML = textarea.html();
+            const textarea: TextareaElement = editField.querySelector('.textarea')!;
+            const originalText = textarea.value;
 
-            // Append space
-            textarea.append(' ').trigger('input');
-            expect(saveButton.hasClass('enabled')).toBe(true);
+            // Append text
+            textarea.value += '   test';
+            textarea.dispatchEvent(new InputEvent('input'));
+            expect(saveButton.classList.contains('enabled')).toBe(true);
 
             // Revert changes
-            textarea.html(originalHTML).trigger('input');
-            expect(saveButton.hasClass('enabled')).toBe(false);
+            textarea.value = originalText;
+            textarea.dispatchEvent(new InputEvent('input'));
+            expect(saveButton.classList.contains('enabled')).toBe(false);
+
+            // Append spaces
+            textarea.value += '   ';
+            textarea.dispatchEvent(new InputEvent('input'));
+            expect(saveButton.classList.contains('enabled')).toBe(false);
         });
     });
 
-    describe('Deleting', function() {
+    describe('Deleting', () => {
 
-        it('Should show the delete button for own comments', function() {
-            var ownComment = $('#comment-list li.comment[data-id=3]');
-            var editButton = ownComment.find('.edit');
+        it('Should show the delete button for own comments', () => {
+            const ownComment: CommentElement = queryComments('#comment-list li.comment[data-id="3"]')!;
 
-            editButton.click();
-
-            var deleteButton = ownComment.find('.delete');
-            expect(deleteButton.length).toBe(1);
-            expect(deleteButton.hasClass('enabled')).toBe(true);
+            const deleteButton: ButtonElement = ownComment.querySelector('.delete')!;
+            expect(isNil(deleteButton)).toBe(false);
+            expect(deleteButton.classList.contains('enabled')).toBe(true);
         });
 
-        it('Should be able to delete a main level comment', function() {
-            var commentId = 3;
-            var ownComment = $('#comment-list li.comment[data-id="'+commentId+'"]');
+        it('Should be possible to delete a main level comment', async () => {
+            const commentId = '3';
+            const ownComment: CommentElement = queryComments(`#comment-list li.comment[data-id="${commentId}"]`)!;
 
-            var childComments = comments.commentsById[commentId].childIds.slice();
+            const childComments = commentViewModel.getChildComments(commentId).slice();
             expect(childComments.length).toBe(2);
-            var commentCountBeforeDelete = comments.getComments().length;
 
-            var editButton = ownComment.find('.edit');
-            editButton.click();
-
-            wait(function() {
-                return comments.getComments().length < commentCountBeforeDelete;
-            });
-
-            var deleteButton = ownComment.find('.delete');
+            const deleteButton: ButtonElement = ownComment.querySelector('.delete')!;
             deleteButton.click();
+            jest.runAllTimers();
 
-            run(function() {
-                expect(comments.getComments().length).toBe(commentCountBeforeDelete - 3);
-
-                // Expect childIds to be deleted
-                $(childComments).each(function(index, id) {
-                    expect(comments.commentsById[id]).toBe(undefined);
-                    expect($('#comment-list li.comment[data-id="'+id+'"]').length).toBe(0);
-                });
-
-                // Except the main comment to be deleted
-                expect(comments.commentsById[commentId]).toBe(undefined);
-                expect($('#comment-list li.comment[data-id="'+commentId+'"]').length).toBe(0);
-            });
+            // Except the main comment to be deleted
+            expect(commentViewModel.getComment(commentId)!.content).toBe('Deleted');
         });
 
-        it('Should be able to delete a reply', function() {
-            var commentId = 10;
-            var ownComment = $('#comment-list li.comment[data-id="'+commentId+'"]');
-            var commentCountBeforeDelete = comments.getComments().length;
-            var outermostParent = ownComment.parents('li.comment').last();
-            var toggleAllButton = outermostParent.find('.toggle-all');
+        it('Should be possible to delete a reply', async () => {
+            const commentId = '10';
+            const ownComment: CommentElement = queryComments(`#comment-list li.comment[data-id="${commentId}"]`)!;
+            const outermostParent: CommentElement = findParentsBySelector<CommentElement>(ownComment, 'li.comment').last()!;
+            const toggleAllButton = outermostParent.querySelector('.toggle-all .text')!;
 
             // Check the child count
-            expect(toggleAllButton.text()).toBe('View all 5 replies');
-            expect(comments.commentsById[outermostParent.attr('data-id')].childIds.length).toBe(5);
+            expect(toggleAllButton.textContent).toBe('View all 5 replies');
+            expect(commentViewModel.getChildComments(outermostParent.commentModel.id).length).toBe(5);
 
-            var editButton = ownComment.find('.edit');
-            editButton.click();
-
-            wait(function() {
-                return comments.getComments().length < commentCountBeforeDelete;
-            });
-
-            var deleteButton = ownComment.find('.delete');
+            const deleteButton: ButtonElement = ownComment.querySelector('.delete')!;
             deleteButton.click();
+            jest.runAllTimers();
 
-            run(function() {
-                expect(comments.getComments().length).toBe(commentCountBeforeDelete - 1);
-
-                // Except the main comment to be deleted
-                expect(comments.commentsById[commentId]).toBe(undefined);
-                expect($('#comment-list li.comment[data-id="'+commentId+'"]').length).toBe(0);
-
-                // Check the child count
-                expect(toggleAllButton.text()).toBe('View all 4 replies');
-                expect(comments.commentsById[outermostParent.attr('data-id')].childIds.length).toBe(4);
-            });
+            expect(commentViewModel.getComment(commentId)!.content).toBe('Deleted');
         });
 
-        it('Should be able to delete a reply that has re-replies', function() {
-            var commentId = 8;
-            var reReplies = [9, 10];
-            var ownComment = $('#comment-list li.comment[data-id="'+commentId+'"]');
-            var commentCountBeforeDelete = comments.getComments().length;
-            var outermostParent = ownComment.parents('li.comment').last();
-            var toggleAllButton = outermostParent.find('.toggle-all');
+        it('Should be possible to delete a reply that has re-replies', async () => {
+            const commentId = '8';
+            const ownComment: CommentElement = queryComments(`#comment-list li.comment[data-id="${commentId}"]`)!;
+            const outermostParent: CommentElement = findParentsBySelector<CommentElement>(ownComment, 'li.comment').last()!;
+            const toggleAllButton = outermostParent.querySelector('.toggle-all .text')!;
 
             // Check the child count
-            expect(toggleAllButton.text()).toBe('View all 5 replies');
-            expect(comments.commentsById[outermostParent.attr('data-id')].childIds.length).toBe(5);
+            expect(toggleAllButton.textContent).toBe('View all 5 replies');
+            expect(commentViewModel.getChildComments(outermostParent.commentModel.id).length).toBe(5);
 
-            var editButton = ownComment.find('.edit');
-            editButton.click();
-
-            wait(function() {
-                return comments.getComments().length < commentCountBeforeDelete;
-            });
-
-            var deleteButton = ownComment.find('.delete');
+            const deleteButton: HTMLElement = ownComment.querySelector('.delete')!;
             deleteButton.click();
+            jest.runAllTimers();
 
-            run(function() {
-                expect(comments.getComments().length).toBe(commentCountBeforeDelete - 3);
+            // Except the main reply to be deleted
+            expect(commentViewModel.getComment(commentId)!.content).toBe('Deleted');
 
-                // Expect re-replies to be deleted
-                $(reReplies).each(function(index, id) {
-                    expect(comments.commentsById[id]).toBe(undefined);
-                    expect($('#comment-list li.comment[data-id="'+id+'"]').length).toBe(0);
-                });
-
-                // Except the main comment to be deleted
-                expect(comments.commentsById[commentId]).toBe(undefined);
-                expect($('#comment-list li.comment[data-id="'+commentId+'"]').length).toBe(0);
-
-                // Check the child count
-                expect(outermostParent.find('.toggle-all').length).toBe(0);
-                expect(comments.commentsById[outermostParent.attr('data-id')].childIds.length).toBe(2);
-            });
+            // Check the child count
+            expect(toggleAllButton.textContent).toBe('View all 5 replies');
+            expect(commentViewModel.getChildComments(outermostParent.commentModel.id).length).toBe(5);
         });
 
-        it('Should be able to delete attachments', function() {
-            var ownCommentModel = comments.commentsById[10];
-            var ownComment = $('#comment-list li.comment[data-id=10]');
+        it('Should be possible to delete attachments', async () => {
+            const ownCommentModel = commentViewModel.getComment('10')!;
+            const ownComment: CommentElement = queryComments('#comment-list li.comment[data-id="10"]')!;
 
-            var attachmentCountBefore = 1;
-            expect(ownCommentModel.attachments.length).toBe(attachmentCountBefore);
-            expect(ownComment.find('.attachments').first().find('.attachment').length).toBe(1);
+            const attachmentCountBefore = 1;
+            expect(ownCommentModel.attachments!.length).toBe(attachmentCountBefore);
+            expect(ownComment.querySelector('.attachments')!.querySelectorAll('.attachment').length).toBe(1);
 
             // Open edit mode
-            var editButton = ownComment.find('.edit');
+            const editButton: HTMLElement = ownComment.querySelector('.edit')!;
             editButton.click();
 
             // Delete attachment
-            var attachmentTag = ownComment.find('li.commenting-field').find('.attachment').first();
-            attachmentTag.find('.delete').trigger('click');
+            const attachmentTag = ownComment.querySelector('.commenting-field')!.querySelector('.attachment')!;
+            attachmentTag.querySelector<HTMLElement>('.delete')!.click();
 
             // Save comment
-            var saveButton = ownComment.find('.save');
-            expect(saveButton.hasClass('enabled')).toBe(true);
-            saveButton.trigger('click');
+            const saveButton: HTMLElement = ownComment.querySelector('.save')!;
+            expect(saveButton.classList.contains('enabled')).toBe(true);
+            saveButton.click();
+            jest.runAllTimers();
 
-            wait(function() {
-                return ownCommentModel.attachments.length < attachmentCountBefore;
-            });
-
-            run(function() {
-                expect(ownCommentModel.attachments.length).toBe(0);
-                expect(ownComment.find('.attachments').first().find('.attachment').length).toBe(0);
-            })
+            expect(ownCommentModel.attachments!.length).toBe(0);
+            expect(ownComment.querySelector('.attachments')!.querySelectorAll('.attachment').length).toBe(0);
         });
     });
 
-    describe('Upvoting', function() {
+    describe('Upvoting', () => {
 
-        it('Should be able to upvote a comment', function() {
-            var commentId = 1;
-            var commentEl = $('#comment-list li.comment[data-id="'+commentId+'"]');
-            var commentModel = comments.commentsById[commentId];
-
-            // Check the status before upvoting
-            var upvoteEl = commentEl.find('.upvote').first();
-            expect(commentModel.userHasUpvoted).toBe(false);
-            expect(upvoteEl.hasClass('highlight-font')).toBe(false);
-
-            expect(commentModel.upvoteCount).toBe(3);
-            expect(upvoteEl.find('.upvote-count').text()).toBe('3');
-
-            upvoteEl.click();
-
-            // Check status after upvoting
-            upvoteEl = commentEl.find('.upvote').first();
-            expect(commentModel.userHasUpvoted).toBe(true);
-            expect(upvoteEl.hasClass('highlight-font')).toBe(true);
-
-            expect(commentModel.upvoteCount).toBe(4);
-            expect(upvoteEl.find('.upvote-count').text()).toBe('4');
-        });
-
-        it('Should be able to revoke an upvote', function() {
-            var commentId = 3;
-            var commentEl = $('#comment-list li.comment[data-id="'+commentId+'"]');
-            var commentModel = comments.commentsById[commentId];
+        it('Should be possible to upvote a comment', () => {
+            const commentId = '4';
+            const commentEl: CommentElement = queryComments(`#comment-list li.comment[data-id="${commentId}"]`)!;
+            const commentModel = commentViewModel.getComment(commentId)!;
 
             // Check the status before upvoting
-            var upvoteEl = commentEl.find('.upvote').first();
-            expect(commentModel.userHasUpvoted).toBe(true);
-            expect(upvoteEl.hasClass('highlight-font')).toBe(true);
+            let upvoteEl: HTMLElement = commentEl.querySelector('.upvote')!;
+            expect(commentModel.upvotedByCurrentUser).toBe(false);
+            expect(upvoteEl.classList.contains('highlight-font')).toBe(false);
 
             expect(commentModel.upvoteCount).toBe(2);
-            expect(upvoteEl.find('.upvote-count').text()).toBe('2');
+            expect(upvoteEl.querySelector('.upvote-count')!.textContent).toBe('2');
 
             upvoteEl.click();
 
             // Check status after upvoting
-            upvoteEl = commentEl.find('.upvote').first();
-            expect(commentModel.userHasUpvoted).toBe(false);
-            expect(upvoteEl.hasClass('highlight-font')).toBe(false);
+            upvoteEl = commentEl.querySelector('.upvote')!;
+            expect(commentModel.upvotedByCurrentUser).toBe(true);
+            expect(upvoteEl.classList.contains('highlight-font')).toBe(true);
 
-            expect(commentModel.upvoteCount).toBe(1);
-            expect(upvoteEl.find('.upvote-count').text()).toBe('1');
+            expect(commentModel.upvoteCount).toBe(3);
+            expect(upvoteEl.querySelector('.upvote-count')!.textContent).toBe('3');
+        });
+
+        it('Should be possible to revoke an upvote', () => {
+            const commentId = '1';
+            const commentEl: CommentElement = queryComments(`#comment-list li.comment[data-id="${commentId}"]`)!;
+            const commentModel = commentViewModel.getComment(commentId)!;
+
+            // Check the status before upvoting
+            let upvoteEl: HTMLElement = commentEl.querySelector('.upvote')!;
+            expect(commentModel?.upvotedByCurrentUser).toBe(true);
+            expect(upvoteEl.classList.contains('highlight-font')).toBe(true);
+
+            expect(commentModel.upvoteCount).toBe(3);
+            expect(upvoteEl.querySelector('.upvote-count')!.textContent).toBe('3');
+
+            upvoteEl.click();
+
+            // Check status after upvoting
+            upvoteEl = commentEl.querySelector('.upvote')!;
+            expect(commentModel.upvotedByCurrentUser).toBe(false);
+            expect(upvoteEl.classList.contains('highlight-font')).toBe(false);
+
+            expect(commentModel.upvoteCount).toBe(2);
+            expect(upvoteEl.querySelector('.upvote-count')!.textContent).toBe('2');
         });
     });
 
-    afterEach(function() {
-        $('.jquery-comments').remove();
+    afterEach(() => {
+        jest.clearAllTimers();
+        commentsElement.remove();
     });
 
-
-    // Helpers
-    // =======
-
-    function wait(callback) {
-        $('.jquery-comments').hide();
-        waitsFor(callback);
+    function queryComments<T extends HTMLElement = HTMLElement>(selectors: string): T | null {
+        return commentContainer.querySelector<T>(selectors);
     }
 
-    function run(callback) {
-        runs(function() {
-            $('.jquery-comments').show();
-            callback();
-        });
+    function queryCommentsAll<T extends HTMLElement = HTMLElement>(selectors: string): NodeListOf<T> {
+        return commentContainer.querySelectorAll<T>(selectors);
     }
 
-    function checkCommentElementData(commentEl) {
-        var header = commentEl.find('.comment-header').first();
+    function isElementHidden(element: HTMLElement): boolean {
+        return element.style.display === 'none' || element.style.visibility === 'hidden';
+    }
+
+    async function waitForCondition(condition: () => boolean, timeout: number = 300): Promise<void> {
+        const startTime: number = new Date().getTime();
+
+        while (true) {
+            if (condition()) {
+                return;
+            }
+            if (new Date().getTime() > startTime + timeout) {
+                throw new Error('Condition not met');
+            }
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+    }
+
+    function checkCommentElementData(commentEl: CommentElement): void {
+        const header = commentEl.querySelector('.comment-header')!;
 
         // Fields to be tested
-        var profilePictureURL = commentEl.find('.profile-picture').first().css('background-image').slice(5, -2);
-        var replyTo = header.find('.reply-to').text();
-        var fullname = header.find('.name').text();
+        const profilePictureURL = commentEl.querySelector<HTMLElement>('.profile-picture')!.style.backgroundImage.slice(4, -1);
+        const displayName = header.querySelector('.name')!.textContent;
 
         // Model that we are testing against
-        var commentModel = commentEl.data().model;
+        const commentModel = commentEl.commentModel;
 
         // Check basic fields
-        expect(profilePictureURL).toBe(commentModel.profilePictureURL);
-        expect(fullname).toBe(commentModel.fullname);
+        expect(profilePictureURL).toBe(commentModel.creatorProfilePictureURL);
+        expect(displayName).toBe(commentModel.creatorDisplayName);
 
         // Check content
-        if(commentModel.fileURL) {
-            var link = commentEl.find('a');
-            expect(link.attr('href')).toBe(commentModel.fileURL);
-        } else {
-            var content = getTextContentFromCommentElement(commentEl);
-            expect(content).toBe(commentModel.content);
-        }
+        const content = getEscapedTextContentFromCommentElement(commentEl);
+        expect(content).toBe(commentModel.content);
 
         // Check time
-        var dateUI = new Date(commentEl.find('time').first().attr('data-original'));
-        var modelCreatedDate = new Date(commentModel.created);
+        const dateUI = new Date(commentEl.querySelector('time')!.getAttribute('datetime')!);
+        const modelCreatedDate = commentModel.createdAt;
         compareDates(dateUI, modelCreatedDate);
 
         // Check attachments
-        var attachmentTags = commentEl.find('.attachments').first().find('.attachment');
-        expect(commentModel.attachments.length).toBe(attachmentTags.length);
-        $(commentModel.attachments).each(function(index, attachment) {
-            var file = commentModel.attachments[index].file;
-            
+        const attachmentTags = commentEl.querySelector('.attachments')!.querySelectorAll('.attachment');
+        expect(commentModel.attachments!.length).toBe(attachmentTags.length);
+        commentModel.attachments!.forEach((attachment, index) => {
+            const file = (attachment as any).file;
+
             // Find out attachment name
-            var attachmentName = '';
-            if(attachment.file instanceof File) {
-                attachmentName = attachment.file.name;
+            let attachmentName = '';
+            if (file instanceof File) {
+                attachmentName = file.name;
             } else {
-                var urlParts = attachment.file.split('/');
+                const urlParts = file.split('/');
                 attachmentName = urlParts[urlParts.length - 1];
             }
 
-            var tagText = commentEl.find('.attachment').eq(index).text();
+            const tagText = commentEl.querySelectorAll('.attachment')[index].textContent;
             expect(attachmentName).toBe(tagText);
         });
     }
 
-    function getTextContentFromCommentElement(commentEl)  {
-        var content = commentEl.find('.content').first().clone();
+    function getEscapedTextContentFromCommentElement(commentEl: CommentElement): string {
+        const content = commentEl.querySelector('.content')!.cloneNode(true) as HTMLElement;
 
         // Remove edited timestamp
-        content.children('time').remove().end();
+        content.querySelectorAll('time')
+            .forEach(t => t.remove());
 
         // Replace inputs with respective values
-        content.find('.tag').replaceWith(function() {
-            return $(this).val();
-        });
-        return content.text();
+        content.querySelectorAll<HTMLInputElement>('.tag')
+            .forEach(t => t.replaceWith(parseTagValue(t)));
+        return content.textContent!;
     }
 
-    function compareDates(dateA, dateB) {
-        expect(dateA.getDate()).toBe(dateB.getDate());
-        expect(dateA.getMonth()).toBe(dateB.getMonth());
+    function parseTagValue(tag: HTMLInputElement): string {
+        return tag.getAttribute('data-type')! + tag.getAttribute('data-value')!;
+    }
+
+    function compareDates(dateA: Date, dateB: Date): void {
         expect(dateA.getFullYear()).toBe(dateB.getFullYear());
+        expect(dateA.getMonth()).toBe(dateB.getMonth());
+        expect(dateA.getDate()).toBe(dateB.getDate());
+        expect(dateA.getHours()).toBe(dateB.getHours());
+        expect(dateA.getMinutes()).toBe(dateB.getMinutes());
+        expect(dateA.getSeconds()).toBe(dateB.getSeconds());
     }
 
-    function getOrder(elements) {
-        return elements.map(function(index, commentEl){return $(commentEl).data().id}).toArray();
+    function checkOrder(elements: NodeListOf<HTMLElement>, expectedOrder: string[]): void {
+        const order: string[] = getOrder(elements);
+        expect(order).toEqual(expectedOrder);
     }
 
-    function checkOrder(elements, expectedOrder) {
-        var order = getOrder(elements);
-        expect(JSON.stringify(order)).toBe(JSON.stringify(expectedOrder));
+    function getOrder(elements: NodeListOf<HTMLElement>): string[] {
+        return [...elements].map((commentEl) => commentEl.getAttribute('data-id')!);
     }
 
-    function testEditingComment(id) {
-        var ownComment = $('#comment-list li.comment[data-id='+id+']');
-        var editButton = ownComment.find('.edit').first();
+    async function testEditingComment(id: string): Promise<void> {
+        let ownComment: CommentElement = queryComments(`#comment-list li.comment[data-id="${id}"]`)!;
+        const editButton: HTMLElement = ownComment.querySelector('.edit')!;
 
-        var ownCommentBefore = ownComment.clone();
-        var ownCommentModelBefore = $.extend({},comments.commentsById[id]);
+        const ownCommentBefore: CommentElement = ownComment.cloneNode(true) as CommentElement;
+        const ownCommentModelBefore = Object.assign({}, commentViewModel.getComment(id));
 
         editButton.click();
-        var editField = ownComment.find('li.commenting-field');
-        var textarea = editField.find('.textarea');
+        const editField: CommentingFieldElement = ownComment.querySelector('.commenting-field')!;
+        const textarea: TextareaElement = editField.querySelector('.textarea')!;
 
         // Edit the comment
-        var modifiedContent = '<br>appended content with new line';
-        textarea.append(modifiedContent).trigger('input');
+        const modifiedContent = '<br />appended content with new line';
+        textarea.value += modifiedContent;
+        textarea.dispatchEvent(new InputEvent('input'));
 
         // Add attachments
-        var files = [new File([], 'test.txt'), new File([], 'test2.png')];
-        comments.preSaveAttachments(files, editField);
+        const files = [new File([], 'test.txt'), new File([], 'test2.png')];
+        editField.preSaveAttachments(files);
 
         // Verify pre saved attachments
-        var attachmentTags = editField.find('.attachments').first().find('.attachment');
+        const attachmentTags = editField.querySelector('.attachments')!.querySelectorAll('.attachment');
         expect(attachmentTags.length).toBe(2);
-        expect(attachmentTags.first().text()).toBe('test.txt');
-        expect(attachmentTags.last().text()).toBe('test2.png');
+        expect(attachmentTags[0].textContent).toBe('test.txt');
+        expect(attachmentTags[1].textContent).toBe('test2.png');
 
         // Save the comment
-        var originalContent = comments.commentsById[id].content;
-        wait(function() {
-            return comments.commentsById[id].content != originalContent;
+        editField.querySelector<HTMLElement>('.save')!.click();
+        jest.runAllTimers();
+
+        expect(isNil(ownComment.querySelector('.commenting-field'))).toBe(true);
+
+        // Check the edited comment
+        ownComment = queryComments(`#comment-list li.comment[data-id="${id}"]`)!;
+        checkCommentElementData(ownComment);
+        expect(ownComment.querySelector('.content .edited')!.textContent!.length).not.toBe(0);
+
+        // Check that only fields content and modified have changed in comment model
+        const ownCommentModel = commentViewModel.getComment(id)!;
+        Object.keys(ownCommentModel).forEach((key) => {
+            let currentComparisonValue: any;
+            let oldComparisonValue: any;
+
+            // Comparison value type
+            const arrayComparison = key === 'pings' || key === 'attachments';
+            const functionComparison = key === 'hasAttachments';
+
+            // Get comparison values based on comparison type
+            if (arrayComparison) {
+                currentComparisonValue = JSON.stringify(ownCommentModel[key]);
+                oldComparisonValue = JSON.stringify(ownCommentModelBefore[key]);
+            } else if (functionComparison) {
+                currentComparisonValue = ownCommentModel[key]()
+                oldComparisonValue = ownCommentModelBefore[key]();
+            } else {
+                currentComparisonValue = ownCommentModel[key as keyof CommentModelEnriched];
+                oldComparisonValue = ownCommentModelBefore[key as keyof CommentModelEnriched];
+            }
+
+            if (key === 'content' || key === 'modifiedAt' || key === 'attachments' || key === 'hasAttachments') {
+                expect(currentComparisonValue).not.toBe(oldComparisonValue);
+            } else {
+                expect(currentComparisonValue).toBe(oldComparisonValue);
+            }
         });
 
-        editField.find('.save').click();
+        // Check that only content has changed in comment element
+        ownComment = ownComment.cloneNode(true) as CommentElement;
 
-        run(function() {
-            expect(editField.is(':visible')).toBe(false);
+        ownComment.querySelector('.content')!.remove();
+        ownCommentBefore.querySelector('.content')!.remove();
 
-            // Check the edited comment
-            ownComment = $('#comment-list li.comment[data-id='+id+']');
-            checkCommentElementData(ownComment);
-            expect(ownComment.find('.content .edited').text().length).not.toBe(0);
+        ownComment.querySelector('.attachments')!.remove();
+        ownCommentBefore.querySelector('.attachments')!.remove();
 
-            // Check that only fields content and modified have changed in comment model
-            var ownCommentModel = comments.commentsById[id];
-            $(Object.keys(ownCommentModel)).each(function(index, key) {
-                var currentComparisonValue;
-                var oldComparisonValue;
-
-                // Comparison value type
-                var arrayComparison = key == 'pings' || key == 'attachments';
-                var functionComparison = key == 'hasAttachments';
-
-                // Get comparison values based on comparison type
-                if(arrayComparison) {
-                    currentComparisonValue = JSON.stringify(ownCommentModel[key]);
-                    oldComparisonValue = JSON.stringify(ownCommentModelBefore[key]);
-                } else if(functionComparison) {  
-                    currentComparisonValue = ownCommentModel[key]()
-                    oldComparisonValue = ownCommentModelBefore[key]();
-                } else {
-                    currentComparisonValue = ownCommentModel[key];
-                    oldComparisonValue = ownCommentModelBefore[key];
-                }
-
-                if(key == 'content' || key == 'modified' || key == 'attachments') {
-                    expect(currentComparisonValue).not.toBe(oldComparisonValue);
-                } else {
-                    expect(currentComparisonValue).toBe(oldComparisonValue);
-                }
-            });
-
-            // Check that only content has changed in comment element
-            ownComment = ownComment.clone();
-
-            ownComment.find('.content').remove();
-            ownCommentBefore.find('.content').remove();
-
-            ownComment.find('.attachments').remove();
-            ownCommentBefore.find('.attachments').remove();
-
-            expect(ownComment[0].outerHTML).toBe(ownCommentBefore[0].outerHTML);
-        });
+        expect(ownComment.outerHTML).toBe(ownCommentBefore.outerHTML);
     }
 
 });

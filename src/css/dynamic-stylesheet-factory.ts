@@ -21,6 +21,6 @@ export function createDynamicStylesheet(options: CommentsOptions): CSSStyleSheet
 
 function createStyle(css: string): CSSStyleSheet {
     const styleSheet: CSSStyleSheet = new CSSStyleSheet();
-    (styleSheet as any).replaceSync(css);
+    styleSheet.replaceSync(css);
     return styleSheet;
 }

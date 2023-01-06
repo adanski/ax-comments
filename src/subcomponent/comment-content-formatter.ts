@@ -98,7 +98,9 @@ export class CommentContentFormatter {
     }
 
     private createHashTag(hashTagText: string): string {
-        const tag: HTMLElement = this.#tagFactory.createTagElement('#' + hashTagText, 'hashtag', hashTagText);
+        const tag: HTMLElement = this.#tagFactory.createTagElement('#' + hashTagText, 'hashtag', hashTagText, {
+            'data-type': '#'
+        });
         return tag.outerHTML;
     }
 
@@ -115,7 +117,8 @@ export class CommentContentFormatter {
 
     private createUserTag(pingText: string, userId: string): string {
         const tag: HTMLElement = this.#tagFactory.createTagElement(pingText, 'ping', userId, {
-            'data-user-id': userId
+            'data-user-id': userId,
+            'data-type': '@'
         });
         return tag.outerHTML;
     }

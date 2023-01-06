@@ -53,6 +53,7 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
             ?.parentElement as ToggleAllButtonElement;
         childComments.forEach(childComment => {
             childComment.classList.remove('togglable-reply');
+            childComment.classList.add('visible');
         });
 
         let togglableReplies: HTMLElement[];
@@ -70,9 +71,7 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
             togglableReplies[i].classList.add('togglable-reply');
 
             // Show all replies if replies are expanded
-            if (allRepliesExpanded) {
-                togglableReplies[i].classList.add('visible');
-            }
+            togglableReplies[i].classList.toggle('visible', allRepliesExpanded);
         }
 
         if (childComments.length > options.maxRepliesVisible) { // Make sure that toggle all button is present

@@ -1,10 +1,9 @@
 import {CommentsOptions} from '../api.js';
 import {OptionsProvider, ServiceProvider} from '../provider.js';
 import {TextareaElement} from './textarea-element.js';
-import {StrategyProps, Textcomplete} from '@textcomplete/core';
+import {StrategyProps, Textcomplete, TextcompleteOption} from '@textcomplete/core';
 import {TextareaEditor} from '@textcomplete/textarea';
 import {isStringEmpty, normalizeSpaces} from '../util.js';
-import {TextcompleteOption} from '@textcomplete/core/src/Textcomplete';
 import {ProfilePictureFactory} from './profile-picture-factory.js';
 import {PingableUser, ReferenceableHashtag} from '../options/models.js';
 
@@ -68,43 +67,39 @@ export class TextcompleteFactory {
     }
 
     #createUserItem(user: PingableUser): HTMLElement {
-        const userItem: HTMLParagraphElement = document.createElement('p');
-        userItem.classList.add('result');
+        const profilePic: HTMLElement = this.#profilePictureFactory.createProfilePictureElement(user.id, user.profilePictureURL);
 
-        const profilePicture: HTMLElement = this.#profilePictureFactory.createProfilePictureElement(user.id, user.profilePictureURL);
-
-        const details: HTMLSpanElement = document.createElement('span');
-        details.classList.add('details');
-        const name: HTMLSpanElement = document.createElement('span');
-        name.classList.add('name');
-        name.textContent = user.displayName || user.id;
-
-        if (user.email || user.displayName) {
-            const email: HTMLSpanElement = document.createElement('span');
-            email.classList.add('email');
-            email.textContent = user.email || user.id;
-            details.append(name, email);
-        } else {
-            details.classList.add('no-email');
-            details.append(name);
-        }
-
-        userItem.append(profilePicture, details);
-
-        return userItem;
+        return this.#createResult(profilePic, user.displayName || user.id, user.email || user.displayName && user.id);
     }
 
     #createHashtagItem(hashtag: ReferenceableHashtag): HTMLElement {
-        const hashtagItem: HTMLParagraphElement = document.createElement('p');
-        hashtagItem.classList.add('result');
+        const hash: HTMLElement = document.createElement('i');
+        hash.classList.add('fas', 'fa-hashtag', 'hashtag');
 
+        return this.#createResult(hash, hashtag.tag, hashtag.description);
+    }
+
+    #createResult(pic: HTMLElement, nameContent: string, detailsContent?: string): HTMLParagraphElement {
+        const info: HTMLSpanElement = document.createElement('span');
+        info.classList.add('info');
         const name: HTMLSpanElement = document.createElement('span');
         name.classList.add('name');
-        name.textContent = `#${hashtag.tag}`;
+        name.textContent = nameContent;
 
-        hashtagItem.append(name);
+        if (detailsContent) {
+            const details: HTMLSpanElement = document.createElement('span');
+            details.classList.add('details');
+            details.textContent = detailsContent;
+            info.append(name, details);
+        } else {
+            info.classList.add('no-details');
+            info.append(name);
+        }
 
-        return hashtagItem;
+        const result: HTMLParagraphElement = document.createElement('p');
+        result.classList.add('result');
+        result.append(pic, info);
+        return result;
     }
 
     #replaceUserPingText(user: PingableUser, textarea: TextareaElement, startsWithSpace: boolean): string {
