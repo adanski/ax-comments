@@ -47,8 +47,14 @@
     <script async type="module" src="sidebar.js"></script>
     <script async type="module" src="code-highlighter.js"></script>
 </head>
-<body>
+<body class="dark-mode">
 <section class="page-header">
+    <button type="button"
+            class="btn"
+            style="float:right;padding:0.2rem;"
+            onclick="(function () { document.body.classList.toggle('dark-mode') })();">
+        🌞/🌙
+    </button>
     <h1 class="project-name">ax-comments</h1>
     <h2 class="project-tagline">The TypeScript library of choice for implementing commenting in your web app</h2>
     <a href="https://github.com/adanski/ax-comments" class="btn">View on GitHub</a>
