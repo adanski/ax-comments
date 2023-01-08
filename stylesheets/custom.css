@@ -50,11 +50,13 @@
 .content pre code {
     font-size: 12px;
     border-radius: 6px;
+    border: slategrey solid 1px;
 }
 
 .content pre.source-with-footer code {
     font-size: 12px;
     border-radius: 6px 6px 0 0;
+    border-bottom: none;
 }
 
 label {
