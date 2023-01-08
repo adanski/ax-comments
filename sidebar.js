@@ -1,14 +1,16 @@
-import $ from 'cash-dom';
-
 // Create sidebar dynamically
 document.querySelectorAll('h3[id]').forEach((header) => {
-    const sidebarLink = $(`<a href="#${header.id}">${header.innerText}</a>`);
-    document.querySelector('.sidebar').append(sidebarLink[0]);
+    const sidebarLink = createElement(
+        `<a href="#${header.id}">${header.innerText.trim()}</a>`
+    );
+    document.querySelector('.sidebar').append(sidebarLink);
 
     if (header.nextElementSibling?.classList.contains(`${header.id}-linkable`)) {
         document.querySelectorAll(`.${header.id}-linkable`).forEach((linkable) => {
-            const sidebarSubLink = $(`<a href="#${linkable.id}" class="level-2">${linkable.innerText}</a>`);
-            document.querySelector('.sidebar').append(sidebarSubLink[0]);
+            const sidebarSubLink = createElement(
+                `<a href="#${linkable.id}" class="level-2">${linkable.innerText.trim()}</a>`
+            );
+            document.querySelector('.sidebar').append(sidebarSubLink);
         });
     }
 });
@@ -23,3 +25,10 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         });
     });
 });
+
+function createElement(htmlTemplate) {
+    const template = document.createElement('template');
+    htmlTemplate = htmlTemplate.trim(); // Never return a text node of whitespace as the result
+    template.innerHTML = htmlTemplate;
+    return template.content.firstChild;
+}
