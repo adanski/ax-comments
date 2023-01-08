@@ -30,37 +30,35 @@
         ga('send', 'pageview');
     </script>
 
-    <!-- CSS Modules polyfill necessary for Firefox -->
-    <script>
-        esmsInitOptions = {
-            shimMode: false,
-            polyfillEnable: ['css-modules', 'json-modules']
-        }
-    </script>
-    <script async src="https://ga.jspm.io/npm:es-module-shims@1.6.2/dist/es-module-shims.js"></script>
-
     <script type="importmap">
         {
             "imports": {
                 "highlight.js/lib/core": "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/es/core.min.js",
                 "highlight.js/lib/languages/bash": "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/es/languages/bash.min.js",
                 "highlight.js/lib/languages/javascript": "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/es/languages/javascript.min.js",
-                "highlight.js/lib/languages/typescript": "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/es/languages/typescript.min.js"
+                "highlight.js/lib/languages/typescript": "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/es/languages/typescript.min.js",
+                "github-buttons": "https://cdn.jsdelivr.net/npm/github-buttons@2.22.2/dist/buttons.esm.js"
             }
         }
     </script>
 
-    <script async type="module" src="sidebar.js"></script>
-    <script async type="module" src="code-highlighter.js"></script>
-    <script type="module">
+    <script defer type="module" src="sidebar.js"></script>
+    <script defer type="module" src="code-highlighter.js"></script>
+    <script defer type="module">
+        import {render} from 'github-buttons'
+
         matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
             const lightStyle = document.querySelector('link[title="light"]');
             lightStyle.disabled = !e.matches;
             const darkStyle = document.querySelector('link[title="dark"]');
             darkStyle.disabled = !!e.matches;
         });
+
+        document.querySelectorAll('.page-header a.github-button')
+            .forEach(anchor => render(anchor, btn => {
+                anchor.parentNode.replaceChild(btn, anchor)
+            }));
     </script>
-    <script async defer src="https://buttons.github.io/buttons.js"></script>
 </head>
 <body>
 <section class="page-header">
