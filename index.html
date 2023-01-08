@@ -1,119 +1,137 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
-  <meta charset="UTF-8">
-  <title>ax-comments by adanski</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-  <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
-  <link rel="stylesheet" type="text/css" href="stylesheets/custom.css" media="screen">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.0/cash.min.js"
-          integrity="sha512-sgDgZX/GgfD7qSeMjPN/oE9EQgXZJW55FIjdexVT60QerG2gAWhR9QDQEGt3O90Dy9jVcwMWsoTMhLgldIiKXw=="
+<head>
+    <meta charset="UTF-8">
+    <title>&lt;ax-comments&gt; element by adanski</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+          integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w=="
           crossorigin="anonymous"
-          referrerpolicy="no-referrer">
-  </script>
-  <script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+          referrerpolicy="no-referrer" />
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/custom.css" media="screen">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cash/8.1.2/cash.min.js"
+            integrity="sha512-CTy35lwDgrrz5oNy6gE8NIoh1mF1jFpOKmsXEdu0oubFSVx/4a6Oto3ti/ki5MicE+24JiPWh5d0mfYOULEk0g=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+            defer>
+    </script>
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-    ga('create', 'UA-41980270-4', 'auto');
-    ga('set', 'anonymizeIp', true);
-    ga('send', 'pageview');
+        ga('create', 'UA-41980270-4', 'auto');
+        ga('set', 'anonymizeIp', true);
+        ga('send', 'pageview');
+    </script>
+    <script type="module">
+        // Create sidebar dynamically
+        document.querySelectorAll('h3').forEach((el, index) => {
+            const headerAnchor = el.querySelector('a[id]');
+            const id = headerAnchor.id;
+            const listEl = $(`<a href="#${id}">${el.innerText}</a>`);
+            document.querySelector('.sidebar').append(listEl[0]);
 
-    // Create sidebar dynamically
-    $(() => {
-        $('h3').each((index, el) => {
-            el = $(el);
-            const id = 'link-' + index;
-            el.attr('id', id);
-            const listEl = $('<a/>').text(el.text());
-            listEl.attr('href', '#' + id);
-            $('.sidebar').append(listEl);
+            if (el.nextElementSibling?.tagName.toLowerCase() === 'table') {
+                const table = el.nextElementSibling;
+                table.querySelectorAll('th').forEach((th, index) => {
+                    const subId = `${id}-${index + 1}`;
+                    th.id = subId;
 
-            if (el.next().is('table')) {
-                const table = el.next();
-                table.find('th').each((index, th) => {
-                    th = $(th);
-                    const id2 = id + '-' + index;
-                    th.attr('id', id2);
-
-                    const listEl2 = $('<a/>').html(th.text()).addClass('level-2');
-                    listEl2.attr('href', '#' + id2);
-                    $('.sidebar').append(listEl2);
+                    const listSubEl = $(`<a href="#${subId}" class="level-2">${th.innerText}</a>`);
+                    document.querySelector('.sidebar').append(listSubEl[0]);
                 });
             }
         });
-    });
-  </script>
-
-  </head>
-  <body>
-  <section class="page-header">
+    </script>
+</head>
+<body>
+<section class="page-header">
     <h1 class="project-name">ax-comments</h1>
-    <h2 class="project-tagline">The Javascript library of choice for implementing commenting in your web app</h2>
+    <h2 class="project-tagline">The TypeScript library of choice for implementing commenting in your web app</h2>
     <a href="https://github.com/adanski/ax-comments" class="btn">View on GitHub</a>
     <a href="https://github.com/adanski/ax-comments/zipball/master" class="btn">Download .zip</a>
     <a href="https://github.com/adanski/ax-comments/tarball/master" class="btn">Download .tar.gz</a>
-  </section>
+</section>
 
-  <section class="main-content">
+<section class="main-content">
 
     <div class="sidebar"></div>
 
-    <div class="content">
+    <main class="content">
 
-          <h1>
-      <a id="ax-comments" class="anchor" href="#ax-comments" aria-hidden="true"><span class="octicon octicon-link"></span></a>ax-comments</h1>
+        <h1>
+            <a id="ax-comments" class="anchor" href="#ax-comments" aria-hidden="true"><span class="octicon octicon-link"></span></a>ax-comments
+        </h1>
 
-      <p>ax-comments is a jQuery plugin for implementing an out-of-the-box commenting solution to any web application with an existing backend. It provides all the UI functionalities and ties them to callbacks that let you easily define what you want to do with the data. The library is highly customizable and very easy to integrate thanks to a wide variety of settings.</p>
+        <p>
+            &lt;ax-comments&gt; is a standalone web component with minimal set of dependencies (no jQuery!)
+            for implementing an out-of-the-box commenting solution to any web application with an existing backend.
+            It provides all the UI functionalities and ties them to callbacks that let you easily define
+            what you want to do with the data. The library is highly customizable and very easy to integrate
+            thanks to a wide variety of settings.
+        </p>
 
-      <p><img src="https://github.com/adanski/ax-comments/blob/master/screenshot.png?raw=true" alt="Screenshot of ax-comments" title="Screenshot of ax-comments"></p>
+        <p><img src="https://github.com/adanski/ax-comments/blob/master/screenshot.png?raw=true"
+                alt="Screenshot of ax-comments" title="Screenshot of ax-comments"></p>
 
-      <h3>
-      <a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h3>
+        <h3>
+            <a id="features" class="anchor" href="#features" aria-hidden="true">
+                <span class="octicon octicon-link"></span>
+            </a>
+            Features
+        </h3>
 
-      <ul>
-				<li>Commenting</li>
-				<li>Replying (nested comments)</li>
-				<li>Editing comments</li>
-				<li>Deleting comments</li>
-				<li>Upvoting comments</li>
-				<li>Uploading attachments</li>
-        <li>Hashtags</li>
-        <li>Pinging users</li>
-				<li>Enabling/disabling functionalities</li>
-				<li>Localization</li>
-				<li>Time formatting</li>
-				<li>Field mappings</li>
-				<li>Callbacks</li>
-				<li>Fully responsive and mobile compatible</li>
-				<li>Miscellaneous settings</li>
-      </ul>
+        <ul>
+            <li>Commenting</li>
+            <li>Replying (nested comments)</li>
+            <li>Editing comments</li>
+            <li>Deleting comments</li>
+            <li>Upvoting comments</li>
+            <li>Uploading attachments</li>
+            <li>Hashtags</li>
+            <li>Pinging users</li>
+            <li>Enabling/disabling functionalities</li>
+            <li>Localization</li>
+            <li>Time formatting</li>
+            <li>Field mappings</li>
+            <li>Callbacks</li>
+            <li>Fully responsive and mobile compatible</li>
+            <li>Miscellaneous settings</li>
+        </ul>
 
-      <h3>
-      <a id="demo" class="anchor" href="#demo" aria-hidden="true"><span class="octicon octicon-link"></span></a>Demo</h3>
+        <h3>
+            <a id="demo" class="anchor" href="#demo" aria-hidden="true">
+                <span class="octicon octicon-link"></span>
+            </a>
+            Demo
+        </h3>
 
-      <p><a href="https://adanski.github.io/ax-comments/demo/">https://adanski.github.io/ax-comments/demo/</a></p>
+        <p><a href="https://adanski.github.io/ax-comments/demo/">https://adanski.github.io/ax-comments/demo/</a></p>
 
-      <h3>
-      <a id="quick-start" class="anchor" href="#quick-start" aria-hidden="true"><span class="octicon octicon-link"></span></a>Quick start</h3>
+        <h3>
+            <a id="quick-start" class="anchor" href="#quick-start" aria-hidden="true">
+                <span class="octicon octicon-link"></span>
+            </a>
+            Quick start
+        </h3>
 
-      <p><strong>1) Add the following to your HTML file</strong></p>
+        <p><strong>1) Add the following to your HTML file</strong></p>
 
-<pre><code>&lt;link rel="stylesheet" type="text/css" href="css/jquery-comments.css"&gt;
+        <pre><code>&lt;link rel="stylesheet" type="text/css" href="css/jquery-comments.css"&gt;
 &lt;link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"&gt;
 
 &lt;script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js"&gt;&lt;/script&gt;
 &lt;script type="text/javascript" src="js/jquery-comments.js"&gt;&lt;/script&gt;
-</code></pre>
+        </code></pre>
 
-      <p><strong>2) Initialize the library</strong></p>
+        <p><strong>2) Initialize the library</strong></p>
 
-<pre><code>$('#comments-container').comments({
+        <pre><code>$('#comments-container').comments({
   profilePictureURL: 'https://viima-app.s3.amazonaws.com/media/public/defaults/user-icon.png',
   getComments: function(success, error) {
     var commentsArray = [{
@@ -127,24 +145,31 @@
     success(commentsArray);
   }
 });
-</code></pre>
+        </code></pre>
 
-      <p>If you are not using Font Awesome for icons, you should replace the icons with custom images by overriding following options when initializing the library:</p>
+        <p>If you are not using Font Awesome for icons, you should replace the icons with custom images by overriding
+            following options when initializing the library:</p>
 
-<pre><code>spinnerIconURL: '',
+        <pre><code>spinnerIconURL: '',
 noCommentsIconURL: '',
 closeIconURL: '',
 upvoteIconURL: '',      // Only if upvoting is enabled
 replyIconURL: '',       // Only if replying is enabled
 uploadIconURL: '',      // Only if attachments are enabled
 attachmentIconURL: '',  // Only if attachments are enabled
-</code></pre>
+        </code></pre>
 
 
-<h3><a id="example-data" class="anchor" href="#example-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example data</h3>
-<p>The library expects the comment (and attachment) data to be provided with the structure demonstrated below. Please note that you can use <code>fieldMappings</code> to map the field names to match with your API.</p>
+        <h3>
+            <a id="example-data" class="anchor" href="#example-data" aria-hidden="true">
+                <span class="octicon octicon-link"></span>
+            </a>
+            Example data
+        </h3>
+        <p>The library expects the comment (and attachment) data to be provided with the structure demonstrated below.
+            Please note that you can use <code>fieldMappings</code> to map the field names to match with your API.</p>
 
-<pre><code>{
+        <pre><code>{
    "id": 4,
    "parent": 3,
    "created": "2015-01-04",
@@ -166,731 +191,777 @@ attachmentIconURL: '',  // Only if attachments are enabled
    "user_has_upvoted": false,
    "is_new": true
 }
-</code></pre>
+        </code></pre>
 
-<h3>Configuration options</h3>
+        <h3>
+            <a id="configuration-options" class="anchor" href="#configuration-options" aria-hidden="true">
+                <span class="octicon octicon-link"></span>
+            </a>
+            Configuration options
+        </h3>
 
-<table>
+        <table>
 
-<tr><th colspan="2">Current user</th></tr>
+            <tr>
+                <th colspan="2">Current user</th>
+            </tr>
 
-<tr>
-<td><code>profilePictureURL</code></td>
-<td>
-<p>
-An <code>url</code> for profile picture of the current user. Not required if Font Awesome is used.
-</p>
-<label>DEFAULT</label>
-<code class="string">""</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>profilePictureURL</code></td>
+                <td>
+                    <p>
+                        An <code>url</code> for profile picture of the current user. Not required if Font Awesome is
+                        used.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">""</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   profilePictureURL: '/user_profiles/user-icon.png'
 });
-</pre>
-</td>
-</tr>
-<tr>
-<td><code>currentUserIsAdmin</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether the current user is administarator
-</p>
-<label>DEFAULT</label>
-<code class="boolean">false</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                </td>
+            </tr>
+            <tr>
+                <td><code>currentUserIsAdmin</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether the current user is administarator
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="boolean">false</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   currentUserIsAdmin: true
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr><th colspan="2">Images</th></tr>
-<tr>
-<td><code>spinnerIconURL</code></td>
-<td>
-<p>
-An <code>url</code> for spinner icon that is shown before comments have been fetched. Not required if Font Awesome is used.
-</p>
-<label>DEFAULT</label>
-<code class="string">""</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <th colspan="2">Images</th>
+            </tr>
+            <tr>
+                <td><code>spinnerIconURL</code></td>
+                <td>
+                    <p>
+                        An <code>url</code> for spinner icon that is shown before comments have been fetched. Not
+                        required if Font Awesome is used.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">""</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   spinnerIconURL: '/img/spinner.gif'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>upvoteIconURL</code></td>
-<td>
-<p>
-An <code>url</code> for upvote icon that is used as a button for upvoting. Not required if Font Awesome is used.
-</p>
-<label>DEFAULT</label>
-<code class="string">""</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>upvoteIconURL</code></td>
+                <td>
+                    <p>
+                        An <code>url</code> for upvote icon that is used as a button for upvoting. Not required if Font
+                        Awesome is used.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">""</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   upvoteIconURL: '/img/upvote-icon.png'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>replyIconURL</code></td>
-<td>
-<p>
-An <code>url</code> for reply icon that is shown after the author of the comment if the comment is a reply. Not required if Font Awesome is used.
-</p>
-<label>DEFAULT</label>
-<code class="string">""</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>replyIconURL</code></td>
+                <td>
+                    <p>
+                        An <code>url</code> for reply icon that is shown after the author of the comment if the comment
+                        is a reply. Not required if Font Awesome is used.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">""</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   replyIconURL: '/img/reply-icon.png'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>uploadIconURL</code></td>
-<td>
-<p>
-An <code>url</code> for upload icon that is used as a button for uploading attachments. Not required if Font Awesome is used.
-</p>
-<label>DEFAULT</label>
-<code class="string">""</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>uploadIconURL</code></td>
+                <td>
+                    <p>
+                        An <code>url</code> for upload icon that is used as a button for uploading attachments. Not
+                        required if Font Awesome is used.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">""</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   uploadIconURL: '/img/upload-icon.png'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>attachmentIconURL</code></td>
-<td>
-<p>
-An <code>url</code> for attachment icon that is used as a symbol for attachments. Not required if Font Awesome is used.
-</p>
-<label>DEFAULT</label>
-<code class="string">""</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>attachmentIconURL</code></td>
+                <td>
+                    <p>
+                        An <code>url</code> for attachment icon that is used as a symbol for attachments. Not required
+                        if Font Awesome is used.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">""</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   attachmentIconURL: '/img/attachment-icon.png'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>closeIconURL</code></td>
-<td>
-<p>
-An <code>url</code> for close icon that is used as a button for closing commenting field. Not required if Font Awesome is used.
-</p>
-<label>DEFAULT</label>
-<code class="string">""</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>closeIconURL</code></td>
+                <td>
+                    <p>
+                        An <code>url</code> for close icon that is used as a button for closing commenting field. Not
+                        required if Font Awesome is used.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">""</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   closeIconURL: '/img/close-icon.png'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>noCommentsIconURL</code></td>
-<td>
-<p>
-An <code>url</code> for no-comments icon that is shown if there are no comments to show. Not required if Font Awesome is used.
-</p>
-<label>DEFAULT</label>
-<code class="string">""</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>noCommentsIconURL</code></td>
+                <td>
+                    <p>
+                        An <code>url</code> for no-comments icon that is shown if there are no comments to show. Not
+                        required if Font Awesome is used.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">""</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   noCommentsIconURL: '/img/no-comments-icon.png'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr><th colspan="2">Strings</th></tr>
+            <tr>
+                <th colspan="2">Strings</th>
+            </tr>
 
-<tr>
-<td><code>textareaPlaceholderText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed as a placeholder in commenting fields
-</p>
-<label>DEFAULT</label>
-<code class="string">"Add a comment"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>textareaPlaceholderText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed as a placeholder in commenting fields
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Add a comment"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   textareaPlaceholderText: 'Leave a comment'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>newestText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on sorting button for newest comments
-</p>
-<label>DEFAULT</label>
-<code class="string">"Newest"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>newestText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on sorting button for newest comments
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Newest"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   newestText: 'New'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>oldestText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on sorting button for oldest comments
-</p>
-<label>DEFAULT</label>
-<code class="string">"Oldest"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>oldestText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on sorting button for oldest comments
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Oldest"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   oldestText: 'Old'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>popularText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on sorting button for most popular comments
-</p>
-<label>DEFAULT</label>
-<code class="string">"Popular"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>popularText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on sorting button for most popular comments
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Popular"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   popularText: 'Most popular'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>attachmentsText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on sorting button for attachments
-</p>
-<label>DEFAULT</label>
-<code class="string">"Attachments"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>attachmentsText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on sorting button for attachments
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Attachments"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   attachmentsText: 'Show attachments'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>sendText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on send button
-</p>
-<label>DEFAULT</label>
-<code class="string">"Send"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>sendText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on send button
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Send"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   sendText: 'Comment'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>replyText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on reply button
-</p>
-<label>DEFAULT</label>
-<code class="string">"Reply"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>replyText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on reply button
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Reply"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   replyText: 'Answer'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>editText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on edit button
-</p>
-<label>DEFAULT</label>
-<code class="string">"Edit"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>editText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on edit button
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Edit"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   editText: 'Modify'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>editedText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on edited timestamp
-</p>
-<label>DEFAULT</label>
-<code class="string">"Edited"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>editedText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on edited timestamp
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Edited"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   editedText: 'Modified'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>youText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed as a name of the user for new comments by default
-</p>
-<label>DEFAULT</label>
-<code class="string">"You"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>youText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed as a name of the user for new comments by default
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"You"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   youText: 'Me'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>saveText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on save button
-</p>
-<label>DEFAULT</label>
-<code class="string">"Save"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>saveText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on save button
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Save"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   saveText: 'Update'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>deleteText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed on delete button
-</p>
-<label>DEFAULT</label>
-<code class="string">"Delete"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>deleteText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed on delete button
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Delete"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   deleteText: 'Remove'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>viewAllRepliesText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed to show all replies when there are more replies than defined in <code>maxRepliesVisible</code> option. Variable <code>__replyCount__</code> is used as a placeholder for the reply count.
-</p>
-<label>DEFAULT</label>
-<code class="string">"View all __replyCount__ replies"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>viewAllRepliesText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed to show all replies when there are more replies than
+                        defined in <code>maxRepliesVisible</code> option. Variable <code>__replyCount__</code> is used
+                        as a placeholder for the reply count.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"View all __replyCount__ replies"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   viewAllRepliesText: 'Show all replies (__replyCount__)'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>hideRepliesText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed to hide replies that weren't visible initially
-</p>
-<label>DEFAULT</label>
-<code class="string">"Hide replies"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>hideRepliesText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed to hide replies that weren't visible initially
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Hide replies"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   hideRepliesText: 'Hide'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>noCommentsText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed if there are no comments to show
-</p>
-<label>DEFAULT</label>
-<code class="string">"No comments"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>noCommentsText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed if there are no comments to show
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"No comments"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   noCommentsText: 'There are no comments'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>noAttachmentsText</code></td>
-<td>
-<p>
-A <code>string</code> that is displayed if there are no attachments to show
-</p>
-<label>DEFAULT</label>
-<code class="string">"No attachments"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>noAttachmentsText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is displayed if there are no attachments to show
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"No attachments"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   noAttachmentsText: 'There are no attachments'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>attachmentDropText</code></td>
-<td>
-<p>
-A <code>string</code> that is used to inform the user where the attachments can be dropped
-</p>
-<label>DEFAULT</label>
-<code class="string">"Drop files here"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>attachmentDropText</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> that is used to inform the user where the attachments can be dropped
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"Drop files here"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   attachmentDropText: 'Drop here'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr><th colspan="2">Colors</th></tr>
+            <tr>
+                <th colspan="2">Colors</th>
+            </tr>
 
-<td><code>highlightColor</code></td>
-<td>
-<p>
-A <code>css</code> value for the highlight color that is used for example to highlight active sorting button and comments by admin
-</p>
-<label>DEFAULT</label>
-<code class="string">#337AB7</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <td><code>highlightColor</code></td>
+            <td>
+                <p>
+                    A <code>css</code> value for the highlight color that is used for example to highlight active
+                    sorting button and comments by admin
+                </p>
+                <label>DEFAULT</label>
+                <code class="string">#337AB7</code>
+                <label class="example">EXAMPLE</label>
+                <pre class="prettyprint linemus">
 $('#comments-container').comments({
   highlightColor: '#23A6F0'
 });
-</pre>
-</td>
-</tr>
+                </pre>
+            </td>
+            </tr>
 
-<tr>
-<td><code>deleteButtonColor</code></td>
-<td>
-<p>
-A <code>css</code> value for the color of the delete button
-</p>
-<label>DEFAULT</label>
-<code class="string">#C9302C</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>deleteButtonColor</code></td>
+                <td>
+                    <p>
+                        A <code>css</code> value for the color of the delete button
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">#C9302C</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   deleteButtonColor: 'red'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr><th colspan="2">Functionalities</th></tr>
+            <tr>
+                <th colspan="2">Functionalities</th>
+            </tr>
 
-<tr>
-<td><code>enableReplying</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether replying is enabled
-</p>
-<label>DEFAULT</label>
-<code>true</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>enableReplying</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether replying is enabled
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>true</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   enableReplying: false
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>enableEditing</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether editing is enabled
-</p>
-<label>DEFAULT</label>
-<code>true</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>enableEditing</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether editing is enabled
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>true</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   enableEditing: false
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>enableUpvoting</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether upvoting is enabled
-</p>
-<label>DEFAULT</label>
-<code>true</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>enableUpvoting</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether upvoting is enabled
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>true</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   enableUpvoting: false
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>enableDeleting</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether deleting is enabled
-</p>
-<label>DEFAULT</label>
-<code>true</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>enableDeleting</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether deleting is enabled
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>true</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   enableDeleting: false
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code style="font-size:0.8rem">enableDeletingCommentWithReplies</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether user is allowed to delete own comment that has replies (replies will be deleted as well)
-</p>
-<label>DEFAULT</label>
-<code>true</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code style="font-size:0.8rem">enableDeletingCommentWithReplies</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether user is allowed to delete own comment that has
+                        replies (replies will be deleted as well)
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>true</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   enableDeletingCommentWithReplies: false
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>enableAttachments</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether attachments are enabled
-</p>
-<label>DEFAULT</label>
-<code>false</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>enableAttachments</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether attachments are enabled
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>false</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   enableAttachments: true
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>enableHashtags</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether hashtags are enabled. Enabling this functionality highlights the hashtags and the <code>hashtagClicked</code> callback function will be executed once the user has clicked a hashtag.
-</p>
-<label>DEFAULT</label>
-<code>false</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>enableHashtags</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether hashtags are enabled. Enabling this functionality
+                        highlights the hashtags and the <code>hashtagClicked</code> callback function will be executed
+                        once the user has clicked a hashtag.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>false</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   enableHashtags: true
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>enablePinging</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether pinging users is enabled. Enabling this functionality highlights the pings and the <code>pingClicked</code> callback function will be executed once the user has clicked a ping.
-<br>
-<br>
-<label>N.B.</label>
-<br>
-<ul>
-<li>The feature is depended on a javascript library called <a href="https://github.com/yuku/textcomplete">jquery-textcomplete</a></li>
-<li>You need to implement the <code>searchUsers</code> callback function which returns a list of all users matching the ping</li>
-<li>ax-comments assumes that the pings are sent to the server in format <code>@&lt;user_id&gt;</code>, for example <code>@145</code></li>
-<li>ax-comments assumes that the pings are returned from the server in format <code>@&lt;user_fullname&gt;</code>, for example <code>@Bryan Connery</code> together with a dictionary of pinged users and respective full names<br/>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>enablePinging</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether pinging users is enabled. Enabling this
+                        functionality highlights the pings and the <code>pingClicked</code> callback function will be
+                        executed once the user has clicked a ping.
+                        <br>
+                        <br>
+                        <label>N.B.</label>
+                        <br>
+                    <ul>
+                        <li>The feature is depended on a javascript library called <a
+                                href="https://github.com/yuku/textcomplete">jquery-textcomplete</a></li>
+                        <li>You need to implement the <code>searchUsers</code> callback function which returns a list of
+                            all users matching the ping
+                        </li>
+                        <li>ax-comments assumes that the pings are sent to the server in format
+                            <code>@&lt;user_id&gt;</code>, for example <code>@145</code></li>
+                        <li>ax-comments assumes that the pings are returned from the server in format <code>@&lt;user_fullname&gt;</code>,
+                            for example <code>@Bryan Connery</code> together with a dictionary of pinged users and
+                            respective full names<br/>
+                            <label class="example">EXAMPLE</label>
+                            <pre class="prettyprint linemus">
 {
   content: "What do you think @Bryan Connery?",
   pings: {254: "Bryan Connery"},
   ...
 }
-</pre>
-</ul>
-</ul>
+                            </pre>
+                    </ul>
+                    </ul>
 
-<i>Switching the ping format is required in order to keep the link between the user model and the ping so that the ping won't get broken in case the user changes her name for example. On the other hand, we expect the server to return the ping in user friendly format so that the API will always return comments in a format that can be displayed without processing.</i>
+                    <i>Switching the ping format is required in order to keep the link between the user model and the
+                        ping so that the ping won't get broken in case the user changes her name for example. On the
+                        other hand, we expect the server to return the ping in user friendly format so that the API will
+                        always return comments in a format that can be displayed without processing.</i>
 
-</p>
-<label>DEFAULT</label>
-<code>false</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>false</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   enablePinging: true
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>enableNavigation</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether navigation is enabled
-</p>
-<label>DEFAULT</label>
-<code>true</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>enableNavigation</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether navigation is enabled
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>true</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   enableNavigation: false
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>postCommentOnEnter</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether comments will be posted by pressing enter
-</p>
-<label>DEFAULT</label>
-<code>false</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>postCommentOnEnter</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether comments will be posted by pressing enter
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>false</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   postCommentOnEnter: true
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>forceResponsive</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether the main navigation elements are presented in a dropdown
-</p>
-<label>DEFAULT</label>
-<code>false</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>forceResponsive</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether the main navigation elements are presented in a
+                        dropdown
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>false</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   forceResponsive: true
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>readOnly</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether any actions are enabled
-</p>
-<label>DEFAULT</label>
-<code>false</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>readOnly</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether any actions are enabled
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>false</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   readOnly: true
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr><th colspan="2">Field mappings</th></tr>
+            <tr>
+                <th colspan="2">Field mappings</th>
+            </tr>
 
-<tr>
-<td><code>fieldMappings</code></td>
-<td>
-<p>
-A <code>dictionary</code> that is used to map the fields between ax-comments and the server. The keys of the dictionary represent field names used within the ax-comments whereas the values represent the field names from your API. In callback functions the data is remapped to match with your API so you can use the comment data as such.
-</p>
-<label>FIELDS</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>fieldMappings</code></td>
+                <td>
+                    <p>
+                        A <code>dictionary</code> that is used to map the fields between ax-comments and the server. The
+                        keys of the dictionary represent field names used within the ax-comments whereas the values
+                        represent the field names from your API. In callback functions the data is remapped to match
+                        with your API so you can use the comment data as such.
+                    </p>
+                    <label>FIELDS</label>
+                    <pre class="prettyprint linemus">
 id                    // Required
 parent                // Required if replying is enabled
 created               // Required
@@ -906,9 +977,9 @@ createdByAdmin        // Optional
 createdByCurrentUser  // Required if editing is enabled
 upvoteCount           // Required if upvoting is enabled
 userHasUpvoted        // Required if upvoting is enabled
-</pre>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 fieldMappings: {
   id: 'id',
   parent: 'parent',
@@ -926,9 +997,9 @@ fieldMappings: {
   upvoteCount: 'upvote_count',
   userHasUpvoted: 'user_has_upvoted'
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   fieldMappings: {
      parent: 'comment_id',
@@ -938,47 +1009,52 @@ $('#comments-container').comments({
      upvoteCount: 'upvotes',
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr><th colspan="2">Callbacks</th></tr>
+            <tr>
+                <th colspan="2">Callbacks</th>
+            </tr>
 
-<tr>
-<td><code>refresh</code></td>
-<td>
-<p>
-A callback <code>function</code> that is called after the comments have been rendered
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>refresh</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is called after the comments have been rendered
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function() {}
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   refresh: function() {
     $('#comments-container').addClass('rendered');
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>getComments</code></td>
-<td>
-<p>
-A callback <code>function</code> that is used to fetch the comments array from the server. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server. The success callback takes the comment array as a parameter.
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>getComments</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is used to fetch the comments array from the server. The
+                        callback provides both <code>success</code> and <code>error</code> callbacks which should be
+                        called based on the result from the server. The success callback takes the comment array as a
+                        parameter.
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(success, error) {
   success([]);
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   getComments: function(success, error) {
     $.ajax({
@@ -991,24 +1067,26 @@ $('#comments-container').comments({
     });
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>searchUsers</code></td>
-<td>
-<p>
-A callback <code>function</code> that is used for searching users when pinging. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server. The success callback takes the user array as a parameter.
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>searchUsers</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is used for searching users when pinging. The callback
+                        provides both <code>success</code> and <code>error</code> callbacks which should be called based
+                        on the result from the server. The success callback takes the user array as a parameter.
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(term, success, error) {
   success([]);
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   searchUsers: function(term, success, error) {
     $.ajax({
@@ -1021,24 +1099,28 @@ $('#comments-container').comments({
     });
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>postComment</code></td>
-<td>
-<p>
-A callback <code>function</code> that is used to create a new comment to the server. The first parameter of the callback is <code>commentJSON</code> that contains the data of the new comment. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server. The success callback takes the created comment as a parameter.
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>postComment</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is used to create a new comment to the server. The first
+                        parameter of the callback is <code>commentJSON</code> that contains the data of the new comment.
+                        The callback provides both <code>success</code> and <code>error</code> callbacks which should be
+                        called based on the result from the server. The success callback takes the created comment as a
+                        parameter.
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(commentJSON, success, error) {
   success(commentJSON);
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   postComment: function(commentJSON, success, error) {
     $.ajax({
@@ -1052,24 +1134,28 @@ $('#comments-container').comments({
     });
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>putComment</code></td>
-<td>
-<p>
-A callback <code>function</code> that is used to update an existing comment to the server. The first parameter of the callback is <code>commentJSON</code> that contains the data of the updated comment. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server. The success callback takes the updated comment as a parameter.
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>putComment</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is used to update an existing comment to the server. The
+                        first parameter of the callback is <code>commentJSON</code> that contains the data of the
+                        updated comment. The callback provides both <code>success</code> and <code>error</code>
+                        callbacks which should be called based on the result from the server. The success callback takes
+                        the updated comment as a parameter.
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(commentJSON, success, error) {
   success(commentJSON);
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   putComment: function(commentJSON, success, error) {
     $.ajax({
@@ -1083,25 +1169,28 @@ $('#comments-container').comments({
     });
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
 
-<tr>
-<td><code>deleteComment</code></td>
-<td>
-<p>
-A callback <code>function</code> that is used to delete a comment from the server. The first parameter of the callback is <code>commentJSON</code> that contains the data of the comment to be deleted. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server.
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>deleteComment</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is used to delete a comment from the server. The first
+                        parameter of the callback is <code>commentJSON</code> that contains the data of the comment to
+                        be deleted. The callback provides both <code>success</code> and <code>error</code> callbacks
+                        which should be called based on the result from the server.
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(commentJSON, success, error) {
   success();
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   deleteComment: function(commentJSON, success, error) {
     $.ajax({
@@ -1112,24 +1201,28 @@ $('#comments-container').comments({
     });
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>upvoteComment</code></td>
-<td>
-<p>
-A callback <code>function</code> that is used to create or delete an upvote. The first parameter of the callback is <code>commentJSON</code> that contains the data of the upvoted comment. The callback provides both <code>success</code> and <code>error</code> callbacks which should be called based on the result from the server. The success callback takes the updated comment as a parameter.
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>upvoteComment</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is used to create or delete an upvote. The first parameter
+                        of the callback is <code>commentJSON</code> that contains the data of the upvoted comment. The
+                        callback provides both <code>success</code> and <code>error</code> callbacks which should be
+                        called based on the result from the server. The success callback takes the updated comment as a
+                        parameter.
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(commentJSON, success, error) {
   success(commentJSON);
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   upvoteComment: function(commentJSON, success, error) {
     var commentURL = '/api/comments/' + commentJSON.id;
@@ -1159,27 +1252,30 @@ $('#comments-container').comments({
     }
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>validateAttachments</code></td>
-<td>
-<p>
-A callback <code>function</code> that is used to validate attachments prior uploading them to server. The first parameter of the callback is <code>attachments</code> array including all the attachments to be uploaded. The callback function takes an array of validated attachments as a parameter.
-<br>
-<br>
-Please see <a href="#attachments">Working with attachments</a> for more information.
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>validateAttachments</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is used to validate attachments prior uploading them to
+                        server. The first parameter of the callback is <code>attachments</code> array including all the
+                        attachments to be uploaded. The callback function takes an array of validated attachments as a
+                        parameter.
+                        <br>
+                        <br>
+                        Please see <a href="#attachments">Working with attachments</a> for more information.
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(attachments, callback) {
   callback(attachments);
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   validateAttachments: function(attachments, callback) {
     var validAttachments = [];
@@ -1196,220 +1292,247 @@ $('#comments-container').comments({
     callback(validAttachments);
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>hashtagClicked</code></td>
-<td>
-<p>
-A callback <code>function</code> that is called after user has clicked a hashtag
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>hashtagClicked</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is called after user has clicked a hashtag
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(hashtag) {}
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   hashtagClicked: function(hashtag) {
     location.hash = 'tags/' + hashtag
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>pingClicked</code></td>
-<td>
-<p>
-A callback <code>function</code> that is called after user has clicked a ping
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>pingClicked</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is called after user has clicked a ping
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(ping) {}
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   pingClicked: function(ping) {
     location.hash = 'users/' + ping
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr><th colspan="2">Formatters</th></tr>
+            <tr>
+                <th colspan="2">Formatters</th>
+            </tr>
 
-<tr>
-<td><code>textFormatter</code></td>
-<td>
-<p>
-A callback <code>function</code> that is called for strings before inserting to DOM. Can be used for localization for instance.
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>textFormatter</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is called for strings before inserting to DOM. Can be used
+                        for localization for instance.
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(text) {
   return text;
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   textFormatter: function(text) {
     return i18n.translate(text);
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>timeFormatter</code></td>
-<td>
-<p>
-A callback <code>function</code> that is called for timestamps before inserting to DOM. Can be used for relative times for instance.
-</p>
-<label>DEFAULT</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>timeFormatter</code></td>
+                <td>
+                    <p>
+                        A callback <code>function</code> that is called for timestamps before inserting to DOM. Can be
+                        used for relative times for instance.
+                    </p>
+                    <label>DEFAULT</label>
+                    <pre class="prettyprint linemus">
 function(time) {
   return new Date(time).toLocaleDateString();
 }
-</pre>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+                    </pre>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   timeFormatter: function(time) {
     return moment(time).fromNow();
   }
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr><th colspan="2">Miscellaneous</th></tr>
+            <tr>
+                <th colspan="2">Miscellaneous</th>
+            </tr>
 
-<tr>
-<td><code>defaultNavigationSortKey</code></td>
-<td>
-<p>
-A <code>string</code> value determing the default sorting. Possible values are <code>newest</code>, <code>oldest</code>, <code>popularity</code> and <code>attachments</code>
-</p>
-<label>DEFAULT</label>
-<code class="string">"newest"</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>defaultNavigationSortKey</code></td>
+                <td>
+                    <p>
+                        A <code>string</code> value determing the default sorting. Possible values are
+                        <code>newest</code>, <code>oldest</code>, <code>popularity</code> and <code>attachments</code>
+                    </p>
+                    <label>DEFAULT</label>
+                    <code class="string">"newest"</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   defaultNavigationSortKey: 'popularity'
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>roundProfilePictures</code></td>
-<td>
-<p>
-A <code>boolean</code> value determing whether profile pictures are rounded
-</p>
-<label>DEFAULT</label>
-<code>false</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>roundProfilePictures</code></td>
+                <td>
+                    <p>
+                        A <code>boolean</code> value determing whether profile pictures are rounded
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>false</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   roundProfilePictures: true
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>textareaRows</code></td>
-<td>
-<p>
-An <code>integer</code> value determing how many rows there are in the commenting fields
-</p>
-<label>DEFAULT</label>
-<code>2</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>textareaRows</code></td>
+                <td>
+                    <p>
+                        An <code>integer</code> value determing how many rows there are in the commenting fields
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>2</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   textareaRows: 1
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>textareaRowsOnFocus</code></td>
-<td>
-<p>
-An <code>integer</code> value determing how many rows there are in the commenting fields on focus
-</p>
-<label>DEFAULT</label>
-<code>2</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>textareaRowsOnFocus</code></td>
+                <td>
+                    <p>
+                        An <code>integer</code> value determing how many rows there are in the commenting fields on
+                        focus
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>2</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   textareaRowsOnFocus: 4
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>textareaMaxRows</code></td>
-<td>
-<p>
-An <code>integer</code> or a <code>boolean</code> value determing the maximum amount of rows in commenting fields as they increase when typing. If set to <code>false</code>, commenting fields will increase infinitely.
-</p>
-<label>DEFAULT</label>
-<code>5</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>textareaMaxRows</code></td>
+                <td>
+                    <p>
+                        An <code>integer</code> or a <code>boolean</code> value determing the maximum amount of rows in
+                        commenting fields as they increase when typing. If set to <code>false</code>, commenting fields
+                        will increase infinitely.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>5</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   textareaMaxRows: false
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-<tr>
-<td><code>maxRepliesVisible</code></td>
-<td>
-<p>
-An <code>integer</code> value determing the maximum amount of replies that are visibile intially under a comment. The hidden replies can be shown by clicking the button with a text set in <code>viewAllRepliesText</code> option.
-</p>
-<label>DEFAULT</label>
-<code>2</code>
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+            <tr>
+                <td><code>maxRepliesVisible</code></td>
+                <td>
+                    <p>
+                        An <code>integer</code> value determing the maximum amount of replies that are visibile intially
+                        under a comment. The hidden replies can be shown by clicking the button with a text set in
+                        <code>viewAllRepliesText</code> option.
+                    </p>
+                    <label>DEFAULT</label>
+                    <code>2</code>
+                    <label class="example">EXAMPLE</label>
+                    <pre class="prettyprint linemus">
 $('#comments-container').comments({
   maxRepliesVisible: 3
 });
-</pre>
-</td>
-</tr>
+                    </pre>
+                </td>
+            </tr>
 
-</table>
+        </table>
 
-<h3>
-<a id="attachments" class="anchor" href="#attachments" aria-hidden="true"><span class="octicon octicon-link"></span></a>Working with attachments</h3>
-<p>Saving attachments is a bit different than saving other fields of the comment as attachments cannot be presented in plain text unlike other fields; the attachments are sent to the API in binary format and the API returns the URL of the saved file instead of the original binary data due to performance reasons.
-<br>
-<br>
-The data should be provided to the API using <a href="https://developer.mozilla.org/en-US/docs/Web/API/FormData" target="_blank">FormData</a> interface. Also please make sure that your API supports content type <code>multipart/form-data</code> to accept the binary files provided with the FormData. Unfortunately it's not possbile to provide hierarchical data structure with the FormData interface and thus the attachments must be sent to the API using a temporary field. The API must then get the files from that temporary field, save them to a file system and provide the URLs of those files in the <code>attachments</code> field.
-<br>
-<br>
-In the example below, the attachments are sent to the API in a field named <code>attachments_to_be_created</code>. The API is expected to process the files from that field and provide the URL of the saved attachments in the <code>attachments</code> field of the response. Please see <a href="#example-data">Example data</a> for expected output.
-</p>
+        <h3>
+            <a id="attachments" class="anchor" href="#attachments" aria-hidden="true">
+                <span class="octicon octicon-link"></span>
+            </a>
+            Working with attachments
+        </h3>
+        <p>Saving attachments is a bit different than saving other fields of the comment as attachments cannot be
+            presented in plain text unlike other fields; the attachments are sent to the API in binary format and the
+            API returns the URL of the saved file instead of the original binary data due to performance reasons.
+            <br>
+            <br>
+            The data should be provided to the API using <a
+                    href="https://developer.mozilla.org/en-US/docs/Web/API/FormData" target="_blank">FormData</a>
+            interface. Also please make sure that your API supports content type <code>multipart/form-data</code> to
+            accept the binary files provided with the FormData. Unfortunately it's not possbile to provide hierarchical
+            data structure with the FormData interface and thus the attachments must be sent to the API using a
+            temporary field. The API must then get the files from that temporary field, save them to a file system and
+            provide the URLs of those files in the <code>attachments</code> field.
+            <br>
+            <br>
+            In the example below, the attachments are sent to the API in a field named
+            <code>attachments_to_be_created</code>. The API is expected to process the files from that field and provide
+            the URL of the saved attachments in the <code>attachments</code> field of the response. Please see <a
+                    href="#example-data">Example data</a> for expected output.
+        </p>
 
 
-<label class="example">EXAMPLE</label>
-<pre class="prettyprint linemus">
+        <label class="example">EXAMPLE</label>
+        <pre class="prettyprint linemus">
 $('#comments-container').comments({
   postComment: function(commentJSON, success, error) {
 
@@ -1443,48 +1566,49 @@ $('#comments-container').comments({
     });
   }
 });
-</pre>
+        </pre>
 
+        <h3>
+            <a id="browser-support" class="anchor" href="#browser-support" aria-hidden="true">
+                <span class="octicon octicon-link"></span>
+            </a>
+            Browser support
+        </h3>
 
+        <p>Basically every modern browser that supports native web components and shadow dom.</p>
+        <p>Includes Firefox, Edge, Chrome and probably Safari</p>
 
-<h3>
-<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h3>
+        <h3>
+            <a id="special-thanks" class="anchor" href="#special-thanks" aria-hidden="true">
+                <span class="octicon octicon-link"></span>
+            </a>
+            Special thanks
+        </h3>
 
-<ul>
-<li><a href="https://github.com/fabiospampinato/cash">Cash</a> &gt;= 8.1.0</li>
-<li><a href="https://github.com/FortAwesome/Font-Awesome">Font Awesome</a> (optional)</li>
-<li><a href="https://github.com/yuku/textcomplete">jquery-textcomplete</a> (optional)</li>
-</ul>
+        <p>&lt;ax-comments&gt; probably wouldn't exist if it wasn't for the outstanding work of the authors of the following packages:</p>
+        <ul>
+            <li><a href="https://github.com/Viima/jquery-comments">jquery-comments</a></li>
+            <li><a href="https://github.com/yuku/textcomplete">textcomplete</a></li>
+            <li><a href="https://github.com/github/markdown-toolbar-element">markdown-toolbar-element</a></li>
+        </ul>
 
-<h3>
-<a id="maintainers" class="anchor" href="#maintainers" aria-hidden="true"><span class="octicon octicon-link"></span></a>Maintainers</h3>
+        <h3>
+            <a id="copyright-and-license" class="anchor" href="#copyright-and-license" aria-hidden="true">
+                <span class="octicon octicon-link"></span>
+            </a>
+            Copyright and license
+        </h3>
 
-<ul>
-<li>
-    <a href="https://www.linkedin.com/in/joonatykkylainen">Joona Tykkyläinen</a>, Viima Solutions Oy
-</li>
-<li>
-    <a href="https://github.com/adanski">adanski</a>
-</li>
-</ul>
+        <p>Copyright 2017-2021 <a href="https://www.viima.com/">Viima Solutions Oy</a>.</p>
+        <p>Copyright 2022 <a href="https://github.com/adanski/">adanski</a>.</p>
+        <p>Released under <a href="https://github.com/adanski/ax-comments/blob/master/LICENSE">the MIT license</a>.</p>
 
-<h3>
-<a id="browser-support" class="anchor" href="#browser-support" aria-hidden="true"><span class="octicon octicon-link"></span></a>Browser support</h3>
+        <footer class="site-footer">
+            <span class="site-footer-owner"><a href="https://github.com/adanski/ax-comments">ax-comments</a> is maintained by <a
+                    href="https://github.com/adanski">adanski</a>.</span>
+        </footer>
 
-<p>All modern browsers which support Web Components (obviously excluding IE)</p>
-
-<h3>
-<a id="copyright-and-license" class="anchor" href="#copyright-and-license" aria-hidden="true"><span class="octicon octicon-link"></span></a>Copyright and license</h3>
-
-<p>Code and documentation copyright 2021 <a href="https://www.viima.com/">Viima Solutions Oy</a>.</p>
-<p>Code and documentation copyright 2021 <a href="https://github.com/adanski/">adanski</a>.</p>
-<p>Code released under <a href="https://github.com/adanski/ax-comments/blob/master/LICENSE">the MIT license</a>.</p>
-
-    <footer class="site-footer">
-    <span class="site-footer-owner"><a href="https://github.com/adanski/ax-comments">ax-comments</a> is maintained by <a href="https://github.com/adanski">adanski</a>.</span>
-    </footer>
-
-</div>
+    </main>
 
 </section>
 </body>
