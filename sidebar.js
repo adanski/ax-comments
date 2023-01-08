@@ -1,20 +1,25 @@
 import $ from 'cash-dom';
 
 // Create sidebar dynamically
-document.querySelectorAll('h3').forEach((el, index) => {
-    const headerAnchor = el.querySelector('a[id]');
-    const id = headerAnchor.id;
-    const listEl = $(`<a href="#${id}">${el.innerText}</a>`);
-    document.querySelector('.sidebar').append(listEl[0]);
+document.querySelectorAll('h3[id]').forEach((header) => {
+    const sidebarLink = $(`<a href="#${header.id}">${header.innerText}</a>`);
+    document.querySelector('.sidebar').append(sidebarLink[0]);
 
-    if (el.nextElementSibling?.tagName.toLowerCase() === 'table') {
-        const table = el.nextElementSibling;
-        table.querySelectorAll('th').forEach((th, index) => {
-            const subId = `${id}-${index + 1}`;
-            th.id = subId;
-
-            const listSubEl = $(`<a href="#${subId}" class="level-2">${th.innerText}</a>`);
-            document.querySelector('.sidebar').append(listSubEl[0]);
+    if (header.nextElementSibling?.classList.contains(`${header.id}-linkable`)) {
+        document.querySelectorAll(`.${header.id}-linkable`).forEach((linkable) => {
+            const sidebarSubLink = $(`<a href="#${linkable.id}" class="level-2">${linkable.innerText}</a>`);
+            document.querySelector('.sidebar').append(sidebarSubLink[0]);
         });
     }
+});
+
+// Animate scrolling into sections
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
 });
