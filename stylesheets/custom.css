@@ -22,23 +22,28 @@
     overflow: hidden;
 }
 
-.content table {
+.content table.article {
     font-size: .9em;
     text-align: left;
 }
 
-.content td {
+.content table.article td.cell {
     vertical-align: top;
 }
 
-.content code {
+/*.content code {
     color: #23A6F0;
     background: none;
-}
+}*/
 
-.content code.string {
+/*.content code.string {
     font-style: italic;
     color: inherit;
+}*/
+
+.content pre code {
+    font-size: 12px;
+    border-radius: 6px;
 }
 
 label {
@@ -51,9 +56,9 @@ label.example {
     margin-top: 1rem;
 }
 
-pre {
+/*pre {
     white-space: pre-wrap;
-}
+}*/
 
 .octicon {
     position: relative;
