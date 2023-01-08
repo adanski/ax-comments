@@ -31,19 +31,18 @@
     vertical-align: top;
 }
 
-/*.content code {
-    color: #23A6F0;
-    background: none;
-}*/
-
-/*.content code.string {
-    font-style: italic;
-    color: inherit;
-}*/
+.content pre {
+    margin: 0;
+}
 
 .content pre code {
     font-size: 12px;
     border-radius: 6px;
+}
+
+.content pre.source-with-footer code {
+    font-size: 12px;
+    border-radius: 6px 6px 0 0;
 }
 
 label {
@@ -56,9 +55,23 @@ label.example {
     margin-top: 1rem;
 }
 
-/*pre {
-    white-space: pre-wrap;
-}*/
+.source-footer {
+    width: 100%;
+    background-color: slategrey;
+    color: white;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 0 0 6px 6px;
+}
+
+.source-footer a {
+    font-weight: 600;
+    color: white;
+}
+
+.source-footer a:hover {
+    text-decoration: none;
+}
 
 .octicon {
     position: relative;
