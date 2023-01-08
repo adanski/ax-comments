@@ -53,23 +53,46 @@
     <script async type="module" src="sidebar.js"></script>
     <script async type="module" src="code-highlighter.js"></script>
     <script type="module">
-        document.querySelector('#toggle-mode').onclick = function () {
-            document.body.classList.toggle('dark-mode');
+        matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
             const lightStyle = document.querySelector('link[title="light"]');
-            lightStyle.disabled = !lightStyle.disabled;
+            lightStyle.disabled = !e.matches;
             const darkStyle = document.querySelector('link[title="dark"]');
-            darkStyle.disabled = !darkStyle.disabled;
-        };
+            darkStyle.disabled = !!e.matches;
+        });
     </script>
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
 </head>
-<body class="dark-mode">
+<body>
 <section class="page-header">
-    <button type="button"
-            id="toggle-mode"
-            class="btn"
-            style="float:right;padding:0.2rem;">
-        🌞/🌙
-    </button>
+    <span style="position: absolute; top: 1.2em; right: 1.2em">
+        <a class="github-button"
+           href="https://github.com/adanski/ax-comments/subscription"
+           data-color-scheme="no-preference: dark_dimmed; light: light; dark: dark_dimmed;"
+           data-icon="octicon-eye"
+           data-size="large"
+           data-show-count="true"
+           aria-label="Watch adanski/ax-comments on GitHub">
+            Watch
+        </a>
+        <a class="github-button"
+           href="https://github.com/adanski/ax-comments"
+           data-color-scheme="no-preference: dark_dimmed; light: light; dark: dark_dimmed;"
+           data-icon="octicon-star"
+           data-size="large"
+           data-show-count="true"
+           aria-label="Star adanski/ax-comments on GitHub">
+            Star
+        </a>
+        <a class="github-button"
+           href="https://github.com/adanski/ax-comments/packages"
+           data-color-scheme="no-preference: dark_dimmed; light: light; dark: dark_dimmed;"
+           data-icon="octicon-package"
+           data-size="large"
+           aria-label="Install this package adanski/ax-comments on GitHub">
+            Install this package
+        </a>
+    </span>
+
     <h1 class="project-name">ax-comments</h1>
     <h2 class="project-tagline">The TypeScript library of choice for implementing commenting in your web app</h2>
     <a href="https://github.com/adanski/ax-comments" class="btn">View on GitHub</a>

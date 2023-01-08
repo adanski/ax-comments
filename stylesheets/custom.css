@@ -1,14 +1,13 @@
-.dark-mode {
-    background-color: #202124;
-    color: #bcc0c3;
-}
-
-/*@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) {
     body {
         background-color: #202124;
         color: #bcc0c3;
     }
-}*/
+
+    .content pre {
+        border: none !important;
+    }
+}
 
 .sidebar {
     float: left;
@@ -45,16 +44,17 @@
 
 .content pre {
     margin: 0;
-}
-
-.content pre code {
     font-size: 12px;
     border-radius: 6px;
     border: slategrey solid 1px;
+    overflow: hidden;
 }
 
-.content pre.source-with-footer code {
-    font-size: 12px;
+.content pre code {
+    overflow: auto;
+}
+
+.content pre.source-with-footer {
     border-radius: 6px 6px 0 0;
     border-bottom: none;
 }
