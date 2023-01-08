@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "nodenext",
+    "noEmitOnError": true,
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "strict": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "importHelpers": false,
+    "outDir": "dist",
+    "sourceMap": true,
+    "inlineSources": true,
+    "declaration": true,
+    "incremental": false
+  }
+}
