@@ -1,5 +1,5 @@
 import {WebComponent} from './web-component.js';
-import {isMobileBrowser, isNil} from './util.js';
+import {isMobileBrowser, isNil, noop} from './util.js';
 import {getDefaultOptions} from './default-options-factory.js';
 import {CommentTransformer} from './comment-transformer.js';
 import {EVENT_HANDLERS_MAP} from './events.js';
@@ -171,7 +171,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             // Render
             this.#render();
         };
-        const error: () => void = () => {};
+        const error: () => void = noop;
 
         this.#options.getComments(success, error);
     }

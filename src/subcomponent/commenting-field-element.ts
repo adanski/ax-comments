@@ -4,7 +4,7 @@ import {Textcomplete} from '@textcomplete/core';
 import {TagFactory} from './tag-factory.js';
 import {TextareaElement} from './textarea-element.js';
 import {CommentModel, CommentsOptions} from '../api.js';
-import {areArraysEqual, isStringEmpty} from '../util.js';
+import {areArraysEqual, isStringEmpty, noop} from '../util.js';
 import {CommentModelEnriched} from '../comments-by-id.js';
 import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../provider.js';
 import {CommentViewModel} from '../comment-view-model.js';
@@ -26,7 +26,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     parentId: string | null = null;
     existingCommentId: string | null = null;
     isMain: boolean = false;
-    onClosed: () => void = () => {};
+    onClosed: () => void = noop;
 
     #textcomplete: Textcomplete | undefined;
 

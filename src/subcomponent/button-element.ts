@@ -7,7 +7,7 @@ import {getHostContainer} from '../html-util.js';
 import {CommentTransformer} from '../comment-transformer.js';
 import {CommentModelEnriched} from '../comments-by-id.js';
 import {ErrorFct, SuccessFct} from '../options/callbacks.js';
-import {isNil} from '../util.js';
+import {isNil, noop} from '../util.js';
 
 @RegisterCustomElement('ax-button', {extends: 'button'})
 export class ButtonElement extends HTMLButtonElement implements WebComponent {
@@ -15,7 +15,7 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
     set inline(value: boolean) {
         if (value) this.classList.add('inline-button');
     }
-    onInitialized: (button: ButtonElement) => void = () => {};
+    onInitialized: (button: ButtonElement) => void = noop;
 
     #initialized: boolean = false;
     #options!: Required<CommentsOptions>;

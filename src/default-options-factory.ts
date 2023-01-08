@@ -1,4 +1,5 @@
 import {CommentsOptions, SortKey, STYLE_SHEET} from './api.js';
+import {noop} from './util.js';
 
 export function getDefaultOptions(): Required<CommentsOptions> {
     return {
@@ -62,9 +63,9 @@ export function getDefaultOptions(): Required<CommentsOptions> {
         }),
         upvoteComment: (comment, success, error) => success(comment),
         validateAttachments: (attachments, accept) => accept(attachments),
-        hashtagClicked: (hashtag) => {},
-        pingClicked: (userId) => {},
-        refresh: () => {},
+        hashtagClicked: noop,
+        pingClicked: noop,
+        refresh: noop,
 
         // Formatters
         timeFormatter: getDefaultTimeFormatter(),

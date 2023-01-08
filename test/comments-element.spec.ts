@@ -774,7 +774,7 @@ describe('CommentsElement', () => {
         const textarea: TextareaElement = editField.querySelector('.textarea')!;
 
         // Edit the comment
-        const modifiedContent = '<br />appended content with new line';
+        const modifiedContent = '<br>appended content with new line';
         textarea.value += modifiedContent;
         textarea.dispatchEvent(new InputEvent('input'));
 

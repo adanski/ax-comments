@@ -4,7 +4,7 @@ import {OptionsProvider, ServiceProvider} from '../provider.js';
 import {Functionalities} from '../options/functionalities.js';
 import {CommentModelEnriched} from '../comments-by-id.js';
 import {Callbacks} from '../options/callbacks.js';
-import sanitize from 'sanitize-html';
+import DOMPurify from 'dompurify';
 
 export class CommentContentFormatter {
 
@@ -20,7 +20,7 @@ export class CommentContentFormatter {
     }
 
     getFormattedCommentContent(commentModel: CommentModelEnriched, replaceNewLines?: boolean): HTMLElement {
-        let html: string = this.escape(sanitize(commentModel.content));
+        let html: string = this.escape(DOMPurify.sanitize(commentModel.content));
         html = this.linkify(html);
         html = this.highlightTags(commentModel, html);
         if (replaceNewLines) {
