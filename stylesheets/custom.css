@@ -56,12 +56,20 @@ pre {
 }
 
 .octicon {
+    position: relative;
     display: inline-block;
-    overflow: visible !important;
-    vertical-align: text-bottom;
-    fill: currentColor;
+    width: 0.8rem;
 }
 
-.octicon-link {
-    background-image: url('link.svg');
+.octicon:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left:0;
+}
+
+.octicon > .octicon-link {
+    width: 100%;
 }
