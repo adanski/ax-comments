@@ -16,9 +16,9 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css"
           disabled="disabled"
           title="light">
-    <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" href="stylesheets/github-light.css" media="screen">
-    <link rel="stylesheet" href="stylesheets/custom.css" media="screen">
+    <link rel="stylesheet" href="style/stylesheet.css" media="screen">
+    <link rel="stylesheet" href="style/github-light.css" media="screen">
+    <link rel="stylesheet" href="style/custom.css" media="screen">
     <script>
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
         (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -42,10 +42,10 @@
         }
     </script>
 
-    <script defer type="module" src="sidebar.js"></script>
-    <script defer type="module" src="code-highlighter.js"></script>
+    <script defer type="module" src="js/sidebar.js"></script>
+    <script defer type="module" src="js/code-highlighter.js"></script>
     <script defer type="module">
-        import {render} from 'github-buttons'
+        import {render} from 'github-buttons';
 
         matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
             const lightStyle = document.querySelector('link[title="light"]');
@@ -56,7 +56,7 @@
 
         document.querySelectorAll('.page-header a.github-button')
             .forEach(anchor => render(anchor, btn => {
-                anchor.parentNode.replaceChild(btn, anchor)
+                anchor.parentNode.replaceChild(btn, anchor);
             }));
     </script>
 </head>
@@ -121,7 +121,7 @@
 
         <h3 id="features">
             <a class="anchor octicon" href="#features" aria-hidden="true">
-                <object class="octicon-link" type="image/svg+xml" data="stylesheets/link.svg"></object>
+                <object class="octicon-link" type="image/svg+xml" data="style/link.svg"></object>
             </a>
             Features
         </h3>
@@ -145,16 +145,16 @@
 
         <h3 id="demo">
             <a class="anchor octicon" href="#demo" aria-hidden="true">
-                <object class="octicon-link" type="image/svg+xml" data="stylesheets/link.svg"></object>
+                <object class="octicon-link" type="image/svg+xml" data="style/link.svg"></object>
             </a>
             Demo
         </h3>
 
-        <p><a href="https://adanski.github.io/ax-comments/demo/">https://adanski.github.io/ax-comments/demo/</a></p>
+        <p><a href="demo/">https://adanski.github.io/ax-comments/demo/</a></p>
 
         <h3 id="quick-start">
             <a  class="anchor octicon" href="#quick-start" aria-hidden="true">
-                <object class="octicon-link" type="image/svg+xml" data="stylesheets/link.svg"></object>
+                <object class="octicon-link" type="image/svg+xml" data="style/link.svg"></object>
             </a>
             Quick start
         </h3>
@@ -207,7 +207,7 @@ attachmentIconURL: '',  // Only if attachments are enabled</code></pre>
 
         <h3 id="example-data">
             <a class="anchor octicon" href="#example-data" aria-hidden="true">
-                <object class="octicon-link" type="image/svg+xml" data="stylesheets/link.svg"></object>
+                <object class="octicon-link" type="image/svg+xml" data="style/link.svg"></object>
             </a>
             Example data
         </h3>
@@ -234,7 +234,7 @@ attachmentIconURL: '',  // Only if attachments are enabled</code></pre>
 
         <h3 id="configuration-options">
             <a class="anchor octicon" href="#configuration-options" aria-hidden="true">
-                <object class="octicon-link" type="image/svg+xml" data="stylesheets/link.svg"></object>
+                <object class="octicon-link" type="image/svg+xml" data="style/link.svg"></object>
             </a>
             Configuration options
         </h3>
@@ -348,7 +348,7 @@ attachmentIconURL: '',  // Only if attachments are enabled</code></pre>
 
         <h3 id="attachments">
             <a class="anchor octicon" href="#attachments" aria-hidden="true">
-                <object class="octicon-link" type="image/svg+xml" data="stylesheets/link.svg"></object>
+                <object class="octicon-link" type="image/svg+xml" data="style/link.svg"></object>
             </a>
             Working with attachments
         </h3>
@@ -409,7 +409,7 @@ attachmentIconURL: '',  // Only if attachments are enabled</code></pre>
 
         <h3 id="browser-support">
             <a class="anchor octicon" href="#browser-support" aria-hidden="true">
-                <object class="octicon-link" type="image/svg+xml" data="stylesheets/link.svg"></object>
+                <object class="octicon-link" type="image/svg+xml" data="style/link.svg"></object>
             </a>
             Browser support
         </h3>
@@ -419,7 +419,7 @@ attachmentIconURL: '',  // Only if attachments are enabled</code></pre>
 
         <h3 id="special-thanks">
             <a class="anchor octicon" href="#special-thanks" aria-hidden="true">
-                <object class="octicon-link" type="image/svg+xml" data="stylesheets/link.svg"></object>
+                <object class="octicon-link" type="image/svg+xml" data="style/link.svg"></object>
             </a>
             Special thanks
         </h3>
@@ -433,7 +433,7 @@ attachmentIconURL: '',  // Only if attachments are enabled</code></pre>
 
         <h3 id="copyright-and-license">
             <a class="anchor octicon" href="#copyright-and-license" aria-hidden="true">
-                <object class="octicon-link" type="image/svg+xml" data="stylesheets/link.svg"></object>
+                <object class="octicon-link" type="image/svg+xml" data="style/link.svg"></object>
             </a>
             Copyright and license
         </h3>
