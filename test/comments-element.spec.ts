@@ -7,7 +7,7 @@ import {isNil} from '../src/util.js';
 import {ButtonElement} from '../src/subcomponent/button-element.js';
 import {CommentingFieldElement} from '../src/subcomponent/commenting-field-element.js';
 import {TextareaElement} from '../src/subcomponent/textarea-element.js';
-import {findParentsBySelector} from '../src/html-util.js';
+import {findParentsBySelector, getElementStyle} from '../src/html-util.js';
 import {CommentModelEnriched} from '../src/comments-by-id.js';
 import {jest, describe, beforeEach, afterEach, it, expect} from '@jest/globals';
 
@@ -667,7 +667,7 @@ describe('CommentsElement', () => {
     }
 
     function isElementHidden(element: HTMLElement): boolean {
-        return element.style.display === 'none' || element.style.visibility === 'hidden';
+        return getElementStyle(element, 'display') === 'none' || getElementStyle(element, 'visibility') === 'hidden';
     }
 
     async function waitForCondition(condition: () => boolean, timeout: number = 300): Promise<void> {

@@ -9,23 +9,35 @@ export function getHostContainer(child: HTMLElement): HTMLElement {
 }
 
 export function showElement(element: HTMLElement): void {
+    if (getElementStyle(element, 'display') === 'none') {
+        showElementUnconditionally(element);
+    }
+}
+
+function showElementUnconditionally(element: HTMLElement): void {
     element.style.display = PREVIOUS_DISPLAY_VALUE.get(element) || 'block';
 }
 
 export function hideElement(element: HTMLElement): void {
+    if (getElementStyle(element, 'display') !== 'none') {
+        hideElementUnconditionally(element);
+    }
+}
+
+function hideElementUnconditionally(element: HTMLElement): void {
     PREVIOUS_DISPLAY_VALUE.set(element, getElementStyle(element, 'display'));
     element.style.display = 'none';
 }
 
 export function toggleElementVisibility(element: HTMLElement): void {
     if (getElementStyle(element, 'display') !== 'none') {
-        hideElement(element);
+        hideElementUnconditionally(element);
     } else {
-        showElement(element);
+        showElementUnconditionally(element);
     }
 }
 
-function getElementStyle(element: HTMLElement, prop: StringProps<CSSStyleDeclaration>): string {
+export function getElementStyle(element: HTMLElement, prop: StringProps<CSSStyleDeclaration>): string {
     return element.style[prop] || getComputedStyle(element)[prop];
 }
 
