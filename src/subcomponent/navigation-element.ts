@@ -128,8 +128,10 @@ export class NavigationElement extends HTMLElement implements WebComponent {
         // Prevent closing immediately
         e.stopPropagation();
 
-        const dropdown: HTMLElement = (e.currentTarget as HTMLElement).querySelector('~ .dropdown')!;
-        toggleElementVisibility(dropdown);
+        const dropdown: HTMLElement = (e.currentTarget as HTMLElement).nextElementSibling as HTMLElement;
+        if (dropdown.classList.contains('dropdown')) {
+            toggleElementVisibility(dropdown);
+        }
     };
 
     #forceResponsive(): void {

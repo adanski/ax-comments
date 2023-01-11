@@ -9,21 +9,27 @@ export function getHostContainer(child: HTMLElement): HTMLElement {
 }
 
 export function showElement(element: HTMLElement): void {
-    element.style.display = PREVIOUS_DISPLAY_VALUE.get(element) ?? 'block';
+    element.style.display = PREVIOUS_DISPLAY_VALUE.get(element) || 'block';
 }
 
 export function hideElement(element: HTMLElement): void {
-    PREVIOUS_DISPLAY_VALUE.set(element, element.style.display);
+    PREVIOUS_DISPLAY_VALUE.set(element, getElementStyle(element, 'display'));
     element.style.display = 'none';
 }
 
 export function toggleElementVisibility(element: HTMLElement): void {
-    if (element.style.display !== 'none') {
+    if (getElementStyle(element, 'display') !== 'none') {
         hideElement(element);
     } else {
         showElement(element);
     }
 }
+
+function getElementStyle(element: HTMLElement, prop: StringProps<CSSStyleDeclaration>): string {
+    return element.style[prop] || getComputedStyle(element)[prop];
+}
+
+type StringProps<T> = ({ [P in keyof T]: T[P] extends string ? P : never })[keyof T];
 
 // Inspired by jQuery
 export function isElementVisible(element: HTMLElement): boolean {

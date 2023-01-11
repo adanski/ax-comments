@@ -37,4 +37,4 @@ interface ElementEvent {
 
 type ElementEventHandlerNames = FunctionProps<ElementEventHandler>[];
 
-export type FunctionProps<T> = ({ [P in keyof T]: T[P] extends Function ? P : never })[keyof T];
+type FunctionProps<T> = ({ [P in keyof T]: T[P] extends Function ? P : never })[keyof T];
