@@ -1,21 +1,21 @@
 const mainStyle: string = `
-.jquery-comments * {
+#comments-container * {
     box-sizing: border-box;
     text-shadow: none;
 }
 
-.jquery-comments a[href]:not(.tag) {
+#comments-container a[href]:not(.tag) {
     color: #2793e6;
     text-decoration: none;
 }
 
-.jquery-comments a[href]:not(.tag):hover {
+#comments-container a[href]:not(.tag):hover {
     text-decoration: underline;
 }
 
-.jquery-comments .textarea,
-.jquery-comments input,
-.jquery-comments button {
+#comments-container .textarea,
+#comments-container input,
+#comments-container button {
     appearance: none;
 
     vertical-align: top;
@@ -27,11 +27,11 @@ const mainStyle: string = `
     background: rgba(0, 0, 0, 0);
 }
 
-.jquery-comments button {
+#comments-container button {
     vertical-align: inherit;
 }
 
-.jquery-comments .tag {
+#comments-container .tag {
     color: inherit;
     font-size: 0.9em;
     line-height: 1.2em;
@@ -47,7 +47,7 @@ const mainStyle: string = `
     text-decoration: none;
 }
 
-.jquery-comments .attachments .tag {
+#comments-container .attachments .tag {
     white-space: normal;
     word-break: break-all;
 
@@ -58,11 +58,11 @@ const mainStyle: string = `
     margin-right: 0.5em;
 }
 
-.jquery-comments .attachments .tag > i:first-child {
+#comments-container .attachments .tag > i:first-child {
     margin-right: 0.4em;
 }
 
-.jquery-comments .attachments .tag .delete {
+#comments-container .attachments .tag .delete {
     display: inline;
     font-size: 14px;
     color: #888;
@@ -73,41 +73,41 @@ const mainStyle: string = `
     right: -4px;
 }
 
-.jquery-comments .attachments .tag:hover .delete {
+#comments-container .attachments .tag:hover .delete {
     color: black;
 }
 
-.jquery-comments .tag:hover {
+#comments-container .tag:hover {
     text-decoration: none;
 }
 
-.jquery-comments .tag:not(.deletable):hover {
+#comments-container .tag:not(.deletable):hover {
     background-color: #d8edf8;
     border-color: #2793e6;
 }
 
-.jquery-comments textarea.textarea:focus::placeholder {
+#comments-container textarea.textarea:focus::placeholder {
     color: transparent;
     resize: vertical;
 }
 
-.jquery-comments textarea.textarea:not(:focus)::placeholder {
+#comments-container textarea.textarea:not(:focus)::placeholder {
     color: #CCC;
     resize: vertical;
 }
 
-.jquery-comments i.fa {
+#comments-container i.fa {
     width: 1em;
     height: 1em;
     background-size: cover;
     text-align: center;
 }
 
-.jquery-comments i.fa.image:before {
+#comments-container i.fa.image:before {
     content: "";
 }
 
-.jquery-comments .spinner {
+#comments-container .spinner {
     font-size: 2em;
     text-align: center;
     padding: 0.5em;
@@ -115,23 +115,23 @@ const mainStyle: string = `
     color: #666;
 }
 
-.jquery-comments .spinner.inline {
+#comments-container .spinner.inline {
     font-size: inherit;
     padding: 0;
     color: #fff;
 }
 
-.jquery-comments .spinner.inline:not(.hidden) ~ * {
+#comments-container .spinner.inline:not(.hidden) ~ * {
     margin-left: 0.4em;
 }
 
-.jquery-comments ul {
+#comments-container ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.jquery-comments .profile-picture {
+#comments-container .profile-picture {
     float: left;
     width: 3.6rem;
     height: 3.6rem;
@@ -142,30 +142,30 @@ const mainStyle: string = `
     background-position: center center;
 }
 
-.jquery-comments i.profile-picture {
+#comments-container i.profile-picture {
     font-size: 3.4em;
     text-align: center;
 }
 
-.jquery-comments .profile-picture.round {
+#comments-container .profile-picture.round {
     border-radius: 50%;
 }
 
-.jquery-comments .commenting-field.main .textarea-wrapper {
+#comments-container .commenting-field.main .textarea-wrapper {
     margin-bottom: 0.75em;
 }
 
-.jquery-comments .commenting-field.main .profile-picture {
+#comments-container .commenting-field.main .profile-picture {
     margin-bottom: 1rem;
 }
 
-.jquery-comments .textarea-wrapper {
+#comments-container .textarea-wrapper {
     overflow: hidden;
     padding-left: 15px;
     position: relative;
 }
 
-.jquery-comments .textarea-wrapper:before {
+#comments-container .textarea-wrapper:before {
     content: " ";
     position: absolute;
     border: 5px solid #D5D5D5;
@@ -178,7 +178,7 @@ const mainStyle: string = `
     border-left-color: rgba(0, 0, 0, 0);
 }
 
-.jquery-comments .textarea-wrapper:after {
+#comments-container .textarea-wrapper:after {
     content: " ";
     position: absolute;
     border: 7px solid #FFF;
@@ -191,7 +191,7 @@ const mainStyle: string = `
     border-left-color: rgba(0, 0, 0, 0);
 }
 
-.jquery-comments .textarea-wrapper .inline-button {
+#comments-container .textarea-wrapper .inline-button {
     cursor: pointer;
     right: 0;
     z-index: 10;
@@ -205,20 +205,20 @@ const mainStyle: string = `
     user-select: none;
 }
 
-.jquery-comments .textarea-wrapper .inline-button:hover {
+#comments-container .textarea-wrapper .inline-button:hover {
     opacity: 1;
 }
 
-.jquery-comments:not(.mobile) .textarea-wrapper.textarea-scrollable .inline-button {
+#comments-container:not(.mobile) .textarea-wrapper.textarea-scrollable .inline-button {
     /* Because of scrollbar */
     margin-right: 15px;
 }
 
-.jquery-comments .textarea-wrapper .inline-button i {
+#comments-container .textarea-wrapper .inline-button i {
     font-size: 1.2em;
 }
 
-.jquery-comments .textarea-wrapper .upload input {
+#comments-container .textarea-wrapper .upload input {
     cursor: pointer;
     position: absolute;
     top: 0;
@@ -230,12 +230,12 @@ const mainStyle: string = `
     opacity: 0;
 }
 
-.jquery-comments .textarea-wrapper .close {
+#comments-container .textarea-wrapper .close {
     width: 1em;
     height: 1em;
 }
 
-.jquery-comments .textarea-wrapper .textarea {
+#comments-container .textarea-wrapper .textarea {
     width: 100%;
     margin: 0;
     outline: 0;
@@ -253,16 +253,16 @@ const mainStyle: string = `
     padding-right: 2em;
 }
 
-.jquery-comments:not(.mobile) .textarea-wrapper.textarea-scrollable .textarea {
+#comments-container:not(.mobile) .textarea-wrapper.textarea-scrollable .textarea {
     /* Because of scrollbar */
     padding-right: calc(2em + 15px);
 }
 
-.jquery-comments .textarea-wrapper .control-row > .attachments {
+#comments-container .textarea-wrapper .control-row > .attachments {
     padding-top: .3em;
 }
 
-.jquery-comments .textarea-wrapper .control-row > button {
+#comments-container .textarea-wrapper .control-row > button {
     float: right;
     line-height: 1.6em;
     margin-top: .4em;
@@ -273,34 +273,34 @@ const mainStyle: string = `
     opacity: .5;
 }
 
-.jquery-comments button .hidden {
+#comments-container button .hidden {
     display: none !important;
 }
 
-.jquery-comments .textarea-wrapper .control-row > button:not(:first-child) {
+#comments-container .textarea-wrapper .control-row > button:not(:first-child) {
     margin-right: .5em;
 }
 
-.jquery-comments .textarea-wrapper .control-row > button.enabled {
+#comments-container .textarea-wrapper .control-row > button.enabled {
     opacity: 1;
     cursor: pointer;
 }
 
-.jquery-comments .textarea-wrapper .control-row > button:not(.enabled) {
+#comments-container .textarea-wrapper .control-row > button:not(.enabled) {
     pointer-events: none;
 }
 
-.jquery-comments .textarea-wrapper .control-row > button.enabled:hover {
+#comments-container .textarea-wrapper .control-row > button.enabled:hover {
     opacity: .9;
 }
 
-.jquery-comments .textarea-wrapper .control-row > button.upload {
+#comments-container .textarea-wrapper .control-row > button.upload {
     position: relative;
     overflow: hidden;
     background-color: #999;
 }
 
-.jquery-comments ul.navigation {
+#comments-container ul.navigation {
     clear: both;
 
     color: #999;
@@ -310,11 +310,11 @@ const mainStyle: string = `
     margin-bottom: 0.5em;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper {
+#comments-container ul.navigation .navigation-wrapper {
     position: relative;
 }
 
-.jquery-comments ul.navigation li {
+#comments-container ul.navigation li {
     display: inline-block;
     position: relative;
     padding: 0 1em;
@@ -324,12 +324,12 @@ const mainStyle: string = `
     user-select: none;
 }
 
-.jquery-comments ul.navigation li.active,
-.jquery-comments ul.navigation li:hover {
+#comments-container ul.navigation li.active,
+#comments-container ul.navigation li:hover {
     color: #000;
 }
 
-.jquery-comments ul.navigation li.active:after {
+#comments-container ul.navigation li.active:after {
     content: " ";
     display: block;
     right: 0;
@@ -340,39 +340,39 @@ const mainStyle: string = `
     left: 0;
 }
 
-.jquery-comments ul.navigation li[data-sort-key="attachments"] {
+#comments-container ul.navigation li[data-sort-key="attachments"] {
     float: right;
 }
 
-.jquery-comments ul.navigation li[data-sort-key="attachments"] i {
+#comments-container ul.navigation li[data-sort-key="attachments"] i {
     margin-right: 0.25em;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper.responsive {
+#comments-container ul.navigation .navigation-wrapper.responsive {
     display: none;
 }
 
 @media screen and (max-width: 600px) {
-    .jquery-comments ul.navigation .navigation-wrapper {
+    #comments-container ul.navigation .navigation-wrapper {
         display: none;
     }
-    .jquery-comments ul.navigation .navigation-wrapper.responsive {
+    #comments-container ul.navigation .navigation-wrapper.responsive {
         display: inline;
     }
 }
 
-.jquery-comments.responsive ul.navigation .navigation-wrapper {
+#comments-container.responsive ul.navigation .navigation-wrapper {
     display: none;
 }
-.jquery-comments.responsive ul.navigation .navigation-wrapper.responsive {
+#comments-container.responsive ul.navigation .navigation-wrapper.responsive {
     display: inline;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper.responsive li.title {
+#comments-container ul.navigation .navigation-wrapper.responsive li.title {
     padding: 0 1.5em;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper.responsive li.title header:after {
+#comments-container ul.navigation .navigation-wrapper.responsive li.title header:after {
     display: inline-block;
     content: "";
     border-left: 0.3em solid rgba(0, 0, 0, 0) !important;
@@ -383,12 +383,12 @@ const mainStyle: string = `
     top: -0.1em;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper.responsive li.title.active header:after,
-.jquery-comments ul.navigation .navigation-wrapper.responsive li.title:hover header:after {
+#comments-container ul.navigation .navigation-wrapper.responsive li.title.active header:after,
+#comments-container ul.navigation .navigation-wrapper.responsive li.title:hover header:after {
     border-top-color: #000;
 }
 
-.jquery-comments ul.dropdown {
+#comments-container ul.dropdown {
     display: none;
     position: absolute;
     background: #FFF;
@@ -399,11 +399,11 @@ const mainStyle: string = `
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
 }
 
-.jquery-comments ul.dropdown.autocomplete {
+#comments-container ul.dropdown.autocomplete {
     margin-top: 0.25em;
 }
 
-.jquery-comments ul.dropdown li {
+#comments-container ul.dropdown li {
     display: block;
     white-space: nowrap;
     clear: both;
@@ -412,83 +412,83 @@ const mainStyle: string = `
     cursor: pointer;
 }
 
-.jquery-comments ul.dropdown li.active {
+#comments-container ul.dropdown li.active {
     background: #EEE;
 }
 
-.jquery-comments ul.dropdown li .result {
+#comments-container ul.dropdown li .result {
     display: block;
     margin: 0;
     text-decoration: none;
     color: inherit;
 }
 
-.jquery-comments ul.dropdown li .profile-picture {
+#comments-container ul.dropdown li .profile-picture {
     float: left;
     width: 2.4em;
     height: 2.4em;
     margin-right: 0.5em;
 }
 
-.jquery-comments ul.dropdown li .hashtag {
+#comments-container ul.dropdown li .hashtag {
     float: left;
     font-size: 2.4em;
     margin-left: 0.1em;
     margin-right: 0.25em;
 }
 
-.jquery-comments ul.dropdown li .info {
+#comments-container ul.dropdown li .info {
     display: inline-block;
 }
 
-.jquery-comments ul.dropdown li .info > span {
+#comments-container ul.dropdown li .info > span {
     display: block;
 }
 
-.jquery-comments ul.dropdown li .info.no-details {
+#comments-container ul.dropdown li .info.no-details {
     line-height: 2.4em;
 }
 
-.jquery-comments ul.dropdown li .name {
+#comments-container ul.dropdown li .name {
     font-weight: bold;
 }
 
-.jquery-comments ul.dropdown li .details {
+#comments-container ul.dropdown li .details {
     color: #999;
     font-size: 0.95em;
     margin-top: 0.1em;
 }
 
-.jquery-comments ul.dropdown .textcomplete-header {
+#comments-container ul.dropdown .textcomplete-header {
     display: none;
 }
 
-.jquery-comments ul.dropdown .textcomplete-footer {
+#comments-container ul.dropdown .textcomplete-footer {
     display: none;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper.responsive ul.dropdown {
+#comments-container ul.navigation .navigation-wrapper.responsive ul.dropdown {
     left: 0;
     width: 100%;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper.responsive ul.dropdown li {
+#comments-container ul.navigation .navigation-wrapper.responsive ul.dropdown li {
     color: #000;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper.responsive ul.dropdown li.active {
+#comments-container ul.navigation .navigation-wrapper.responsive ul.dropdown li.active {
     color: #FFF;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper.responsive ul.dropdown li:hover:not(.active) {
+#comments-container ul.navigation .navigation-wrapper.responsive ul.dropdown li:hover:not(.active) {
     background: #F5F5F5;
 }
 
-.jquery-comments ul.navigation .navigation-wrapper.responsive ul.dropdown li:after {
+#comments-container ul.navigation .navigation-wrapper.responsive ul.dropdown li:after {
     display: none;
 }
 
-.jquery-comments .no-data {
+#comments-container .no-data {
     display: none;
     margin: 1em;
     text-align: center;
@@ -496,38 +496,38 @@ const mainStyle: string = `
     color: #CCC;
 }
 
-.jquery-comments ul.main:empty ~ .no-comments {
+#comments-container ul.main:empty ~ .no-comments {
     display: inherit;
 }
 
-.jquery-comments ul#attachment-list:empty ~ .no-attachments {
+#comments-container ul#attachment-list:empty ~ .no-attachments {
     display: inherit;
 }
 
-.jquery-comments ul.main li.comment {
+#comments-container ul.main li.comment {
     clear: both;
 }
 
-.jquery-comments ul.main li.comment .comment-wrapper,
-.jquery-comments ul.main button.toggle-all,
-.jquery-comments ul.main li.comment .commenting-field > .commenting-field-container {
+#comments-container ul.main li.comment .comment-wrapper,
+#comments-container ul.main button.toggle-all,
+#comments-container ul.main li.comment .commenting-field > .commenting-field-container {
     padding: .5em;
 }
 
-.jquery-comments ul.main li.comment .comment-wrapper {
+#comments-container ul.main li.comment .comment-wrapper {
     border-top: 1px solid #DDD;
     overflow: hidden;
 }
 
-.jquery-comments ul.main > li.comment:first-child > ax-comment-container > .comment-wrapper {
+#comments-container ul.main > li.comment:first-child > ax-comment-container > .comment-wrapper {
     border-top: none;
 }
 
-.jquery-comments ul.main li.comment .comment-wrapper > .profile-picture {
+#comments-container ul.main li.comment .comment-wrapper > .profile-picture {
     margin-right: 1rem;
 }
 
-.jquery-comments ul.main li.comment time {
+#comments-container ul.main li.comment time {
     float: right;
     line-height: 1.4em;
     margin-left: .5em;
@@ -535,31 +535,31 @@ const mainStyle: string = `
     color: #666;
 }
 
-.jquery-comments ul.main li.comment .comment-header {
+#comments-container ul.main li.comment .comment-header {
     line-height: 1.4em;
     word-break: break-word;
 }
 
-.jquery-comments ul.main li.comment .comment-header > * {
+#comments-container ul.main li.comment .comment-header > * {
     margin-right: .5rem;
 }
 
-.jquery-comments ul.main li.comment .comment-header .name {
+#comments-container ul.main li.comment .comment-header .name {
     font-weight: bold;
 }
 
-.jquery-comments ul.main li.comment .comment-header .reply-to {
+#comments-container ul.main li.comment .comment-header .reply-to {
     color: #999;
     font-size: .8em;
     font-weight: normal;
     vertical-align: top;
 }
 
-.jquery-comments ul.main li.comment .comment-header .reply-to i {
+#comments-container ul.main li.comment .comment-header .reply-to i {
     margin-right: .25rem;
 }
 
-.jquery-comments ul.main li.comment .comment-header .new {
+#comments-container ul.main li.comment .comment-header .new {
     background: #2793e6;
     font-size: 0.8em;
     padding: 0.2em 0.6em;
@@ -570,24 +570,24 @@ const mainStyle: string = `
     word-break: normal;
 }
 
-.jquery-comments ul.main li.comment .wrapper {
+#comments-container ul.main li.comment .wrapper {
     line-height: 1.4em;
     overflow: hidden;
 }
 
-.jquery-comments.mobile ul.main li.comment .child-comments li.comment .wrapper {
+#comments-container.mobile ul.main li.comment .child-comments li.comment .wrapper {
     overflow: visible;
 }
 `;
 
 /* Content */
 const contentStyle: string = `
-.jquery-comments ul.main li.comment .wrapper .content {
+#comments-container ul.main li.comment .wrapper .content {
     white-space: pre-line;
     word-break: break-word;
 }
 
-.jquery-comments ul.main li.comment .wrapper .content time.edited {
+#comments-container ul.main li.comment .wrapper .content time.edited {
     float: inherit;
     margin: 0;
     font-size: .9em;
@@ -595,47 +595,47 @@ const contentStyle: string = `
     color: #999;
 }
 
-.jquery-comments ul.main li.comment .wrapper .content time.edited:before {
+#comments-container ul.main li.comment .wrapper .content time.edited:before {
     content: " - ";
 }
 `;
 
 /* Attachments */
 const attachmentsStyle: string = `
-.jquery-comments ul.main li.comment .wrapper .attachments .tags:not(:empty) {
+#comments-container ul.main li.comment .wrapper .attachments .tags:not(:empty) {
     margin-bottom: 0.5em;
 }
 
-.jquery-comments ul.main li.comment .wrapper .attachments .previews .preview {
+#comments-container ul.main li.comment .wrapper .attachments .previews .preview {
     display: inline-block;
     margin-top: .25em;
     margin-right: .25em;
 }
 
-.jquery-comments ul.main li.comment .wrapper .attachments .previews .preview > * {
+#comments-container ul.main li.comment .wrapper .attachments .previews .preview > * {
     max-width: 100%;
     max-height: 200px;
     width: auto;
     height: auto;
 }
 
-.jquery-comments ul.main li.comment .wrapper .attachments .previews .preview > *:focus {
+#comments-container ul.main li.comment .wrapper .attachments .previews .preview > *:focus {
     outline: none;
 }
 `;
 
 /* Actions */
 const actionsStyle: string = `
-.jquery-comments.mobile ul.main li.comment .actions {
+#comments-container.mobile ul.main li.comment .actions {
     font-size: 1em;
 }
 
-.jquery-comments ul.main li.comment .actions > * {
+#comments-container ul.main li.comment .actions > * {
     color: #999;
     font-weight: bold;
 }
 
-.jquery-comments ul.main li.comment .actions .action {
+#comments-container ul.main li.comment .actions .action {
     display: inline-block;
     cursor: pointer;
     margin-left: 1em;
@@ -644,45 +644,45 @@ const actionsStyle: string = `
     font-size: 0.9em;
 }
 
-.jquery-comments ul.main li.comment .actions .action.disabled {
+#comments-container ul.main li.comment .actions .action.disabled {
     opacity: 0.5;
     pointer-events: none;
 }
 
-.jquery-comments ul.main li.comment .actions .action:first-child {
+#comments-container ul.main li.comment .actions .action:first-child {
     margin-left: 0;
 }
 
-.jquery-comments ul.main li.comment .actions .action.upvote {
+#comments-container ul.main li.comment .actions .action.upvote {
     cursor: inherit;
 }
 
-.jquery-comments ul.main li.comment .actions .action.upvote .upvote-count {
+#comments-container ul.main li.comment .actions .action.upvote .upvote-count {
     margin-right: .5em;
 }
 
-.jquery-comments ul.main li.comment .actions .action.upvote .upvote-count:empty {
+#comments-container ul.main li.comment .actions .action.upvote .upvote-count:empty {
     display: none;
 }
 
-.jquery-comments ul.main li.comment .actions .action.upvote i {
+#comments-container ul.main li.comment .actions .action.upvote i {
     cursor: pointer;
 }
 
-.jquery-comments ul.main li.comment .actions .action:not(.upvote):hover,
-.jquery-comments ul.main li.comment .actions .action.upvote:not(.highlight-font) i:hover {
+#comments-container ul.main li.comment .actions .action:not(.upvote):hover,
+#comments-container ul.main li.comment .actions .action.upvote:not(.highlight-font) i:hover {
     color: #666;
 }
 
-.jquery-comments ul#attachment-list li.comment .actions .action:not(.delete) {
+#comments-container ul#attachment-list li.comment .actions .action:not(.delete) {
     display: none;
 }
 
-.jquery-comments ul#attachment-list li.comment .actions .action.delete {
+#comments-container ul#attachment-list li.comment .actions .action.delete {
     margin: 0;
 }
 
-.jquery-comments ul#attachment-list li.comment .actions .separator {
+#comments-container ul#attachment-list li.comment .actions .separator {
     display: none;
 }
 `;
@@ -690,8 +690,8 @@ const actionsStyle: string = `
 /* Child comments */
 const childCommentsStyle: string = `
 /* Margin for second level content */
-.jquery-comments ul.main li.comment .child-comments > *::before,
-.jquery-comments ul.main li.comment ax-commenting-field > *::before {
+#comments-container ul.main li.comment .child-comments > *::before,
+#comments-container ul.main li.comment ax-commenting-field > *::before {
     content: "";
     height: 1px;
     float: left;
@@ -702,31 +702,31 @@ const childCommentsStyle: string = `
     max-width: calc(50px + .5em);
 }
 
-.jquery-comments ul.main li.comment .child-comments .profile-picture,
-.jquery-comments ul.main li.comment .child-comments ~ ax-commenting-field .profile-picture {
+#comments-container ul.main li.comment .child-comments .profile-picture,
+#comments-container ul.main li.comment .child-comments ~ ax-commenting-field .profile-picture {
     width: 2.4rem;
     height: 2.4rem;
 }
 
-.jquery-comments ul.main li.comment .child-comments i.profile-picture,
-.jquery-comments ul.main li.comment .child-comments ~ ax-commenting-field i.profile-picture {
+#comments-container ul.main li.comment .child-comments i.profile-picture,
+#comments-container ul.main li.comment .child-comments ~ ax-commenting-field i.profile-picture {
     font-size: 2.4em;
 }
 
-.jquery-comments ul.main li.comment .child-comments button.toggle-all {
+#comments-container ul.main li.comment .child-comments button.toggle-all {
     padding-top: 0;
 }
 
-.jquery-comments ul.main li.comment .child-comments button.toggle-all span:first-child {
+#comments-container ul.main li.comment .child-comments button.toggle-all span:first-child {
     vertical-align: middle;
 }
 
-.jquery-comments ul.main li.comment .child-comments button.toggle-all span:first-child:hover {
+#comments-container ul.main li.comment .child-comments button.toggle-all span:first-child:hover {
     cursor: pointer;
     text-decoration: underline;
 }
 
-.jquery-comments ul.main li.comment .child-comments button.toggle-all .caret {
+#comments-container ul.main li.comment .child-comments button.toggle-all .caret {
     display: inline-block;
     vertical-align: middle;
     width: 0;
@@ -741,32 +741,32 @@ const childCommentsStyle: string = `
     border-right-color: rgba(0, 0, 0, 0);
 }
 
-.jquery-comments ul.main li.comment .child-comments button.toggle-all .caret.up {
+#comments-container ul.main li.comment .child-comments button.toggle-all .caret.up {
     border-top-color: rgba(0, 0, 0, 0);
     border-bottom-color: inherit;
     margin-top: -.2em;
 }
 
-.jquery-comments ul.main li.comment .child-comments .togglable-reply {
+#comments-container ul.main li.comment .child-comments .togglable-reply {
     display: none;
 }
 
-.jquery-comments ul.main li.comment .child-comments .visible {
+#comments-container ul.main li.comment .child-comments .visible {
     display: inherit;
 }
 
-.jquery-comments ul.main li.comment.hidden {
+#comments-container ul.main li.comment.hidden {
     display: none;
 }
 `;
 
 /* Editing comment */
 const editingCommentStyle: string = `
-.jquery-comments ul.main li.comment.edit > .comment-wrapper > *:not(.commenting-field) {
+#comments-container ul.main li.comment.edit > .comment-wrapper > *:not(.commenting-field) {
     display: none;
 }
 
-.jquery-comments ul.main li.comment.edit > .comment-wrapper .commenting-field {
+#comments-container ul.main li.comment.edit > .comment-wrapper .commenting-field {
     padding-left: 0 !important;
     padding-right: 0 !important;
 }
@@ -774,11 +774,11 @@ const editingCommentStyle: string = `
 
 /* Drag & drop attachments */
 const dragAndDropAttachmentsStyle: string = `
-.jquery-comments.drag-ongoing {
+#comments-container.drag-ongoing {
     overflow-y: hidden !important;
 }
 
-.jquery-comments .droppable-overlay {
+#comments-container .droppable-overlay {
     display: table;
     position: fixed;
     z-index: 99;
@@ -790,33 +790,33 @@ const dragAndDropAttachmentsStyle: string = `
     background: rgba(0,0,0,0.3)
 }
 
-.jquery-comments .droppable-overlay .droppable-container {
+#comments-container .droppable-overlay .droppable-container {
     display: table-cell;
     vertical-align: middle;
     text-align: center;
 }
 
-.jquery-comments .droppable-overlay .droppable-container .droppable {
+#comments-container .droppable-overlay .droppable-container .droppable {
     background: #FFF;
     color: #CCC;
     padding: 6em;
 }
 
-.jquery-comments .droppable-overlay .droppable-container .droppable.drag-over {
+#comments-container .droppable-overlay .droppable-container .droppable.drag-over {
     color: #999;
 }
 
-.jquery-comments .droppable-overlay .droppable-container .droppable i {
+#comments-container .droppable-overlay .droppable-container .droppable i {
     margin-bottom: 5px;
 }
 `;
 
 /* Read-only mode */
 const readOnlyStyle: string = `
-.jquery-comments.read-only .commenting-field {
+#comments-container.read-only .commenting-field {
     display: none;
 }
-.jquery-comments.read-only .actions {
+#comments-container.read-only .actions {
     display: none;
 }
 `;

@@ -4,17 +4,17 @@ export function createDynamicStylesheet(options: CommentsOptions): CSSStyleSheet
     let css: string = '';
 
     // Navigation underline
-    css += `.jquery-comments ul.navigation li.active:after {background: ${options.highlightColor} !important;}`;
+    css += `#comments-container ul.navigation li.active:after {background: ${options.highlightColor} !important;}`;
 
     // Dropdown active element
-    css += `.jquery-comments ul.navigation ul.dropdown li.active {background: ${options.highlightColor} !important;}`;
+    css += `#comments-container ul.navigation ul.dropdown li.active {background: ${options.highlightColor} !important;}`;
 
     // Background highlight
-    css += `.jquery-comments .highlight-background {background: ${options.highlightColor} !important;}`;
+    css += `#comments-container .highlight-background {background: ${options.highlightColor} !important;}`;
 
     // Font highlight
-    css += `.jquery-comments .highlight-font {color: ${options.highlightColor} !important;}`;
-    css += `.jquery-comments .highlight-font-bold {color: ${options.highlightColor} !important;font-weight: bold;}`;
+    css += `#comments-container .highlight-font {color: ${options.highlightColor} !important;}`;
+    css += `#comments-container .highlight-font-bold {color: ${options.highlightColor} !important;font-weight: bold;}`;
 
     return createStyle(css);
 }

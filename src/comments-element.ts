@@ -79,7 +79,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
      */
     #initShadowDom(shadowRoot: ShadowRoot): void {
         shadowRoot.innerHTML = `
-            <section id="comments-container" class="jquery-comments">
+            <section id="comments-container">
             </section>
         `;
         shadowRoot.adoptedStyleSheets = [STYLE_SHEET];
