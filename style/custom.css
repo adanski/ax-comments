@@ -105,3 +105,16 @@ label.example {
 .octicon > .octicon-link {
     width: 100%;
 }
+
+.github-buttons {
+    display: block;
+    position: absolute;
+    top: 1.2em;
+    right: 1.2em
+}
+
+@media screen and (max-width: 64em) {
+    .github-buttons {
+        position: initial;
+    }
+}

@@ -1,6 +1,6 @@
 import {usersArray, commentsArray} from './comments-data.js';
-import {STYLE_SHEET} from './comments-element-esm.js';
-import './comments-element-esm.js';
+import {STYLE_SHEET} from 'comments-element';
+import 'comments-element';
 import style from 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css' assert { type: 'css' };
 
 if (document.adoptedStyleSheets) document.adoptedStyleSheets = [style];
