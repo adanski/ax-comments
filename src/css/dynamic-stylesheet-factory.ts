@@ -12,6 +12,11 @@ export function createDynamicStylesheet(options: CommentsOptions): CSSStyleSheet
     // Background highlight
     css += `#comments-container .highlight-background {background: ${options.highlightColor} !important;}`;
 
+    // Comment highlight
+    if (options.highlightOwnComments) {
+        css += `#comments-container .comment.by-current-user > ax-comment-container > .comment-wrapper {border-left: 2px solid ${options.highlightColor};margin-left: -2px;border-radius: 3px}`;
+    }
+
     // Font highlight
     css += `#comments-container .highlight-font {color: ${options.highlightColor} !important;}`;
     css += `#comments-container .highlight-font-bold {color: ${options.highlightColor} !important;font-weight: bold;}`;

@@ -33,6 +33,7 @@ export class CommentElement extends HTMLLIElement implements WebComponent {
 
     #initElement(): void {
         this.classList.add('comment');
+        this.id = `comment-${this.#commentModel.id}`;
         this.setAttribute('data-id', this.#commentModel.id);
 
         if (this.#commentModel.createdByCurrentUser) {

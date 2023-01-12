@@ -60,6 +60,21 @@ export interface Misc {
      */
     defaultNavigationSortKey?: SortKey;
     /**
+     * A `boolean` value determining whether to highlight own comments
+     *
+     * @default true
+     * @example
+     * ```javascript
+     * const commentsElement = document.createElement('ax-comments');
+     * commentsElement.options = {
+     *     // ...
+     *     highlightOwnComments: false,
+     *     // ...
+     * };
+     * ```
+     */
+    highlightOwnComments?: boolean,
+    /**
      * A `boolean` value determining whether profile pictures are rounded
      *
      * @default false
@@ -105,7 +120,7 @@ export interface Misc {
      */
     textareaRowsOnFocus?: number,
     /**
-     * An `integer` or a `boolean` value determining the maximum amount of replies that are visibile intially under a comment.
+     * An `integer` or a `boolean` value determining the maximum amount of replies that are visible initially under a comment.
      * The hidden replies can be shown by clicking the button with a text set in `viewAllRepliesText` option.
      * If set to false all replies will always be visible.
      *

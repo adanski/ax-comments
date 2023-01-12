@@ -1,16 +1,13 @@
-# This workflow will test the package using node when 'Build' passes
+# This workflow will test the package using node when 'build' passes
 
 name: test
 
 on:
-  workflow_run:
-    workflows: [build]
-    types: [completed]
+  workflow_call:
 
 jobs:
   test:
     runs-on: windows-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     strategy:
       matrix:
         node-version: [16.x, 18.x]
@@ -22,10 +19,3 @@ jobs:
           node-version: ${{matrix.node-version}}
       - run: npm install
       - run: npm test
-
-  fail:
-    runs-on: windows-latest
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
-    steps:
-      - run: echo 'The triggering workflow failed'
-      - run: exit 1

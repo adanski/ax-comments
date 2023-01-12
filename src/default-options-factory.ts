@@ -75,6 +75,7 @@ export function getDefaultOptions(): Required<CommentsOptions> {
         highlightColor: '#2793e6',
         deleteButtonColor: '#c9302c',
 
+        highlightOwnComments: true,
         roundProfilePictures: false,
         textareaRows: 2,
         textareaRowsOnFocus: 3,

@@ -75,10 +75,13 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         );
 
         // Time
+        const commentLinkWithTime: HTMLAnchorElement = document.createElement('a');
+        commentLinkWithTime.href = `#comment-${this.commentModel.id}`;
         const time: HTMLTimeElement = document.createElement('time');
         time.textContent = this.#options.timeFormatter(this.commentModel.createdAt);
         time.setAttribute('title', this.commentModel.createdAt.toLocaleString());
         time.setAttribute('datetime', this.commentModel.createdAt.toISOString());
+        commentLinkWithTime.append(time);
 
         // Comment header element
         const commentHeaderEl: HTMLDivElement = document.createElement('div');
@@ -214,7 +217,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         const actions: HTMLSpanElement = this.#createActions(this.commentModel);
 
         wrapper.append(content, attachments, actions);
-        commentWrapper.append(profilePicture, time, commentHeaderEl, wrapper);
+        commentWrapper.append(profilePicture, commentLinkWithTime, commentHeaderEl, wrapper);
         this.append(commentWrapper);
     }
 
