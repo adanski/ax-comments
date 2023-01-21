@@ -3,11 +3,11 @@ import {CommentsOptions} from '../api.js';
 export function createDynamicStylesheet(options: CommentsOptions): CSSStyleSheet {
     let css: string = '';
 
-    // Navigation underline
-    css += `#comments-container ul.navigation li.active:after {background: ${options.highlightColor} !important;}`;
+    // Navigation active item underline
+    css += `#comments-container .navigation li.active, #comments-container .navigation .dropdown-menu {border-bottom: 2px solid ${options.highlightColor} !important;}`;
 
     // Dropdown active element
-    css += `#comments-container ul.navigation ul.dropdown li.active {background: ${options.highlightColor} !important;}`;
+    css += `#comments-container .navigation .dropdown .active {border: none;background: ${options.highlightColor} !important;}`;
 
     // Background highlight
     css += `#comments-container .highlight-background {background: ${options.highlightColor} !important;}`;

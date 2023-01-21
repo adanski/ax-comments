@@ -22,7 +22,7 @@ export function getDefaultOptions(): Required<CommentsOptions> {
         newestText: 'Newest',
         oldestText: 'Oldest',
         popularText: 'Popular',
-        attachmentsText: 'Attachments',
+        commentsHeaderText: 'Comments (__commentCount__)',
         sendText: 'Send',
         replyText: 'Reply',
         editText: 'Edit',
@@ -34,7 +34,6 @@ export function getDefaultOptions(): Required<CommentsOptions> {
         viewAllRepliesText: 'View all __replyCount__ replies',
         hideRepliesText: 'Hide replies',
         noCommentsText: 'No comments',
-        noAttachmentsText: 'No attachments',
         attachmentDropText: 'Drop files here',
 
         // Functionalities

@@ -123,6 +123,10 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#commentViewModel.subscribe(CommentViewModelEvent.COMMENT_ADDED, commentId => {
             const comment: CommentModelEnriched = this.#commentViewModel.getComment(commentId)!;
             this.#createComment(comment);
+            this.#getNavigation().commentCount += 1;
+        });
+        this.#commentViewModel.subscribe(CommentViewModelEvent.COMMENT_DELETED, commentId => {
+            this.#getNavigation().commentCount -= 1;
         });
     }
 
@@ -169,7 +173,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             this.#dataFetched = true;
 
             // Render
-            this.#render();
+            this.#render(commentModels.length);
         };
         const error: () => void = noop;
 
@@ -197,18 +201,15 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#options.getComments(success, error);
     }
 
-    #render(): void {
+    #render(commentCount: number): void {
         // Prevent re-rendering if data hasn't been fetched
         if (!this.#dataFetched) {
             return;
         }
 
-        // Show active container
-        this.#showActiveContainer();
-
         // Create comments and attachments
         this.#createComments();
-        if (this.#options.enableAttachments) this.#createAttachments();
+        this.#getNavigation().commentCount = commentCount;
 
         this.#subscribeEvents();
 
@@ -219,13 +220,8 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         this.#options.refresh();
     }
 
-    #showActiveContainer(): void {
-        const activeNavigationEl: HTMLElement = this.container.querySelector('.navigation li[data-container-name].active')!;
-        const containerName: string = activeNavigationEl.getAttribute('data-container-name')!;
-        const containerEl: HTMLElement = this.container.querySelector('[data-container="' + containerName + '"]')!;
-        findSiblingsBySelector(containerEl, '[data-container]')
-            .forEach(hideElement);
-        showElement(containerEl);
+    #getNavigation(): NavigationElement {
+        return this.container.querySelector<NavigationElement>('ax-navigation')!
     }
 
     #createComments() {
@@ -264,23 +260,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         });
     }
 
-    #createAttachments(): void {
-        // Create the list element before appending to DOM in order to reach better performance
-        this.container.querySelector('#attachment-list')?.remove();
-        const attachmentList: HTMLUListElement = document.createElement('ul');
-        attachmentList.id = 'attachment-list';
-        attachmentList.classList.add('main');
-
-        const attachments = this.#commentViewModel.getAttachments();
-        this.#commentSorter.sortComments(attachments, SortKey.NEWEST);
-        attachments.forEach(commentModel => {
-            this.#addAttachment(commentModel, attachmentList);
-        });
-
-        // Append list to DOM
-        this.container.querySelector('[data-container="attachments"]')!.prepend(attachmentList);
-    }
-
     #addComment(commentModel: CommentModelEnriched, commentList: HTMLElement = this.container.querySelector('#comment-list')!, prependComment: boolean = false): void {
         const commentEl: CommentElement = CommentElement.create({commentModel: commentModel});
 
@@ -311,44 +290,11 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         }
     }
 
-    #addAttachment(commentModel: CommentModelEnriched, commentList: HTMLElement = this.container.querySelector('#attachment-list')!): void {
-        const commentEl: CommentElement = CommentElement.create({commentModel: commentModel});
-        commentList.prepend(commentEl);
-    }
-
-    #showActiveSort(): void {
-        const activeElements: NodeListOf<HTMLElement> = this.container
-            .querySelectorAll(`.navigation li[data-sort-key="${this.#currentSortKey}"]`);
-
-        // Indicate active sort
-        this.container.querySelectorAll('.navigation li')
-            .forEach(el => el.classList.remove('active'));
-        activeElements.forEach(el => el.classList.add('active'));
-
-        // Update title for dropdown
-        const titleEl: HTMLElement = this.container.querySelector('.navigation .title')!;
-        if (this.#currentSortKey !== SortKey.ATTACHMENTS) {
-            titleEl.classList.add('active');
-            titleEl.querySelector('header')!.innerHTML = activeElements.item(0).innerHTML;
-        } else {
-            const defaultDropdownEl: HTMLElement = this.container.querySelector('.navigation ul.dropdown')!
-                .firstElementChild! as HTMLElement;
-            titleEl.querySelector('header')!.innerHTML = defaultDropdownEl.innerHTML;
-        }
-
-        // Show active container
-        this.#showActiveContainer();
-    }
-
     #createComment(comment: CommentModelEnriched): void {
         // Add comment element
         const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
         const prependComment = this.#currentSortKey === SortKey.NEWEST;
         this.#addComment(comment, commentList, prependComment);
-
-        if (this.#currentSortKey === SortKey.ATTACHMENTS && comment.hasAttachments()) {
-            this.#addAttachment(comment);
-        }
     }
 
     #createHTML(): void {
@@ -392,25 +338,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
         // Attachments
         if (this.#options.enableAttachments) {
-            // Attachments container
-            const attachmentsContainer = document.createElement('div');
-            attachmentsContainer.classList.add('data-container');
-            attachmentsContainer.setAttribute('data-container', 'attachments');
-            this.container.append(attachmentsContainer);
-
-            // "No attachments" placeholder
-            const noAttachments = document.createElement('div');
-            noAttachments.classList.add('no-attachments', 'no-data');
-            noAttachments.textContent = this.#options.noAttachmentsText;
-            const noAttachmentsIcon: HTMLElement = document.createElement('i');
-            noAttachmentsIcon.classList.add('fa', 'fa-paperclip', 'fa-2x');
-            if (this.#options.attachmentIconURL.length) {
-                noAttachmentsIcon.style.backgroundImage = `url("${this.#options.attachmentIconURL}")`;
-                noAttachmentsIcon.classList.add('image');
-            }
-            noAttachments.prepend(document.createElement('br'), noAttachmentsIcon);
-            attachmentsContainer.append(noAttachments);
-
             // Drag & dropping attachments
             const droppableOverlay: HTMLDivElement = document.createElement('div');
             droppableOverlay.classList.add('droppable-overlay');
@@ -439,23 +366,12 @@ export class CommentsElement extends HTMLElement implements WebComponent {
             hideElement(droppableOverlay);
             this.container.append(droppableOverlay);
         }
-
-        this.#showActiveSort();
     }
 
     #navigationSortKeyChanged: (newSortKey: SortKey) => void = newSortKey => {
         this.#currentSortKey = newSortKey;
-        // Create attachments if necessary
-        if (newSortKey === SortKey.ATTACHMENTS) {
-            this.#createAttachments();
-        }
-
         // Sort the comments if necessary
-        if (newSortKey !== SortKey.ATTACHMENTS) {
-            this.#sortAndReArrangeComments(newSortKey);
-        }
-
-        this.#showActiveSort();
+        this.#sortAndReArrangeComments(newSortKey);
     };
 
     #sortAndReArrangeComments(sortKey: SortKey): void {
@@ -472,5 +388,3 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     }
 
 }
-
-export * from './api.js';

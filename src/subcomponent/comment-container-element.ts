@@ -75,13 +75,13 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         );
 
         // Time
-        const commentLinkWithTime: HTMLAnchorElement = document.createElement('a');
-        commentLinkWithTime.href = `#comment-${this.commentModel.id}`;
+        const commentLink: HTMLAnchorElement = document.createElement('a');
+        commentLink.href = `#comment-${this.commentModel.id}`;
+        commentLink.textContent = this.#options.timeFormatter(this.commentModel.createdAt);
         const time: HTMLTimeElement = document.createElement('time');
-        time.textContent = this.#options.timeFormatter(this.commentModel.createdAt);
         time.setAttribute('title', this.commentModel.createdAt.toLocaleString());
         time.setAttribute('datetime', this.commentModel.createdAt.toISOString());
-        commentLinkWithTime.append(time);
+        time.append(commentLink);
 
         // Comment header element
         const commentHeaderEl: HTMLDivElement = document.createElement('div');
@@ -107,9 +107,11 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
             const parent = this.#commentViewModel.getComment(this.commentModel.parentId)!;
             if (parent.parentId) {
                 const replyTo: HTMLSpanElement = document.createElement('span');
-                replyTo.textContent = parent.creatorDisplayName || parent.creatorUserId;
                 replyTo.classList.add('reply-to');
                 replyTo.setAttribute('data-user-id', parent.creatorUserId);
+                const parentLink: HTMLAnchorElement = document.createElement('a');
+                parentLink.textContent = parent.creatorDisplayName || parent.creatorUserId;
+                parentLink.href = `#comment-${parent.id}`;
 
                 // reply icon
                 const replyIcon: HTMLElement = document.createElement('i');
@@ -120,7 +122,8 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
                     replyIcon.classList.add('image');
                 }
 
-                replyTo.prepend(replyIcon);
+                parentLink.prepend(replyIcon);
+                replyTo.append(parentLink);
                 commentHeaderEl.append(replyTo);
             }
         }
@@ -217,7 +220,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         const actions: HTMLSpanElement = this.#createActions(this.commentModel);
 
         wrapper.append(content, attachments, actions);
-        commentWrapper.append(profilePicture, commentLinkWithTime, commentHeaderEl, wrapper);
+        commentWrapper.append(profilePicture, time, commentHeaderEl, wrapper);
         this.append(commentWrapper);
     }
 

@@ -141,6 +141,5 @@ export interface Misc {
 export enum SortKey {
     POPULARITY = 'popularity',
     OLDEST = 'oldest',
-    NEWEST = 'newest',
-    ATTACHMENTS = 'attachments'
+    NEWEST = 'newest'
 }

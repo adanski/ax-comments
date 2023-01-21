@@ -100,7 +100,7 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
         const textContainer: HTMLElement = this.querySelector('span.text') as HTMLElement;
         const caret: HTMLElement = this.querySelector('.caret') as HTMLElement;
 
-        const showExpandingText: () => void = () => {
+        const setExpandingText: () => void = () => {
             let text: string = this.#options.viewAllRepliesText;
             const replyCount: number = this.parentElement!.querySelectorAll('.comment:not(.hidden)').length;
             text = text.replace('__replyCount__', `${replyCount}`);
@@ -112,7 +112,7 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
         if (toggle) {
             // Toggle text
             if (textContainer.textContent === hideRepliesText) {
-                showExpandingText();
+                setExpandingText();
             } else {
                 textContainer.textContent = hideRepliesText;
             }
@@ -122,7 +122,7 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
         } else {
             // Update text if necessary
             if (textContainer.textContent !== hideRepliesText) {
-                showExpandingText();
+                setExpandingText();
             }
         }
     }

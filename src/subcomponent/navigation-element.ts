@@ -2,7 +2,7 @@ import {CommentsOptions, SortKey} from '../api.js';
 import {OptionsProvider} from '../provider.js';
 import {RegisterCustomElement} from '../register-custom-element.js';
 import {WebComponent} from '../web-component.js';
-import {getHostContainer, toggleElementVisibility} from '../html-util.js';
+import {getHostContainer, hideElement, showElement} from '../html-util.js';
 import {noop} from '../util.js';
 
 @RegisterCustomElement('ax-navigation')
@@ -10,6 +10,17 @@ export class NavigationElement extends HTMLElement implements WebComponent {
 
     sortKey: SortKey = SortKey.NEWEST;
     onSortKeyChanged: (sortKey: SortKey) => void = noop;
+
+    get commentCount(): number {
+        return this.#commentCount;
+    }
+    set commentCount(count: number) {
+        this.#commentCount = count;
+        this.#setCommentsHeaderText(count);
+    }
+
+    #commentCount: number = 0;
+    #dropdownShown: boolean = false;
 
     #options!: Required<CommentsOptions>;
 
@@ -22,17 +33,19 @@ export class NavigationElement extends HTMLElement implements WebComponent {
     connectedCallback() {
         this.#initServices();
         this.#initElement();
-        this.querySelectorAll<HTMLElement>('.navigation li[data-sort-key]')
+        this.querySelectorAll<HTMLElement>('.navigation [data-sort-key]')
             .forEach(nav => nav.addEventListener('click', this.#navigationElementClicked));
-        this.querySelector<HTMLElement>('.navigation li.title')!
-            .addEventListener('click', this.#toggleNavigationDropdown);
+        this.querySelector<HTMLElement>('.dropdown-menu')!
+            .addEventListener('click', this.#showMenuDropdown);
+        addEventListener('click', this.#hideMenuDropdown);
     }
 
     disconnectedCallback(): void {
-        this.querySelectorAll<HTMLElement>('.navigation li[data-sort-key]')
+        this.querySelectorAll<HTMLElement>('.navigation [data-sort-key]')
             .forEach(nav => nav.removeEventListener('click', this.#navigationElementClicked));
-        this.querySelector<HTMLElement>('.navigation li.title')!
-            .removeEventListener('click', this.#toggleNavigationDropdown);
+        this.querySelector<HTMLElement>('.dropdown-menu')!
+            .removeEventListener('click', this.#showMenuDropdown);
+        removeEventListener('click', this.#hideMenuDropdown);
     }
 
     #initServices(): void {
@@ -41,11 +54,15 @@ export class NavigationElement extends HTMLElement implements WebComponent {
     }
 
     #initElement(): void {
-        const navigationEl: HTMLUListElement = document.createElement('ul');
-        navigationEl.classList.add('navigation');
-        const navigationWrapper: HTMLDivElement = document.createElement('div');
-        navigationWrapper.classList.add('navigation-wrapper');
-        navigationEl.append(navigationWrapper);
+        const navigation: HTMLDivElement = document.createElement('div');
+        navigation.className = 'navigation';
+        const commentsHeader: HTMLSpanElement = document.createElement('span');
+        commentsHeader.className = 'comments-header';
+        commentsHeader.textContent = this.#options.commentsHeaderText;
+        this.#setCommentsHeaderText(this.#commentCount, commentsHeader);
+
+        const sortingMenu: HTMLMenuElement = document.createElement('menu');
+        sortingMenu.className = 'bar';
 
         // Newest
         const newest: HTMLLIElement = document.createElement('li');
@@ -65,55 +82,38 @@ export class NavigationElement extends HTMLElement implements WebComponent {
         popular.setAttribute('data-sort-key', SortKey.POPULARITY);
         popular.setAttribute('data-container-name', 'comments');
 
-        // Attachments
-        const attachments: HTMLLIElement = document.createElement('li');
-        attachments.textContent = this.#options.attachmentsText;
-        attachments.setAttribute('data-sort-key', SortKey.ATTACHMENTS);
-        attachments.setAttribute('data-container-name', 'attachments');
-
-        // Attachments icon
-        const attachmentsIcon: HTMLElement = document.createElement('i');
-        attachmentsIcon.classList.add('fa', 'fa-paperclip');
-        if (this.#options.attachmentIconURL.length) {
-            attachmentsIcon.style.backgroundImage = `url("${this.#options.attachmentIconURL}")`;
-            attachmentsIcon.classList.add('image');
-        }
-        attachments.prepend(attachmentsIcon);
-
-
-        // Responsive navigation
-        const dropdownNavigationWrapper: HTMLDivElement = document.createElement('div');
-        dropdownNavigationWrapper.classList.add('navigation-wrapper', 'responsive');
-        const dropdownNavigation: HTMLUListElement = document.createElement('ul');
-        dropdownNavigation.classList.add('dropdown');
-        const dropdownTitle: HTMLLIElement = document.createElement('li');
-        dropdownTitle.classList.add('title');
-        const dropdownTitleHeader: HTMLElement = document.createElement('header');
-
-        dropdownTitle.append(dropdownTitleHeader);
-        dropdownNavigationWrapper.append(dropdownTitle);
-        dropdownNavigationWrapper.append(dropdownNavigation);
-        navigationEl.append(dropdownNavigationWrapper);
-
+        // Dropdown
+        const sortingDropdown: HTMLDivElement = document.createElement('div');
+        sortingDropdown.className = 'dropdown-menu';
+        sortingDropdown.textContent = this.sortKey;
+        const sortingDropdownMenu: HTMLMenuElement = document.createElement('menu');
+        sortingDropdownMenu.className = 'dropdown';
 
         // Populate elements
-        navigationWrapper.append(newest, oldest);
-        dropdownNavigation.append(newest.cloneNode(true), oldest.cloneNode(true));
+        sortingMenu.append(newest, oldest);
+        sortingDropdownMenu.append(newest.cloneNode(true), oldest.cloneNode(true));
+        sortingDropdown.append(sortingDropdownMenu);
+
+        hideElement(sortingDropdownMenu);
 
         if (this.#options.enableReplying || this.#options.enableUpvoting) {
-            navigationWrapper.append(popular);
-            dropdownNavigation.append(popular.cloneNode(true));
-        }
-        if (this.#options.enableAttachments) {
-            navigationWrapper.append(attachments);
-            dropdownNavigationWrapper.append(attachments.cloneNode(true));
+            sortingMenu.append(popular);
+            sortingDropdownMenu.append(popular.cloneNode(true));
         }
 
         if (this.#options.forceResponsive) {
             this.#forceResponsive();
         }
 
-        this.append(navigationEl);
+        navigation.append(commentsHeader, sortingMenu, sortingDropdown);
+        this.append(navigation);
+        this.#activateItem(this.sortKey);
+    }
+
+    #setCommentsHeaderText(commentCount: number, commentHeader: HTMLSpanElement = this.querySelector<HTMLElement>('.comments-header')!) {
+        let text: string = this.#options.commentsHeaderText;
+        text = text.replace('__commentCount__', `${commentCount}`);
+        commentHeader.textContent = text;
     }
 
     #navigationElementClicked: (e: MouseEvent) => void = e => {
@@ -121,18 +121,41 @@ export class NavigationElement extends HTMLElement implements WebComponent {
         const sortKey: SortKey = navigationEl.getAttribute('data-sort-key') as SortKey;
 
         this.sortKey = sortKey;
+        this.#activateItem(sortKey);
         this.onSortKeyChanged(sortKey);
     };
 
-    #toggleNavigationDropdown: (e: UIEvent) => void = e => {
-        // Prevent closing immediately
-        e.stopPropagation();
-
-        const dropdown: HTMLElement = (e.currentTarget as HTMLElement).nextElementSibling as HTMLElement;
-        if (dropdown.classList.contains('dropdown')) {
-            toggleElementVisibility(dropdown);
+    #showMenuDropdown: (e: UIEvent) => void = e => {
+        if (!this.#dropdownShown) {
+            e.stopPropagation();
+            showElement(this.querySelector<HTMLElement>('menu.dropdown')!);
+            this.#dropdownShown = true;
         }
     };
+
+    #hideMenuDropdown: (e: UIEvent) => void = e => {
+        if (this.#dropdownShown) {
+            hideElement(this.querySelector<HTMLElement>('menu.dropdown')!);
+            this.#dropdownShown = false;
+        }
+    };
+
+    #activateItem(sortKey: SortKey): void {
+        const toActivate: NodeListOf<HTMLElement> = this.querySelectorAll(`.navigation [data-sort-key="${sortKey}"]`);
+
+        // Indicate active sort
+        this.querySelectorAll('.navigation [data-sort-key]')
+            .forEach(el => {
+                el.classList.remove('active');
+            });
+        toActivate.forEach(el => {
+            el.classList.add('active');
+        });
+
+        // Update text node on first position
+        this.querySelector<HTMLElement>('.navigation .dropdown-menu')!.childNodes[0].textContent =
+            toActivate[0].textContent;
+    }
 
     #forceResponsive(): void {
         getHostContainer(this).classList.add('responsive');

@@ -1,4 +1,5 @@
-import {CommentModel, CommentsElement, PingableUser, SortKey} from '../src/comments-element.js';
+import {CommentsElement} from '../src/comments-element.js';
+import {CommentModel, PingableUser, SortKey} from '../src/api.js';
 import {commentsArray, usersArray} from './data/comments-data.js';
 import {CommentViewModelProvider} from '../src/provider.js';
 import {CommentViewModel} from '../src/comment-view-model.js';
@@ -131,7 +132,6 @@ describe('CommentsElement', () => {
         checkOrder(queryCommentsAll<CommentElement>('#comment-list > li.comment'), ['1', '2', '3']);
         checkOrder(queryCommentsAll<CommentElement>('#comment-list li.comment[data-id="1"] .child-comments > li.comment'), ['6', '7', '8', '9', '10']);
     });
-
 
     it('Should be possible to toggle all replies', () => {
         const toggleAll = queryComments('#comment-list li.comment[data-id="1"]')!.querySelector<HTMLElement>('.child-comments button.toggle-all .text')!;

@@ -64,7 +64,7 @@ commentsElement.options = {
 document.body.append(commentsElement);
 ```
 
-See full example [here](https://github.com/adanski/ax-comments/blob/gh-pages/demo/demo.js).
+See full example [here](https://github.com/adanski/ax-comments/blob/gh-pages/demo/js/demo.js).
 
 If you are not using Font Awesome for icons, you should replace the icons with custom images by overriding following options when initializing the library:
 

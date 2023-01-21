@@ -60,20 +60,21 @@ export interface Labels {
      */
     popularText?: string;
     /**
-     * A `string` that is displayed on sorting button for attachments
+     * A `string` that is displayed in the navigation right before the total count of comments.
+     * Variable `__commentCount__` is used as a placeholder for the reply count.
      *
-     * @default 'Attachments'
+     * @default 'Comments (__commentCount__)'
      * @example
      * ```javascript
      * const commentsElement = document.createElement('ax-comments');
      * commentsElement.options = {
      *     // ...
-     *     attachmentsText: 'Show attachments',
+     *     commentsHeaderText: '__commentCount__ comments',
      *     // ...
      * };
      * ```
      */
-    attachmentsText?: string;
+    commentsHeaderText?: string;
     /**
      * A `string` that is displayed on send button
      *
@@ -240,21 +241,6 @@ export interface Labels {
      * ```
      */
     noCommentsText?: string;
-    /**
-     * A `string` that is displayed if there are no attachments to show
-     *
-     * @default 'No attachments'
-     * @example
-     * ```javascript
-     * const commentsElement = document.createElement('ax-comments');
-     * commentsElement.options = {
-     *     // ...
-     *     noAttachmentsText: 'There are no attachments',
-     *     // ...
-     * };
-     * ```
-     */
-    noAttachmentsText?: string;
     /**
      * A `string` that is used to inform the user where the attachments can be dropped
      *
