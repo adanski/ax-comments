@@ -1,4 +1,4 @@
-import {CommentModel, PingableUser, ReferenceableHashtag} from './models.js';
+import {AttachmentModel, CommentModel, PingableUser, ReferenceableHashtag} from './models.js';
 import {Functionalities} from './functionalities.js';
 
 export interface Callbacks {
@@ -216,7 +216,7 @@ export interface Callbacks {
      * };
      * ```
      */
-    validateAttachments?(attachments: any[], accept: AcceptFct<any[]>): void;
+    validateAttachments?(attachments: AttachmentModel<File>[], accept: AcceptFct<AttachmentModel<File>[]>): void;
     /**
      * A callback `function` that is called after user has clicked a `#` hashtag
      *

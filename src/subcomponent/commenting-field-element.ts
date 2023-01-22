@@ -19,6 +19,7 @@ import {
 import {TextcompleteFactory} from './textcomplete-factory.js';
 import {ErrorFct, SuccessFct} from '../options/callbacks.js';
 import {CommentTransformer} from '../comment-transformer.js';
+import {AttachmentModel} from '../options/models.js';
 
 @RegisterCustomElement('ax-commenting-field')
 export class CommentingFieldElement extends HTMLElement implements WebComponent {
@@ -69,7 +70,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     #initElement(): void {
         let profilePictureURL: string | undefined;
         let userId: string;
-        let attachments: Record<string, any>[];
+        let attachments: AttachmentModel[];
 
         this.classList.add('commenting-field');
         if (this.isMain) {
@@ -315,7 +316,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         const time: Date = new Date();
 
         const commentModel: CommentModel = {
-            id: 'c' + (this.#commentViewModel.getComments().length + 1),   // Temporary id
+            id: 'tempId_' + (this.#commentViewModel.getComments().length + 1),   // Temporary id
             parentId: textarea.parentId || undefined,
             createdAt: time,
             modifiedAt: time,
@@ -333,9 +334,9 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         return commentModel;
     }
 
-    getAttachments(): any[] {
+    getAttachments<F extends File | string>(): AttachmentModel<F>[] {
         const attachmentElements: NodeListOf<HTMLAnchorElement> = this.querySelectorAll('.attachments .attachment');
-        const attachments: any[] = [];
+        const attachments: AttachmentModel<F>[] = [];
         for (let i = 0; i < attachmentElements.length; i++) {
             attachments[i] = (attachmentElements[i] as any).attachmentTagData;
         }
@@ -391,13 +392,14 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             return;
         }
         // Create attachment models
-        let attachments: any[] = [...files].map(file => ({
-            mime_type: file.type,
+        let attachments: AttachmentModel<File>[] = [...files].map(file => ({
+            id: 'tempId_' + file.name,
+            mimeType: file.type,
             file: file
         }));
 
         // Filter out already added attachments
-        const existingAttachments: any[] = this.getAttachments();
+        const existingAttachments: AttachmentModel<File>[] = this.getAttachments();
         attachments = attachments.filter(attachment => {
             let duplicate = false;
 
@@ -422,7 +424,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         uploadButton.setButtonState(false, true);
 
         // Validate attachments
-        this.#options.validateAttachments(attachments, (validatedAttachments: any[]) => {
+        this.#options.validateAttachments(attachments, validatedAttachments => {
 
             if (validatedAttachments.length) {
                 // Create attachment tags

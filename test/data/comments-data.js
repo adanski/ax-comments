@@ -58,8 +58,8 @@ export const commentsArray = [
       attachments: [
          {
             id: '1',
-            'file': 'http://www.w3schools.com/html/mov_bbb.mp4',
-            'mime_type': 'video/mp4',
+            file: 'http://www.w3schools.com/html/mov_bbb.mp4',
+            mimeType: 'video/mp4',
          },
       ],
       creatorUserId: 'todd_brown',
@@ -161,8 +161,8 @@ export const commentsArray = [
       attachments: [
          {
             id: '2',
-            'file': 'https://www.w3schools.com/images/w3schools_green.jpg',
-            'mime_type': 'image/jpeg',
+            file: 'https://www.w3schools.com/images/w3schools_green.jpg',
+            mimeType: 'image/jpeg',
          },
       ],
       pings: {},

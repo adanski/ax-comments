@@ -39,7 +39,7 @@ export function isMobileBrowser(): boolean {
  * Converts non-standard spaces to regular spaces and trims every space/newline/return at both ends
  */
 export function normalizeSpaces(inputText: string): string {
-    return inputText.trim().replace(/[^\S\n]+/g, ' ');
+    return inputText.trim().replace(/([^\S\n ]|[^\P{C}\n ]|[^\P{Z}\n ])/gmu, ' ');
 }
 
 export function debounce<T extends (...args: any[]) => void>(callback: T, wait: number, options: DebounceOptions = DebounceOptions.BOTH_EDGES): T {

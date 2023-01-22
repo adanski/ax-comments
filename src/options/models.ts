@@ -7,7 +7,7 @@ export interface CommentModel {
     modifiedAt?: Date;
     content: string;
     // Required if attachments are enabled
-    attachments?: object[];
+    attachments?: AttachmentModel[];
     // Required if pinging is enabled
     pings?: UserDisplayNamesById;
     creatorUserId: string;
@@ -54,4 +54,10 @@ export interface ReferenceableHashtag {
      * Description, for example recent popularity, eg. 'Used 50 times in the past hour' or 'Followed by 50 users'.
      */
     description?: string;
+}
+
+export interface AttachmentModel<F extends File | string = File | string> {
+    id: string;
+    file: F;
+    mimeType: string;
 }

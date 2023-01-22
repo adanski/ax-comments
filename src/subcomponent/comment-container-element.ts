@@ -14,6 +14,7 @@ import {TextareaElement} from './textarea-element.js';
 import {CommentElement} from './comment-element.js';
 import {SuccessFct} from '../options/callbacks.js';
 import {CommentTransformer} from '../comment-transformer.js';
+import {AttachmentModel} from '../options/models.js';
 
 @RegisterCustomElement('ax-comment-container')
 export class CommentContainerElement extends HTMLElement implements WebComponent {
@@ -169,13 +170,13 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         attachments.append(attachmentPreviews, attachmentTags);
 
         if (this.#options.enableAttachments && this.commentModel.hasAttachments()) {
-            this.commentModel.attachments?.forEach((attachment: any) => {
+            (this.commentModel.attachments as AttachmentModel<string>[])?.forEach(attachment => {
                 let format = undefined;
                 let type = undefined;
 
                 // Type and format
-                if (attachment.mime_type) {
-                    const mimeTypeParts = attachment.mime_type.split('/');
+                if (attachment.mimeType) {
+                    const mimeTypeParts = attachment.mimeType.split('/');
                     if (mimeTypeParts.length === 2) {
                         format = mimeTypeParts[1];
                         type = mimeTypeParts[0];
@@ -202,7 +203,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
                         video.controls = true;
                         const videoSource: HTMLSourceElement = document.createElement('source');
                         videoSource.src = attachment.file;
-                        videoSource.type = attachment.mime_type;
+                        videoSource.type = attachment.mimeType;
                         video.append(videoSource);
                         preview.append(video);
                     }

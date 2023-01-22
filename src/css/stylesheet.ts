@@ -1,4 +1,6 @@
-const mainStyle: string = `
+import {tagNoop} from './tag-noop.js';
+
+const mainStyle: string = tagNoop`
 #comments-container * {
     box-sizing: border-box;
     text-shadow: none;
@@ -568,7 +570,7 @@ const mainStyle: string = `
 `;
 
 /* Content */
-const contentStyle: string = `
+const contentStyle: string = tagNoop`
 #comments-container ul.main li.comment .wrapper .content {
     white-space: pre-line;
     word-break: break-word;
@@ -588,7 +590,7 @@ const contentStyle: string = `
 `;
 
 /* Attachments */
-const attachmentsStyle: string = `
+const attachmentsStyle: string = tagNoop`
 #comments-container ul.main li.comment .wrapper .attachments .tags:not(:empty) {
     margin-bottom: 0.5em;
 }
@@ -612,7 +614,7 @@ const attachmentsStyle: string = `
 `;
 
 /* Actions */
-const actionsStyle: string = `
+const actionsStyle: string = tagNoop`
 #comments-container.mobile ul.main li.comment .actions {
     font-size: 1em;
 }
@@ -663,7 +665,7 @@ const actionsStyle: string = `
 `;
 
 /* Child comments */
-const childCommentsStyle: string = `
+const childCommentsStyle: string = tagNoop`
 /* Margin for second level content */
 #comments-container ul.main li.comment .child-comments > *::before,
 #comments-container ul.main li.comment ax-commenting-field > *::before {
@@ -736,7 +738,7 @@ const childCommentsStyle: string = `
 `;
 
 /* Editing comment */
-const editingCommentStyle: string = `
+const editingCommentStyle: string = tagNoop`
 #comments-container ul.main li.comment.edit > .comment-wrapper > *:not(.commenting-field) {
     display: none;
 }
@@ -748,33 +750,32 @@ const editingCommentStyle: string = `
 `;
 
 /* Drag & drop attachments */
-const dragAndDropAttachmentsStyle: string = `
+const dragAndDropAttachmentsStyle: string = tagNoop`
 #comments-container.drag-ongoing {
     overflow-y: hidden !important;
 }
 
 #comments-container .droppable-overlay {
-    display: table;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: fixed;
     z-index: 99;
-
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.3)
+    background: rgba(0,0,0,0.65)
 }
 
 #comments-container .droppable-overlay .droppable-container {
-    display: table-cell;
     vertical-align: middle;
     text-align: center;
 }
 
 #comments-container .droppable-overlay .droppable-container .droppable {
-    background: #FFF;
     color: #CCC;
-    padding: 6em;
+    padding: 10em;
 }
 
 #comments-container .droppable-overlay .droppable-container .droppable.drag-over {
@@ -787,7 +788,7 @@ const dragAndDropAttachmentsStyle: string = `
 `;
 
 /* Read-only mode */
-const readOnlyStyle: string = `
+const readOnlyStyle: string = tagNoop`
 #comments-container.read-only .commenting-field {
     display: none;
 }

@@ -1,8 +1,7 @@
 import {ButtonElement} from './button-element.js';
 import {CommentsOptions} from '../api.js';
 import {OptionsProvider} from '../provider.js';
-import {CommentingFieldElement} from './commenting-field-element.js';
-import {findParentsBySelector} from '../html-util.js';
+import {AttachmentModel} from '../options/models.js';
 
 export class TagFactory {
 
@@ -30,7 +29,7 @@ export class TagFactory {
         return tagEl;
     }
 
-    createAttachmentTagElement(attachment: Record<string, any>, onDeleted?: () => void): HTMLAnchorElement {
+    createAttachmentTagElement(attachment: AttachmentModel, onDeleted?: () => void): HTMLAnchorElement {
         // Tag element
         const attachmentTag: HTMLAnchorElement = document.createElement('a');
         attachmentTag.classList.add('tag', 'attachment');
@@ -38,11 +37,7 @@ export class TagFactory {
 
         // Bind data
         attachmentTag.setAttribute('id', attachment.id);
-        (attachmentTag as any).attachmentTagData = {
-            id: attachment.id,
-            mime_type: attachment.mime_type,
-            file: attachment.file,
-        };
+        (attachmentTag as any).attachmentTagData = attachment;
 
         // File name
         let fileName: string = '';
@@ -83,7 +78,7 @@ export class TagFactory {
             }, 'delete');
             attachmentTag.append(closeButton);
         } else { // Set href attribute if not deletable
-            attachmentTag.setAttribute('href', attachment.file);
+            attachmentTag.setAttribute('href', attachment.file as string);
         }
 
         return attachmentTag;
