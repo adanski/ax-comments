@@ -117,6 +117,12 @@ const mainStyle: string = tagNoop`
     color: #666;
 }
 
+#comments-container > .spinner {
+    display: block;
+    margin: auto;
+    font-size: 2.5em;
+}
+
 #comments-container .spinner.inline {
     font-size: inherit;
     padding: 0;
