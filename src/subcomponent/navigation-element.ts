@@ -128,14 +128,14 @@ export class NavigationElement extends HTMLElement implements WebComponent {
     #showMenuDropdown: (e: UIEvent) => void = e => {
         if (!this.#dropdownShown) {
             e.stopPropagation();
-            showElement(this.querySelector<HTMLElement>('menu.dropdown')!);
+            showElement(this.querySelector<HTMLElement>('menu.dropdown'));
             this.#dropdownShown = true;
         }
     };
 
     #hideMenuDropdown: (e: UIEvent) => void = e => {
         if (this.#dropdownShown) {
-            hideElement(this.querySelector<HTMLElement>('menu.dropdown')!);
+            hideElement(this.querySelector<HTMLElement>('menu.dropdown'));
             this.#dropdownShown = false;
         }
     };

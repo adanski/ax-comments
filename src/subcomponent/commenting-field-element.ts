@@ -181,8 +181,8 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         const mainTextarea: HTMLElement = e.currentTarget as HTMLElement;
         findSiblingsBySelector(mainTextarea, '.control-row')
             .forEach(showElement)
-        showElement(mainTextarea.parentElement!.querySelector('.close')!);
-        hideElement(mainTextarea.parentElement!.querySelector('.upload.inline-button')!);
+        showElement(mainTextarea.parentElement!.querySelector('.close'));
+        hideElement(mainTextarea.parentElement!.querySelector('.upload.inline-button'));
         mainTextarea.focus();
     };
 
@@ -207,7 +207,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
 
         hideElement(mainControlRow);
         hideElement(closeButton);
-        showElement(mainTextarea.parentElement!.querySelector('.upload.inline-button')!);
+        showElement(mainTextarea.parentElement!.querySelector('.upload.inline-button'));
         mainTextarea.blur();
         this.onClosed();
     };

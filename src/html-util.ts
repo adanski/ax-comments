@@ -8,8 +8,8 @@ export function getHostContainer(child: HTMLElement): HTMLElement {
     return container;
 }
 
-export function showElement(element: HTMLElement): void {
-    if (getElementStyle(element, 'display') === 'none') {
+export function showElement(element: HTMLElement | null): void {
+    if (element && getElementStyle(element, 'display') === 'none') {
         showElementUnconditionally(element);
     }
 }
@@ -18,8 +18,8 @@ function showElementUnconditionally(element: HTMLElement): void {
     element.style.display = PREVIOUS_DISPLAY_VALUE.get(element) || 'block';
 }
 
-export function hideElement(element: HTMLElement): void {
-    if (getElementStyle(element, 'display') !== 'none') {
+export function hideElement(element: HTMLElement | null): void {
+    if (element && getElementStyle(element, 'display') !== 'none') {
         hideElementUnconditionally(element);
     }
 }
@@ -29,8 +29,10 @@ function hideElementUnconditionally(element: HTMLElement): void {
     element.style.display = 'none';
 }
 
-export function toggleElementVisibility(element: HTMLElement): void {
-    if (getElementStyle(element, 'display') !== 'none') {
+export function toggleElementVisibility(element: HTMLElement | null): void {
+    if (!element) {
+        return;
+    } else if (getElementStyle(element, 'display') !== 'none') {
         hideElementUnconditionally(element);
     } else {
         showElementUnconditionally(element);
@@ -44,11 +46,11 @@ export function getElementStyle(element: HTMLElement, prop: StringProps<CSSStyle
 type StringProps<T> = ({ [P in keyof T]: T[P] extends string ? P : never })[keyof T];
 
 // Inspired by jQuery
-export function isElementVisible(element: HTMLElement): boolean {
-    return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
+export function isElementVisible(element: HTMLElement | null): boolean {
+    return !!element && !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
 }
 
-export function isElementHidden(element: HTMLElement): boolean {
+export function isElementHidden(element: HTMLElement | null): boolean {
     return !isElementVisible(element);
 }
 

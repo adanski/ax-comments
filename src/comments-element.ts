@@ -48,7 +48,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
     connectedCallback(): void {
         if (!Object.keys(this.#options).length) {
-            throw new Error('ax-comments options not set, element could not be initialized.');
+            return;
         }
         this.#initServices();
         this.#initElement();
@@ -66,12 +66,14 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     }
 
     set options(options: CommentsOptions) {
+        if (!options) return;
         if (Object.keys(this.#options).length) {
             console.warn(`<ax-comments> Options already set, component can not be reinitialized.`);
             return;
         }
         Object.assign(this.#options, getDefaultOptions(), options);
         Object.freeze(this.#options);
+        this.connectedCallback();
     }
 
     /**
@@ -305,7 +307,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         // Hide control row and close button
         const mainControlRow: HTMLElement = mainCommentingField.querySelector('.control-row')!;
         hideElement(mainControlRow);
-        hideElement(mainCommentingField.querySelector<HTMLElement>('.close')!);
+        hideElement(mainCommentingField.querySelector<HTMLElement>('.close'));
 
         // Navigation bar
         this.container.append(NavigationElement.create({

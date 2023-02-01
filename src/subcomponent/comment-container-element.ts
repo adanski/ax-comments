@@ -77,7 +77,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
         // Time
         const commentLink: HTMLAnchorElement = document.createElement('a');
-        commentLink.href = `#comment-${this.commentModel.id}`;
+        commentLink.href = `${document.location.href}#comment-${this.commentModel.id}`;
         commentLink.textContent = this.#options.timeFormatter(this.commentModel.createdAt);
         const time: HTMLTimeElement = document.createElement('time');
         time.setAttribute('title', this.commentModel.createdAt.toLocaleString());
@@ -112,7 +112,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
                 replyTo.setAttribute('data-user-id', parent.creatorUserId);
                 const parentLink: HTMLAnchorElement = document.createElement('a');
                 parentLink.textContent = parent.creatorDisplayName || parent.creatorUserId;
-                parentLink.href = `#comment-${parent.id}`;
+                parentLink.href = `${document.location.href}#comment-${parent.id}`;
 
                 // reply icon
                 const replyIcon: HTMLElement = document.createElement('i');
