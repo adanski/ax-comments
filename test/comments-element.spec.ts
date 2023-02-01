@@ -67,7 +67,11 @@ describe('CommentsElement', () => {
                     setTimeout(() => {
                         success(comment);
                     }, 8);
-                }
+                },
+                timeFormatter: (timestamp) =>
+                    timestamp.toLocaleDateString(undefined, {dateStyle: 'short'})
+                    + ' '
+                    + timestamp.toLocaleTimeString(undefined, {timeStyle: 'short'})
             }
         });
 
