@@ -33,6 +33,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     #spinnerFactory!: SpinnerFactory;
 
     #currentSortKey!: SortKey;
+    #connected: boolean = false;
     #dataFetched: boolean = false;
 
     constructor() {
@@ -47,15 +48,14 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     }
 
     connectedCallback(): void {
-        if (!Object.keys(this.#options).length) {
-            return;
+        this.#connected = true;
+        if (Object.keys(this.#options).length) {
+            this.#init();
         }
-        this.#initServices();
-        this.#initElement();
-        this.#initEmitterListeners();
     }
 
     disconnectedCallback(): void {
+        this.#connected = false;
         this.#commentViewModel.unsubscribeAll();
         this.#unsubscribeEvents();
         this.container.innerHTML = '';
@@ -73,7 +73,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         }
         Object.assign(this.#options, getDefaultOptions(), options);
         Object.freeze(this.#options);
-        this.connectedCallback();
+        if (this.#connected) this.#init();
     }
 
     /**
@@ -86,6 +86,12 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         `;
         shadowRoot.adoptedStyleSheets = [STYLE_SHEET];
         this.container = shadowRoot.querySelector<HTMLElement>('#comments-container')!;
+    }
+
+    #init(): void {
+        this.#initServices();
+        this.#initElement();
+        this.#initEmitterListeners();
     }
 
     #initServices(): void {

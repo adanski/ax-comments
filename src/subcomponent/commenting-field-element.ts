@@ -197,7 +197,8 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         mainTextarea.clearTextarea();
 
         // Clear attachments
-        this.querySelector('.attachments')!.innerHTML = '';
+        const attachments: HTMLElement | null = this.querySelector('.attachments');
+        if (attachments) attachments.innerHTML = '';
 
         // Toggle save button
         this.#toggleSaveButton();

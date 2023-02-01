@@ -329,7 +329,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
     };
 
     #isAllowedToDelete(commentModel: CommentModelEnriched): boolean {
-        if (!commentModel.createdByCurrentUser || !this.#options.enableDeleting) {
+        if (!this.#options.enableDeleting || !commentModel.createdByCurrentUser && !this.#options.currentUserIsAdmin) {
             return false;
         } else {
             return this.#options.enableDeletingCommentWithReplies || !commentModel.childIds.length;
