@@ -123,7 +123,7 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
     static createUpvoteButton(commentModel: CommentModelEnriched): ButtonElement {
         const upvoteButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         upvoteButton.classList.add('action', 'upvote');
-        upvoteButton.classList.toggle("disabled", !!commentModel.createdByCurrentUser);
+        upvoteButton.classList.toggle("disabled", !!commentModel.createdByCurrentUser || !!commentModel.isDeleted);
         const upvoteCount: HTMLSpanElement = document.createElement('span');
         upvoteCount.classList.add('upvote-count');
 

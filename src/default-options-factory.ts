@@ -58,7 +58,8 @@ export function getDefaultOptions(): Required<CommentsOptions> {
         putComment: (comment, success, error) => success(comment),
         deleteComment: (comment, success, error) => success({
             ...comment,
-            content: 'Deleted'
+            content: 'Deleted',
+            isDeleted: true
         }),
         upvoteComment: (comment, success, error) => success(comment),
         validateAttachments: (attachments, accept) => accept(attachments),

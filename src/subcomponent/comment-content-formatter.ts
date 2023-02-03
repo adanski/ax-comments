@@ -20,13 +20,22 @@ export class CommentContentFormatter {
     }
 
     getFormattedCommentContent(commentModel: CommentModelEnriched, replaceNewLines?: boolean): HTMLElement {
+        const content: HTMLSpanElement = document.createElement('span');
         let html: string = this.escape(DOMPurify.sanitize(commentModel.content));
+        if (commentModel.isDeleted) {
+            const deletedContent: HTMLElement = document.createElement('i');
+            deletedContent.style.color = 'gray';
+            deletedContent.innerHTML = html;
+            content.append(deletedContent);
+            return content;
+        }
+
         html = this.linkify(html);
         html = this.highlightTags(commentModel, html);
         if (replaceNewLines) {
             html = html.replace(/(?:\n)/g, '<br>');
         }
-        const content: HTMLSpanElement = document.createElement('span');
+
         content.innerHTML = html;
         content.querySelectorAll<HTMLElement>('.hashtag')
             .forEach(hashtag => hashtag.onclick = this.#hashtagClicked);
