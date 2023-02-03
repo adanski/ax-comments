@@ -57,7 +57,8 @@ commentsElement.options = {
         setTimeout(() => {
             success({
                 ...comment,
-                content: 'Deleted'
+                content: 'Deleted',
+                attachments: []
             });
         }, 512);
     },
