@@ -250,7 +250,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         }
 
         // Edit
-        if (commentModel.createdByCurrentUser || this.#options.currentUserIsAdmin) {
+        if ((commentModel.createdByCurrentUser || this.#options.currentUserIsAdmin) && !commentModel.isDeleted) {
             const editButton: ButtonElement = ButtonElement.createActionButton('edit', this.#options.editText, {
                 onclick: this.#editButtonClicked
             });
@@ -329,11 +329,9 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
     };
 
     #isAllowedToDelete(commentModel: CommentModelEnriched): boolean {
-        if (!this.#options.enableDeleting || !commentModel.createdByCurrentUser && !this.#options.currentUserIsAdmin) {
-            return false;
-        } else {
-            return this.#options.enableDeletingCommentWithReplies || !commentModel.childIds.length;
-        }
+        return this.#options.enableDeleting
+            && (this.#options.enableDeletingCommentWithReplies || !commentModel.childIds.length)
+            && (this.#options.currentUserIsAdmin || !!commentModel.createdByCurrentUser);
     }
 
     #deleteButtonClicked: (e: MouseEvent) => void = e => {
