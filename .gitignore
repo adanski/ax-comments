@@ -5,6 +5,7 @@ target/
 # Dependencies
 node_modules/
 jspm_packages/
+# Libraries should not commit package-lock
 package-lock.json
 
 # Logs

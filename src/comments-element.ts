@@ -11,7 +11,7 @@ import {CommentSorter} from './comment-sorter.js';
 import {NavigationElement} from './subcomponent/navigation-element.js';
 import {SpinnerFactory} from './subcomponent/spinner-factory.js';
 import {CommentViewModel, CommentViewModelEvent} from './comment-view-model.js';
-import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util.js';
+import {findParentsBySelector, hideElement} from './html-util.js';
 import {STYLE_SHEET} from './css/stylesheet.js';
 import {RegisterCustomElement} from './register-custom-element.js';
 import {createDynamicStylesheet} from './css/dynamic-stylesheet-factory.js';
