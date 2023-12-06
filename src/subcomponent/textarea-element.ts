@@ -3,11 +3,11 @@ import {CommentsOptions} from '../api.js';
 import {CommentViewModelProvider, OptionsProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
-import {RegisterCustomElement} from '../register-custom-element.js';
+import {CustomElement} from '../custom-element.js';
 import {PingableUser, UserDisplayNamesById} from '../options/models.js';
 import {CommentViewModel} from '../comment-view-model.js';
 
-@RegisterCustomElement('ax-textarea', {extends: 'textarea'})
+@CustomElement('ax-textarea', {extends: 'textarea'})
 export class TextareaElement extends HTMLTextAreaElement implements WebComponent {
 
     parentId: string | null = null;

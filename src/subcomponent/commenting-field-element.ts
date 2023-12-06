@@ -9,7 +9,7 @@ import {CommentModelEnriched} from '../comments-by-id.js';
 import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../provider.js';
 import {CommentViewModel} from '../comment-view-model.js';
 import {WebComponent} from '../web-component.js';
-import {RegisterCustomElement} from '../register-custom-element.js';
+import {CustomElement} from '../custom-element.js';
 import {
     findSiblingsBySelector,
     getHostContainer,
@@ -21,7 +21,7 @@ import {ErrorFct, SuccessFct} from '../options/callbacks.js';
 import {CommentTransformer} from '../comment-transformer.js';
 import {AttachmentModel} from '../options/models.js';
 
-@RegisterCustomElement('ax-commenting-field')
+@CustomElement('ax-commenting-field')
 export class CommentingFieldElement extends HTMLElement implements WebComponent {
 
     parentId: string | null = null;

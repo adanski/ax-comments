@@ -1,10 +1,10 @@
 import {isNil} from '../util.js';
-import {RegisterCustomElement} from '../register-custom-element.js';
+import {CustomElement} from '../custom-element.js';
 import {WebComponent} from '../web-component.js';
 import {CommentContainerElement} from './comment-container-element.js';
 import {CommentModelEnriched} from '../comments-by-id.js';
 
-@RegisterCustomElement('ax-comment', {extends: 'li'})
+@CustomElement('ax-comment', {extends: 'li'})
 export class CommentElement extends HTMLLIElement implements WebComponent {
 
     #commentModel!: CommentModelEnriched;

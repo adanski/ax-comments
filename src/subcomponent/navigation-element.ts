@@ -1,11 +1,11 @@
 import {CommentsOptions, SortKey} from '../api.js';
 import {OptionsProvider} from '../provider.js';
-import {RegisterCustomElement} from '../register-custom-element.js';
+import {CustomElement} from '../custom-element.js';
 import {WebComponent} from '../web-component.js';
 import {getHostContainer, hideElement, showElement} from '../html-util.js';
 import {noop} from '../util.js';
 
-@RegisterCustomElement('ax-navigation')
+@CustomElement('ax-navigation')
 export class NavigationElement extends HTMLElement implements WebComponent {
 
     sortKey: SortKey = SortKey.NEWEST;
