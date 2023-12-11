@@ -1,15 +1,13 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
+    "target": "es2022",
+    "module": "nodenext",
     "moduleResolution": "nodenext",
     "noEmitOnError": true,
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["es2022", "dom", "dom.iterable"],
     "strict": true,
     "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
     "importHelpers": false,
     "outDir": "dist",
     "sourceMap": true,

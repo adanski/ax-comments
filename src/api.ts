@@ -9,7 +9,7 @@ import {Misc} from './options/misc.js';
 export interface CommentsOptions extends CurrentUser, Icons, Labels, Functionalities, Callbacks, Formatters, Misc {
 }
 
-export {CommentModel, UserDisplayNamesById, PingableUser, ReferenceableHashtag} from './options/models.js';
+export type {CommentModel, UserDisplayNamesById, PingableUser, ReferenceableHashtag} from './options/models.js';
 
 export {SortKey} from './options/misc.js';
 

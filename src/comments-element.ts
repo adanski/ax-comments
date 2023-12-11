@@ -11,15 +11,15 @@ import {CommentSorter} from './comment-sorter.js';
 import {NavigationElement} from './subcomponent/navigation-element.js';
 import {SpinnerFactory} from './subcomponent/spinner-factory.js';
 import {CommentViewModel, CommentViewModelEvent} from './comment-view-model.js';
-import {findParentsBySelector, findSiblingsBySelector, hideElement, showElement} from './html-util.js';
+import {findParentsBySelector, hideElement} from './html-util.js';
 import {STYLE_SHEET} from './css/stylesheet.js';
-import {RegisterCustomElement} from './register-custom-element.js';
+import {CustomElement, defineCustomElement} from './custom-element.js';
 import {createDynamicStylesheet} from './css/dynamic-stylesheet-factory.js';
 import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
 import {CommentingFieldElement} from './subcomponent/commenting-field-element.js';
 import {CommentElement} from './subcomponent/comment-element.js';
 
-@RegisterCustomElement('ax-comments')
+//@CustomElement('ax-comments')
 export class CommentsElement extends HTMLElement implements WebComponent {
     private container!: HTMLElement;
 
@@ -396,3 +396,5 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     }
 
 }
+
+defineCustomElement(CommentsElement, 'ax-comments');

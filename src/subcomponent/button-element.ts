@@ -1,7 +1,7 @@
 import {CommentModel, CommentsOptions} from '../api.js';
 import {OptionsProvider, ServiceProvider} from '../provider.js';
 import {SpinnerFactory} from './spinner-factory.js';
-import {RegisterCustomElement} from '../register-custom-element.js';
+import {CustomElement, defineCustomElement} from '../custom-element.js';
 import {WebComponent} from '../web-component.js';
 import {getHostContainer} from '../html-util.js';
 import {CommentTransformer} from '../comment-transformer.js';
@@ -9,7 +9,7 @@ import {CommentModelEnriched} from '../comments-by-id.js';
 import {ErrorFct, SuccessFct} from '../options/callbacks.js';
 import {isNil, noop} from '../util.js';
 
-@RegisterCustomElement('ax-button', {extends: 'button'})
+//@CustomElement('ax-button', {extends: 'button'})
 export class ButtonElement extends HTMLButtonElement implements WebComponent {
 
     set inline(value: boolean) {
@@ -199,3 +199,5 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
     }
 
 }
+
+defineCustomElement(ButtonElement, 'ax-button', {extends: 'button'});

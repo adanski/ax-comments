@@ -1,12 +1,12 @@
 import {isNil} from '../util.js';
 import {OptionsProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
-import {RegisterCustomElement} from '../register-custom-element.js';
+import {CustomElement, defineCustomElement} from '../custom-element.js';
 import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
 import {Labels} from '../options/labels.js';
 import {Misc} from '../options/misc.js';
 
-@RegisterCustomElement('ax-toggle-all-button', {extends: 'li'})
+//@CustomElement('ax-toggle-all-button', {extends: 'li'})
 export class ToggleAllButtonElement extends HTMLLIElement implements WebComponent {
 
     #options!: Required<Labels & Misc>;
@@ -127,3 +127,5 @@ export class ToggleAllButtonElement extends HTMLLIElement implements WebComponen
         }
     }
 }
+
+defineCustomElement(ToggleAllButtonElement, 'ax-toggle-all-button', {extends: 'li'});

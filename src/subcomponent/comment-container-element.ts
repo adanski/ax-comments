@@ -4,7 +4,7 @@ import {TagFactory} from './tag-factory.js';
 import {CommentModel, CommentsOptions} from '../api.js';
 import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
-import {RegisterCustomElement} from '../register-custom-element.js';
+import {CustomElement, defineCustomElement} from '../custom-element.js';
 import {findParentsBySelector, getHostContainer} from '../html-util.js';
 import {ButtonElement} from './button-element.js';
 import {CommentViewModel, CommentViewModelEvent, CommentViewModelEventSubscription} from '../comment-view-model.js';
@@ -16,7 +16,7 @@ import {SuccessFct} from '../options/callbacks.js';
 import {CommentTransformer} from '../comment-transformer.js';
 import {AttachmentModel} from '../options/models.js';
 
-@RegisterCustomElement('ax-comment-container')
+//@CustomElement('ax-comment-container')
 export class CommentContainerElement extends HTMLElement implements WebComponent {
 
     commentModel!: CommentModelEnriched;
@@ -374,3 +374,5 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         this.querySelector('.actions')!.replaceWith(actions);
     }
 }
+
+defineCustomElement(CommentContainerElement, 'ax-comment-container');

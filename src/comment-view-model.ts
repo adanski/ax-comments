@@ -1,6 +1,6 @@
 import {CommentsById, CommentModelEnriched, CommentId} from './comments-by-id.js';
-import EventEmitter from 'EventEmitter3';
 import {CommentModel} from './options/models.js';
+import {EventEmitter} from 'eventemitter3';
 
 export class CommentViewModel {
 

@@ -3,11 +3,11 @@ import {CommentsOptions} from '../api.js';
 import {CommentViewModelProvider, OptionsProvider} from '../provider.js';
 import {WebComponent} from '../web-component.js';
 import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
-import {RegisterCustomElement} from '../register-custom-element.js';
+import {CustomElement, defineCustomElement} from '../custom-element.js';
 import {PingableUser, UserDisplayNamesById} from '../options/models.js';
 import {CommentViewModel} from '../comment-view-model.js';
 
-@RegisterCustomElement('ax-textarea', {extends: 'textarea'})
+//@CustomElement('ax-textarea', {extends: 'textarea'})
 export class TextareaElement extends HTMLTextAreaElement implements WebComponent {
 
     parentId: string | null = null;
@@ -79,7 +79,7 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
 
         if (el.valueBeforeChange !== el.value) {
             el.valueBeforeChange = el.value;
-            el.dispatchEvent(new Event('change', {bubbles: true}))
+            el.dispatchEvent(new CustomEvent('change', {bubbles: true}))
         }
     };
 
@@ -111,3 +111,5 @@ export class TextareaElement extends HTMLTextAreaElement implements WebComponent
     }
 
 }
+
+defineCustomElement(TextareaElement, 'ax-textarea', {extends: 'textarea'});

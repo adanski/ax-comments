@@ -1,5 +1,8 @@
+import {describe, beforeEach, afterEach, it, mock, before} from 'node:test';
+import {expect} from './util/expectation.js';
 import {CommentsElement} from '../src/comments-element.js';
-import {CommentModel, PingableUser, SortKey} from '../src/api.js';
+import {CommentModel, PingableUser} from '../src/options/models.js';
+import {SortKey} from '../src/options/misc.js';
 import {commentsArray, usersArray} from './data/comments-data.js';
 import {CommentViewModelProvider} from '../src/provider.js';
 import {CommentViewModel} from '../src/comment-view-model.js';
@@ -10,7 +13,7 @@ import {CommentingFieldElement} from '../src/subcomponent/commenting-field-eleme
 import {TextareaElement} from '../src/subcomponent/textarea-element.js';
 import {findParentsBySelector, getElementStyle} from '../src/html-util.js';
 import {CommentModelEnriched} from '../src/comments-by-id.js';
-import {jest, describe, beforeEach, afterEach, it, expect} from '@jest/globals';
+import {bootstrap} from './env/bootstrap.js';
 
 describe('CommentsElement', () => {
 
@@ -20,8 +23,19 @@ describe('CommentsElement', () => {
     let commentContainer: HTMLElement;
     let commentViewModel: CommentViewModel;
 
+    let createCommentsElement: typeof CommentsElement['create'];
+
+    before(async () => {
+        bootstrap();
+        mock.timers.enable();
+
+        // classes need to be imported and evaluated after the context bootstrapping
+        const {CommentsElement} = await import('../src/comments-element.js');
+        createCommentsElement = CommentsElement.create;
+    });
+
     beforeEach(() => {
-        commentsElement = CommentsElement.create({
+        commentsElement = createCommentsElement({
             options: {
                 profilePictureURL: 'https://viima-app.s3.amazonaws.com/media/public/defaults/user-icon.png',
                 currentUserId: 'current-user',
@@ -223,12 +237,12 @@ describe('CommentsElement', () => {
             expect(sendButton.classList.contains('enabled')).toBe(false);
         });
 
-        it('Should be possible to add a new main level comment', async () => {
+        it('Should be possible to add a new main level comment', () => {
             mainTextarea.value = multilineText;
             mainTextarea.dispatchEvent(new InputEvent('input'));
 
             mainCommentingField.querySelector<HTMLElement>('.send')!.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             // New comment should always be placed first initially
             const commentEl = queryComments<CommentElement>('#comment-list li.comment')!;
@@ -247,7 +261,7 @@ describe('CommentsElement', () => {
             checkOrder(queryCommentsAll('#comment-list > li.comment'), [idOfNewComment, '3', '2', '1']);
         });
 
-        it('Should be possible to add a new main level comment with attachments', async () => {
+        it('Should be possible to add a new main level comment with attachments', () => {
             mainTextarea.value = multilineText;
             mainTextarea.dispatchEvent(new InputEvent('input'));
 
@@ -262,7 +276,7 @@ describe('CommentsElement', () => {
             expect(attachmentTags[1].textContent).toBe('test2.png');
 
             mainCommentingField.querySelector<HTMLElement>('.send')!.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             const commentEl: CommentElement = queryComments('#comment-list li.comment')!;
             checkCommentElementData(commentEl);
@@ -282,7 +296,7 @@ describe('CommentsElement', () => {
             expect(replyField).toBe(null);
         });
 
-        it('Should be possible to reply', async () => {
+        it('Should be possible to reply', () => {
             mostPopularComment.querySelector<HTMLElement>('.reply')!.click();
             const replyField: CommentingFieldElement = mostPopularComment.querySelector('.commenting-field')!;
             expect(isNil(replyField)).toBe(false);
@@ -298,7 +312,7 @@ describe('CommentsElement', () => {
             replyFieldTextarea.dispatchEvent(new InputEvent('input'));
 
             replyField.querySelector<HTMLElement>('.send')!.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             // New reply should always be placed last
             const commentEl: CommentElement = mostPopularComment.querySelector('li.comment:last-of-type')!;
@@ -316,7 +330,7 @@ describe('CommentsElement', () => {
             expect(mostPopularComment.querySelectorAll('li.comment.visible').length).toBe(2);
         });
 
-        it('Should be possible to reply with attachments', async () => {
+        it('Should be possible to reply with attachments', () => {
             mostPopularComment.querySelector<HTMLElement>('.reply')!.click();
             const replyField: CommentingFieldElement = mostPopularComment.querySelector('.commenting-field')!;
 
@@ -336,7 +350,7 @@ describe('CommentsElement', () => {
             expect(attachmentTags[1].textContent).toBe('test2.png');
 
             replyField.querySelector<HTMLElement>('.send')!.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             const commentEl: CommentElement = mostPopularComment.querySelector('li.comment:last-of-type')!;
             checkCommentElementData(commentEl);
@@ -352,7 +366,7 @@ describe('CommentsElement', () => {
             expect(isNil(replyField)).toBe(true);
         });
 
-        it('Should be possible to re-reply', async () => {
+        it('Should be possible to re-reply', () => {
             const childComment: CommentElement = mostPopularComment.querySelector('.child-comments li.comment[data-id="9"]')!;
             childComment.querySelector<HTMLElement>('.reply')!.click();
             const replyField: CommentingFieldElement = mostPopularComment.querySelector('.commenting-field')!;
@@ -369,13 +383,13 @@ describe('CommentsElement', () => {
             replyFieldTextarea.dispatchEvent(new InputEvent('input'));
 
             replyField.querySelector<HTMLElement>('.send')!.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             // New reply should always be placed last
             const commentEl: CommentElement = mostPopularComment.querySelector('li.comment:last-of-type')!;
             const idOfNewComment = commentEl.commentModel.id;
 
-            expect(commentEl.querySelector('.comment-header .reply-to')!.textContent!.indexOf('Bryan Connery')).not.toBe(-1);
+            expect(commentEl.querySelector('.comment-header .reply-to')!.textContent!.indexOf('Bryan Connery')).notToBe(-1);
             expect(commentEl.querySelector('.content')!.textContent).toBe(replyText);
             expect(commentEl.classList.contains('by-current-user')).toBe(true);
             checkCommentElementData(commentEl);
@@ -385,7 +399,7 @@ describe('CommentsElement', () => {
             expect(mostPopularComment.querySelectorAll('li.comment.visible').length).toBe(2);
         });
 
-        it('Should be possible to re-reply to a hidden reply', async () => {
+        it('Should be possible to re-reply to a hidden reply', () => {
             mostPopularComment.querySelector<HTMLElement>('.toggle-all')!.click();
             const childComment = mostPopularComment.querySelector('.child-comments li.comment')!;
             childComment.querySelector<HTMLElement>('.reply')!.click();
@@ -400,13 +414,13 @@ describe('CommentsElement', () => {
             replyFieldTextarea.dispatchEvent(new InputEvent('input'));
 
             replyField.querySelector<HTMLElement>('.send')!.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             // New reply should always be placed last
             const commentEl: CommentElement = mostPopularComment.querySelector('li.comment:last-of-type')!;
             const idOfNewComment = commentEl.commentModel.id;
 
-            expect(commentEl.querySelector('.comment-header .reply-to')!.textContent!.indexOf('Jack Hemsworth')).not.toBe(-1);
+            expect(commentEl.querySelector('.comment-header .reply-to')!.textContent!.indexOf('Jack Hemsworth')).notToBe(-1);
             expect(commentEl.querySelector('.content')!.textContent).toBe(replyText);
             expect(commentEl.classList.contains('by-current-user')).toBe(true);
             checkCommentElementData(commentEl);
@@ -466,11 +480,11 @@ describe('CommentsElement', () => {
             expect(ownComment.outerHTML).toBe(cloneOfOwnComment.outerHTML);
         });
 
-        it('Should be possible to edit a main level comment', async () => {
-            await testEditingComment(ownComment.commentModel.id);
+        it('Should be possible to edit a main level comment', () => {
+            testEditingComment(ownComment.commentModel.id);
         });
 
-        it('Should be possible to edit a reply', async () => {
+        it('Should be possible to edit a reply', () => {
             [...ownComment.querySelectorAll<HTMLElement>('.reply')].at(-1)!.click();
             const replyText = 'This is a re-reply';
 
@@ -481,12 +495,12 @@ describe('CommentsElement', () => {
 
             // Create reply
             replyField.querySelector<HTMLElement>('.send')!.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             // Test editing the reply
             let reply: CommentElement = [...ownComment.querySelector('.child-comments')!.children].at(-1) as CommentElement;
             let replyId = reply.commentModel.id;
-            await testEditingComment(replyId);
+            testEditingComment(replyId);
         });
 
         it(`Should not let the user save the comment if it hasn't changed`, () => {
@@ -525,7 +539,7 @@ describe('CommentsElement', () => {
             expect(deleteButton.classList.contains('enabled')).toBe(true);
         });
 
-        it('Should be possible to delete a main level comment', async () => {
+        it('Should be possible to delete a main level comment', () => {
             const commentId = '3';
             const ownComment: CommentElement = queryComments(`#comment-list li.comment[data-id="${commentId}"]`)!;
 
@@ -534,13 +548,13 @@ describe('CommentsElement', () => {
 
             const deleteButton: ButtonElement = ownComment.querySelector('.delete')!;
             deleteButton.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             // Except the main comment to be deleted
             expect(commentViewModel.getComment(commentId)!.content).toBe('Deleted');
         });
 
-        it('Should be possible to delete a reply', async () => {
+        it('Should be possible to delete a reply', () => {
             const commentId = '10';
             const ownComment: CommentElement = queryComments(`#comment-list li.comment[data-id="${commentId}"]`)!;
             const outermostParent: CommentElement = findParentsBySelector<CommentElement>(ownComment, 'li.comment').last()!;
@@ -552,12 +566,12 @@ describe('CommentsElement', () => {
 
             const deleteButton: ButtonElement = ownComment.querySelector('.delete')!;
             deleteButton.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             expect(commentViewModel.getComment(commentId)!.content).toBe('Deleted');
         });
 
-        it('Should be possible to delete a reply that has re-replies', async () => {
+        it('Should be possible to delete a reply that has re-replies', () => {
             const commentId = '8';
             const ownComment: CommentElement = queryComments(`#comment-list li.comment[data-id="${commentId}"]`)!;
             const outermostParent: CommentElement = findParentsBySelector<CommentElement>(ownComment, 'li.comment').last()!;
@@ -569,7 +583,7 @@ describe('CommentsElement', () => {
 
             const deleteButton: HTMLElement = ownComment.querySelector('.delete')!;
             deleteButton.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             // Except the main reply to be deleted
             expect(commentViewModel.getComment(commentId)!.content).toBe('Deleted');
@@ -579,7 +593,7 @@ describe('CommentsElement', () => {
             expect(commentViewModel.getChildComments(outermostParent.commentModel.id).length).toBe(5);
         });
 
-        it('Should be possible to delete attachments', async () => {
+        it('Should be possible to delete attachments', () => {
             const ownCommentModel = commentViewModel.getComment('10')!;
             const ownComment: CommentElement = queryComments('#comment-list li.comment[data-id="10"]')!;
 
@@ -599,7 +613,7 @@ describe('CommentsElement', () => {
             const saveButton: HTMLElement = ownComment.querySelector('.save')!;
             expect(saveButton.classList.contains('enabled')).toBe(true);
             saveButton.click();
-            jest.runAllTimers();
+            mock.timers.runAll();
 
             expect(ownCommentModel.attachments!.length).toBe(0);
             expect(ownComment.querySelector('.attachments')!.querySelectorAll('.attachment').length).toBe(0);
@@ -658,7 +672,6 @@ describe('CommentsElement', () => {
     });
 
     afterEach(() => {
-        jest.clearAllTimers();
         commentsElement.remove();
     });
 
@@ -699,8 +712,8 @@ describe('CommentsElement', () => {
         const commentModel = commentEl.commentModel;
 
         // Check basic fields
-        expect(profilePictureURL).toBe(commentModel.creatorProfilePictureURL);
-        expect(displayName).toBe(commentModel.creatorDisplayName);
+        expect(profilePictureURL).toBe(commentModel.creatorProfilePictureURL!!);
+        expect(displayName).toBe(commentModel.creatorDisplayName!!);
 
         // Check content
         const content = getEscapedTextContentFromCommentElement(commentEl);
@@ -726,7 +739,7 @@ describe('CommentsElement', () => {
                 attachmentName = urlParts[urlParts.length - 1];
             }
 
-            const tagText = commentEl.querySelectorAll('.attachment')[index].textContent;
+            const tagText = commentEl.querySelectorAll('.attachment')[index].textContent!!;
             expect(attachmentName).toBe(tagText);
         });
     }
@@ -766,7 +779,7 @@ describe('CommentsElement', () => {
         return [...elements].map((commentEl) => commentEl.getAttribute('data-id')!);
     }
 
-    async function testEditingComment(id: string): Promise<void> {
+    function testEditingComment(id: string): void {
         let ownComment: CommentElement = queryComments(`#comment-list li.comment[data-id="${id}"]`)!;
         const editButton: HTMLElement = ownComment.querySelector('.edit')!;
 
@@ -794,14 +807,14 @@ describe('CommentsElement', () => {
 
         // Save the comment
         editField.querySelector<HTMLElement>('.save')!.click();
-        jest.runAllTimers();
+        mock.timers.runAll();
 
         expect(isNil(ownComment.querySelector('.commenting-field'))).toBe(true);
 
         // Check the edited comment
         ownComment = queryComments(`#comment-list li.comment[data-id="${id}"]`)!;
         checkCommentElementData(ownComment);
-        expect(ownComment.querySelector('.content .edited')!.textContent!.length).not.toBe(0);
+        expect(ownComment.querySelector('.content .edited')!.textContent!.length).notToBe(0);
 
         // Check that only fields content and modified have changed in comment model
         const ownCommentModel = commentViewModel.getComment(id)!;
@@ -826,7 +839,7 @@ describe('CommentsElement', () => {
             }
 
             if (key === 'content' || key === 'modifiedAt' || key === 'attachments' || key === 'hasAttachments') {
-                expect(currentComparisonValue).not.toBe(oldComparisonValue);
+                expect(currentComparisonValue).notToBe(oldComparisonValue);
             } else {
                 expect(currentComparisonValue).toBe(oldComparisonValue);
             }

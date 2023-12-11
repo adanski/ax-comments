@@ -29,8 +29,8 @@
     "build": "npm run build:tsc && npm run build:bundle && npm run build:css",
     "build:tsc": "tsc --project src/tsconfig.json",
     "build:bundle": "esbuild src/index.ts --bundle --format=esm --platform=browser --target=esnext --outfile=dist/bundle/comments-element-esm.js --legal-comments=none",
-    "build:css": "ts-node --esm -P tsconfig-template.json -O {\\\"moduleResolution\\\":\\\"node\\\"} compact-css.ts",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest"
+    "build:css": "tsx --tsconfig tsconfig-template.json script/compact-css.ts",
+    "test": "node --import tsx script/run-tests.ts | faucet"
   },
   "files": [
     "dist/*.js",
@@ -57,24 +57,25 @@
     "url": "https://github.com/adanski/ax-comments.git"
   },
   "engines": {
-    "node": ">=16.0.0 <21.0.0"
+    "node": ">=20.9.0"
   },
   "dependencies": {
-    "@textcomplete/core": "~0.1.12",
-    "@textcomplete/textarea": "~0.1.12",
-    "dompurify": "~2.4.3"
+    "@textcomplete/core": "^0.1.13",
+    "@textcomplete/textarea": "~0.1.13",
+    "eventemitter3": "^5.0.1",
+    "dompurify": "^3.0.6"
   },
   "devDependencies": {
-    "@types/node": "~16.18.10",
-    "@jest/globals": "~29.3.1",
-    "@types/dompurify": "~2.4.0",
-    "typescript": "~4.9.4",
-    "tslib": "~2.4.1",
-    "jest": "~29.3.1",
-    "jest-environment-jsdom": "~29.3.1",
-    "ts-jest": "~29.0.3",
-    "ts-node": "~10.9.1",
-    "esbuild": "~0.16.14",
-    "magic-string": "~0.27.0"
+    "@types/node": "~20.10.4",
+    "@types/dompurify": "~3.0.5",
+    "typescript": "~5.3.3",
+    "tslib": "~2.6.2",
+    "glob": "~10.3.10",
+    "tsx": "~4.6.2",
+    "jsdom": "~23.0.1",
+    "faucet": "~0.0.4",
+    "c8": "~8.0.1",
+    "esbuild": "~0.19.9",
+    "magic-string": "~0.30.5"
   }
 }
