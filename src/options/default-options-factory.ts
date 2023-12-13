@@ -1,5 +1,6 @@
-import {CommentsOptions, SortKey, STYLE_SHEET} from './api.js';
-import {noop} from './util.js';
+import {CommentsOptions, SortKey} from './options.js';
+import {noop} from '../common/util.js';
+import {STYLE_SHEET} from '../css/stylesheet.js';
 
 export function getDefaultOptions(): Required<CommentsOptions> {
     return {
@@ -91,18 +92,19 @@ function getDefaultTimeFormatter(): (timestamp: Date) => string {
         const epochNow = Math.floor(new Date().getTime() / 1000);
         const epochTimestamp = Math.floor(timestamp.getTime() / 1000);
         // Difference in seconds
-        const diff = epochTimestamp - epochNow;
+        let diff = epochTimestamp - epochNow;
+        diff ||= -1;
 
         if (diff > -60) { // Less than a minute has passed
             return rtf.format(diff, 'second');
-        } else if (diff > -3600) { // Less than an hour has passed
+        } else if (diff > -3_600) { // Less than an hour has passed
             return rtf.format(Math.floor(diff / 60), 'minute');
-        } else if (diff > -86400) { // Less than a day has passed
-            return rtf.format(Math.floor(diff / 3600), 'hour');
-        } else if (diff > -2620800) { // Less than a month has passed
-            return rtf.format(Math.floor(diff / 86400), 'day');
-        } else if (diff > -7862400) { // Less than three months has passed
-            return rtf.format(Math.floor(diff / 2620800), 'week');
+        } else if (diff > -86_400) { // Less than a day has passed
+            return rtf.format(Math.floor(diff / 3_600), 'hour');
+        } else if (diff > -2_620_800) { // Less than a month has passed
+            return rtf.format(Math.floor(diff / 86_400), 'day');
+        } else if (diff > -7_862_400) { // Less than three months has passed
+            return rtf.format(Math.floor(diff / 2_620_800), 'week');
         } else { // More time has passed
             return timestamp.toLocaleDateString(undefined, {dateStyle: 'short'})
                 + ' '

@@ -1,7 +1,7 @@
-import {SortKey} from './api.js';
-import {OptionsProvider} from './provider.js';
-import {Functionalities} from './options/functionalities.js';
-import {CommentModelEnriched} from './comments-by-id.js';
+import {SortKey} from '../options/options.js';
+import {OptionsProvider} from '../common/provider.js';
+import {Functionalities} from '../options/functionalities.js';
+import {CommentModelEnriched} from './comment-model-enriched.js';
 
 export class CommentSorter {
 
@@ -18,8 +18,8 @@ export class CommentSorter {
     getSorter(sortKey: SortKey): (a: CommentModelEnriched, b: CommentModelEnriched) => number {
         if (sortKey === SortKey.POPULARITY) { // Sort by popularity
             return (commentA, commentB) => {
-                let pointsOfA = commentA.childIds?.length ?? 0;
-                let pointsOfB = commentB.childIds?.length ?? 0;
+                let pointsOfA = commentA.allChildIds?.length ?? 0;
+                let pointsOfB = commentB.allChildIds?.length ?? 0;
 
                 if (this.#options.enableUpvoting) {
                     pointsOfA += commentA.upvoteCount ?? 0;
@@ -39,7 +39,7 @@ export class CommentSorter {
             return (commentA, commentB) => {
                 const createdA = commentA.createdAt.getTime();
                 const createdB = commentB.createdAt.getTime();
-                if (sortKey == SortKey.OLDEST) {
+                if (sortKey === SortKey.OLDEST) {
                     return createdA - createdB;
                 } else {
                     return createdB - createdA;

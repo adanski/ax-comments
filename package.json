@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@textcomplete/core": "^0.1.13",
-    "@textcomplete/textarea": "~0.1.13",
+    "@textcomplete/textarea": "^0.1.13",
     "eventemitter3": "^5.0.1",
     "dompurify": "^3.0.6"
   },

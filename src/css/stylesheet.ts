@@ -510,7 +510,7 @@ const mainStyle: string = tagNoop`
     overflow: hidden;
 }
 
-#comments-container ul.main > li.comment:first-child > ax-comment-container > .comment-wrapper {
+#comments-container ul.main > li.comment:first-child > ax-comment-content > .comment-wrapper {
     border-top: none;
 }
 
@@ -674,7 +674,7 @@ const actionsStyle: string = tagNoop`
 const childCommentsStyle: string = tagNoop`
 /* Margin for second level content */
 #comments-container ul.main li.comment .child-comments > *::before,
-#comments-container ul.main li.comment ax-commenting-field > *::before {
+#comments-container ul.main li.comment > ax-commenting-field > *::before {
     content: "";
     height: 1px;
     float: left;
@@ -745,11 +745,11 @@ const childCommentsStyle: string = tagNoop`
 
 /* Editing comment */
 const editingCommentStyle: string = tagNoop`
-#comments-container ul.main li.comment.edit > .comment-wrapper > *:not(.commenting-field) {
+#comments-container ul.main li.comment.edit > ax-comment-content > .comment-wrapper > *:not(.commenting-field) {
     display: none;
 }
 
-#comments-container ul.main li.comment.edit > .comment-wrapper .commenting-field {
+#comments-container ul.main li.comment.edit > ax-comment-content > .comment-wrapper .commenting-field {
     padding-left: 0 !important;
     padding-right: 0 !important;
 }

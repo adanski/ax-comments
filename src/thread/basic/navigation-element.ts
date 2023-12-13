@@ -1,9 +1,9 @@
-import {CommentsOptions, SortKey} from '../api.js';
-import {OptionsProvider} from '../provider.js';
-import {CustomElement, defineCustomElement} from '../custom-element.js';
-import {WebComponent} from '../web-component.js';
-import {getHostContainer, hideElement, showElement} from '../html-util.js';
-import {noop} from '../util.js';
+import {CommentsOptions, SortKey} from '../../options/options.js';
+import {OptionsProvider} from '../../common/provider.js';
+import {CustomElement, defineCustomElement} from '../../common/custom-element.js';
+import {WebComponent} from '../../common/web-component.js';
+import {getHostContainer, hideElement, showElement} from '../../common/html-util.js';
+import {noop} from '../../common/util.js';
 
 //@CustomElement('ax-navigation')
 export class NavigationElement extends HTMLElement implements WebComponent {

@@ -17,7 +17,10 @@ const windowPropPartials = [
  * https://developer.mozilla.org/en-US/docs/Web/API/Event#interfaces_based_on_event
  * https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API#html_element_interfaces_2
  */
-const windowHtmlProps = [
+const windowNonEnumerableProps = [
+    'Range',
+    'CSSStyleSheet',
+
     'querySelector',
     'querySelectorAll',
 
@@ -108,7 +111,7 @@ export function bootstrap() {
             global[key] = dom.window[key];
     });
 
-    windowHtmlProps.forEach(key => global[key] = dom.window[key]);
+    windowNonEnumerableProps.forEach(key => global[key] = dom.window[key]);
     global.window = dom.window;
     return dom;
 }

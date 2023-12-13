@@ -1,5 +1,4 @@
-import {AttachmentModel, CommentModel, PingableUser, ReferenceableHashtag} from './models.js';
-import {Functionalities} from './functionalities.js';
+import {AttachmentModel, CommentModel, CommentModelWithUpvotes, PingableUser, ReferenceableHashtag} from './models.js';
 
 export interface Callbacks {
     /**
@@ -194,7 +193,7 @@ export interface Callbacks {
      * };
      * ```
      */
-    upvoteComment?(comment: CommentModel, success: SuccessFct<CommentModel>, error: ErrorFct): void;
+    upvoteComment?(comment: CommentModelWithUpvotes, success: SuccessFct<CommentModelWithUpvotes>, error: ErrorFct): void;
     /**
      * A callback `function` that is used to validate attachments prior uploading them to server.
      * The first parameter of the callback is `attachments` array including all the attachments to be uploaded.

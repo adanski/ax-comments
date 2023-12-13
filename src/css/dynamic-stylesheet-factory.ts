@@ -1,4 +1,4 @@
-import {CommentsOptions} from '../api.js';
+import {CommentsOptions} from '../options/options.js';
 
 export function createDynamicStylesheet(options: CommentsOptions): CSSStyleSheet {
     let css: string = '';
@@ -14,7 +14,7 @@ export function createDynamicStylesheet(options: CommentsOptions): CSSStyleSheet
 
     // Comment highlight
     if (options.highlightOwnComments) {
-        css += `#comments-container .comment.by-current-user > ax-comment-container > .comment-wrapper {border-left: 2px solid ${options.highlightColor};margin-left: -2px;border-radius: 3px}`;
+        css += `#comments-container .comment.by-current-user > ax-comment-content > .comment-wrapper {border-left: 2px solid ${options.highlightColor};margin-left: -2px;border-radius: 3px}`;
     }
 
     // Font highlight

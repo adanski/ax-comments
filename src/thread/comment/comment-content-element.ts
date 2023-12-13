@@ -1,23 +1,24 @@
-import {ProfilePictureFactory} from './profile-picture-factory.js';
+import {ProfilePictureFactory} from '../basic/profile-picture-factory.js';
 import {CommentContentFormatter} from './comment-content-formatter.js';
-import {TagFactory} from './tag-factory.js';
-import {CommentModel, CommentsOptions} from '../api.js';
-import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../provider.js';
-import {WebComponent} from '../web-component.js';
-import {CustomElement, defineCustomElement} from '../custom-element.js';
-import {findParentsBySelector, getHostContainer} from '../html-util.js';
-import {ButtonElement} from './button-element.js';
-import {CommentViewModel, CommentViewModelEvent, CommentViewModelEventSubscription} from '../comment-view-model.js';
-import {CommentModelEnriched} from '../comments-by-id.js';
-import {CommentingFieldElement} from './commenting-field-element.js';
-import {TextareaElement} from './textarea-element.js';
+import {TagFactory} from '../basic/tag-factory.js';
+import {CommentModel, CommentsOptions} from '../../options/options.js';
+import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../../common/provider.js';
+import {WebComponent} from '../../common/web-component.js';
+import {CustomElement, defineCustomElement} from '../../common/custom-element.js';
+import {findParentsBySelector, getHostContainer} from '../../common/html-util.js';
+import {createElement} from '../../common/html-element-factory.js';
+import {ButtonElement} from '../basic/button-element.js';
+import {CommentViewModel, CommentViewModelEvent, CommentViewModelEventSubscription} from '../../view-model/comment-view-model.js';
+import {CommentModelEnriched} from '../../view-model/comment-model-enriched.js';
+import {CommentingFieldElement} from '../commenting-field/commenting-field-element.js';
+import {TextareaElement} from '../commenting-field/textarea-element.js';
 import {CommentElement} from './comment-element.js';
-import {SuccessFct} from '../options/callbacks.js';
-import {CommentTransformer} from '../comment-transformer.js';
-import {AttachmentModel} from '../options/models.js';
+import {SuccessFct} from '../../options/callbacks.js';
+import {AttachmentModel} from '../../options/models.js';
+import {isNil} from '../../common/util.js';
 
-//@CustomElement('ax-comment-container')
-export class CommentContainerElement extends HTMLElement implements WebComponent {
+//@CustomElement('ax-comment-content')
+export class CommentContentElement extends HTMLElement implements WebComponent {
 
     commentModel!: CommentModelEnriched;
 
@@ -25,13 +26,12 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
     #options!: Required<CommentsOptions>;
     #commentViewModel!: CommentViewModel;
-    #commentTransformer!: CommentTransformer;
     #commentContentFormatter!: CommentContentFormatter;
     #profilePictureFactory!: ProfilePictureFactory;
     #tagFactory!: TagFactory;
 
-    static create(options: Pick<CommentContainerElement, 'commentModel'>): CommentContainerElement {
-        const commentContainer: CommentContainerElement = document.createElement('ax-comment-container') as CommentContainerElement;
+    static create(options: Pick<CommentContentElement, 'commentModel'>): CommentContentElement {
+        const commentContainer: CommentContentElement = document.createElement('ax-comment-content') as CommentContentElement;
         Object.assign(commentContainer, options);
         return commentContainer;
     }
@@ -58,7 +58,6 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         const container: HTMLElement = getHostContainer(this);
         this.#options = OptionsProvider.get(container);
         this.#commentViewModel = CommentViewModelProvider.get(container);
-        this.#commentTransformer = ServiceProvider.get(container, CommentTransformer);
         this.#commentContentFormatter = ServiceProvider.get(container, CommentContentFormatter);
         this.#profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
         this.#tagFactory = ServiceProvider.get(container, TagFactory);
@@ -76,13 +75,13 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
         );
 
         // Time
-        const commentLink: HTMLAnchorElement = document.createElement('a');
-        commentLink.href = `${document.location.href}#comment-${this.commentModel.id}`;
-        commentLink.textContent = this.#options.timeFormatter(this.commentModel.createdAt);
-        const time: HTMLTimeElement = document.createElement('time');
-        time.setAttribute('title', this.commentModel.createdAt.toLocaleString());
-        time.setAttribute('datetime', this.commentModel.createdAt.toISOString());
-        time.append(commentLink);
+        const time: HTMLTimeElement = createElement(`
+            <time title="${this.commentModel.createdAt.toLocaleString()}" datetime="${this.commentModel.createdAt.toISOString()}">
+                <a href="${document.location.href}#comment-${this.commentModel.id}">
+                    ${this.#options.timeFormatter(this.commentModel.createdAt)}
+                </a>
+            </time>
+        `);
 
         // Comment header element
         const commentHeaderEl: HTMLDivElement = document.createElement('div');
@@ -307,18 +306,22 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
     #editButtonClicked: (e: MouseEvent) => void = e => {
         const editButton: HTMLElement = e.currentTarget as HTMLElement;
         const commentEl: CommentElement = findParentsBySelector<CommentElement>(editButton, 'li.comment').first()!;
+        const commentWrapper: HTMLElement = commentEl.querySelector('.comment-wrapper')!;
         const commentModel: CommentModelEnriched = commentEl.commentModel;
         commentEl.classList.add('edit');
 
-        // Create the editing field
-        const editField: CommentingFieldElement = CommentingFieldElement.create({
-            parentId: commentModel.parentId,
-            existingCommentId: commentModel.id,
-            onClosed: () => {
-                commentEl.classList.remove('edit');
-            }
-        });
-        commentEl.querySelector('.comment-wrapper')!.append(editField);
+        // Get or create the editing field
+        let editField: CommentingFieldElement | null = commentWrapper.querySelector(':scope > ax-commenting-field');
+        if (isNil(editField)) {
+            editField = CommentingFieldElement.create({
+                parentId: commentModel.parentId,
+                existingCommentId: commentModel.id,
+                onClosed: () => {
+                    commentEl.classList.remove('edit');
+                }
+            });
+            commentWrapper.append(editField);
+        }
 
         // Move cursor to end
         const textarea: HTMLElement = editField.querySelector('.textarea')!;
@@ -330,7 +333,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
 
     #isAllowedToDelete(commentModel: CommentModelEnriched): boolean {
         return this.#options.enableDeleting
-            && (this.#options.enableDeletingCommentWithReplies || !commentModel.childIds.length)
+            && (this.#options.enableDeletingCommentWithReplies || !commentModel.directChildIds.length)
             && (this.#options.currentUserIsAdmin || !!commentModel.createdByCurrentUser);
     }
 
@@ -359,7 +362,7 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
             deleteButton.setButtonState(true, false);
         };
 
-        this.#options.deleteComment(this.#commentTransformer.deplete(commentEnriched), success, error);
+        this.#options.deleteComment(commentEnriched.deplete(), success, error);
     };
 
     #moveCursorToEnd(element: HTMLElement): void {
@@ -375,4 +378,4 @@ export class CommentContainerElement extends HTMLElement implements WebComponent
     }
 }
 
-defineCustomElement(CommentContainerElement, 'ax-comment-container');
+defineCustomElement(CommentContentElement, 'ax-comment-content');

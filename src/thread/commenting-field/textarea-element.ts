@@ -1,11 +1,11 @@
-import {normalizeSpaces} from '../util.js';
-import {CommentsOptions} from '../api.js';
-import {CommentViewModelProvider, OptionsProvider} from '../provider.js';
-import {WebComponent} from '../web-component.js';
-import {findSiblingsBySelector, getHostContainer} from '../html-util.js';
-import {CustomElement, defineCustomElement} from '../custom-element.js';
-import {PingableUser, UserDisplayNamesById} from '../options/models.js';
-import {CommentViewModel} from '../comment-view-model.js';
+import {normalizeSpaces} from '../../common/util.js';
+import {CommentsOptions} from '../../options/options.js';
+import {CommentViewModelProvider, OptionsProvider} from '../../common/provider.js';
+import {WebComponent} from '../../common/web-component.js';
+import {findSiblingsBySelector, getHostContainer} from '../../common/html-util.js';
+import {CustomElement, defineCustomElement} from '../../common/custom-element.js';
+import {PingableUser, UserDisplayNamesById} from '../../options/models.js';
+import {CommentViewModel} from '../../view-model/comment-view-model.js';
 
 //@CustomElement('ax-textarea', {extends: 'textarea'})
 export class TextareaElement extends HTMLTextAreaElement implements WebComponent {

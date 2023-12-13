@@ -43,7 +43,6 @@ export function normalizeSpaces(inputText: string): string {
 }
 
 export function debounce<T extends (...args: any[]) => void>(callback: T, wait: number, options: DebounceOptions = DebounceOptions.BOTH_EDGES): T {
-
     if (options === DebounceOptions.LEADING) {
         return getLeadingEdgeDebouncer(callback, wait);
     } else if (options === DebounceOptions.TRAILING) {

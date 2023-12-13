@@ -1,25 +1,23 @@
-import {ProfilePictureFactory} from './profile-picture-factory.js';
-import {ButtonElement} from './button-element.js';
+import {ProfilePictureFactory} from '../basic/profile-picture-factory.js';
+import {ButtonElement} from '../basic/button-element.js';
 import {Textcomplete} from '@textcomplete/core';
-import {TagFactory} from './tag-factory.js';
+import {TagFactory} from '../basic/tag-factory.js';
 import {TextareaElement} from './textarea-element.js';
-import {CommentModel, CommentsOptions} from '../api.js';
-import {areArraysEqual, isStringEmpty, noop} from '../util.js';
-import {CommentModelEnriched} from '../comments-by-id.js';
-import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../provider.js';
-import {CommentViewModel} from '../comment-view-model.js';
-import {WebComponent} from '../web-component.js';
-import {CustomElement, defineCustomElement} from '../custom-element.js';
+import {CommentModel, CommentsOptions} from '../../options/options.js';
+import {areArraysEqual, isStringEmpty, noop} from '../../common/util.js';
+import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../../common/provider.js';
+import {CommentViewModel} from '../../view-model/comment-view-model.js';
+import {WebComponent} from '../../common/web-component.js';
+import {CustomElement, defineCustomElement} from '../../common/custom-element.js';
 import {
     findSiblingsBySelector,
     getHostContainer,
     hideElement,
     showElement
-} from '../html-util.js';
+} from '../../common/html-util.js';
 import {TextcompleteFactory} from './textcomplete-factory.js';
-import {ErrorFct, SuccessFct} from '../options/callbacks.js';
-import {CommentTransformer} from '../comment-transformer.js';
-import {AttachmentModel} from '../options/models.js';
+import {ErrorFct, SuccessFct} from '../../options/callbacks.js';
+import {AttachmentModel} from '../../options/models.js';
 
 //@CustomElement('ax-commenting-field')
 export class CommentingFieldElement extends HTMLElement implements WebComponent {
@@ -33,7 +31,6 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
 
     #options!: Required<CommentsOptions>;
     #commentViewModel!: CommentViewModel;
-    #commentTransformer!: CommentTransformer;
     #profilePictureFactory!: ProfilePictureFactory;
     #textcompleteFactory!: TextcompleteFactory;
     #tagFactory!: TagFactory;
@@ -61,7 +58,6 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         const container: HTMLElement = getHostContainer(this);
         this.#options = OptionsProvider.get(container)!;
         this.#commentViewModel = CommentViewModelProvider.get(container);
-        this.#commentTransformer = ServiceProvider.get(container, CommentTransformer);
         this.#profilePictureFactory = ServiceProvider.get(container, ProfilePictureFactory);
         this.#textcompleteFactory = ServiceProvider.get(container, TextcompleteFactory);
         this.#tagFactory = ServiceProvider.get(container, TagFactory);
@@ -139,7 +135,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             // Main upload button
             const mainUploadButton: ButtonElement = ButtonElement.createUploadButton({
                 inline: false,
-                onclick: this.#fileInputChanged
+                onchange: this.#fileInputChanged
             });
             controlRow.append(mainUploadButton);
 
@@ -147,7 +143,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             if (this.isMain) {
                 const inlineUploadButton: ButtonElement = ButtonElement.createUploadButton({
                     inline: true,
-                    onclick: this.#fileInputChanged
+                    onchange: this.#fileInputChanged
                 });
                 textareaWrapper.append(inlineUploadButton);
             }
@@ -235,7 +231,7 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         const comment: CommentModel = this.getCommentModel();
 
         const success: (postedComment: CommentModel) => void = postedComment => {
-            this.#commentViewModel.addComment(this.#commentTransformer.enrich(postedComment));
+            this.#commentViewModel.addComment(postedComment);
 
             // Close the editing field
             this.querySelector<HTMLElement>('.close')!.click();
@@ -263,9 +259,8 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
         updateButton.setButtonState(false, true);
 
         // Use a clone of the existing model and update the model after successful update
-        const commentEnriched: CommentModelEnriched = Object.assign<object, CommentModelEnriched, Partial<CommentModel>>(
-            {},
-            this.#commentViewModel.getComment(this.existingCommentId!)!,
+        const comment: CommentModel = Object.assign<CommentModel, Partial<CommentModel>>(
+            this.#commentViewModel.getComment(this.existingCommentId!)!.deplete(),
             {
                 parentId: textarea.parentId as string,
                 content: textarea.getTextareaContent(),
@@ -290,15 +285,15 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
             updateButton.setButtonState(true, false);
         };
 
-        this.#options.putComment(this.#commentTransformer.deplete(commentEnriched), success, error);
+        this.#options.putComment(comment, success, error);
     };
 
     #fileInputChanged: (e: Event) => void = e => {
-        const uploadButton: ButtonElement = e.currentTarget as ButtonElement;
+        const input: HTMLInputElement = e.currentTarget as HTMLInputElement;
+        const uploadButton: ButtonElement = input.parentElement as ButtonElement;
         if (!uploadButton.classList.contains('enabled')) {
             return;
         }
-        const input: HTMLInputElement = uploadButton.querySelector('input[type="file"]')!;
         this.preSaveAttachments(input.files!);
     };
 
@@ -313,11 +308,11 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
     };
 
     getCommentModel(): CommentModel {
-        const textarea: TextareaElement = this.querySelector('.textarea') as TextareaElement;
+        const textarea: TextareaElement = this.querySelector('.textarea')!;
         const time: Date = new Date();
 
         const commentModel: CommentModel = {
-            id: 'tempId_' + (this.#commentViewModel.getComments().length + 1),   // Temporary id
+            id: 'tempId_' + (this.#commentViewModel.size + 1),   // Temporary id
             parentId: textarea.parentId || undefined,
             createdAt: time,
             modifiedAt: time,
@@ -426,7 +421,6 @@ export class CommentingFieldElement extends HTMLElement implements WebComponent 
 
         // Validate attachments
         this.#options.validateAttachments(attachments, validatedAttachments => {
-
             if (validatedAttachments.length) {
                 // Create attachment tags
                 validatedAttachments.forEach(attachment => {
