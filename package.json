@@ -65,7 +65,21 @@
     "eventemitter3": "^5.0.1",
     "dompurify": "^3.0.6"
   },
+  "peerDependencies": {
+    "marked": "^11.1.0",
+    "@github/markdown-toolbar-element": "^2.2.1"
+  },
+  "peerDependenciesMeta": {
+    "marked": {
+      "optional": true
+    },
+    "@github/markdown-toolbar-element": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "marked": "^11.1.0",
+    "@github/markdown-toolbar-element": "^2.2.1",
     "@types/node": "~20.10.4",
     "@types/dompurify": "~3.0.5",
     "typescript": "~5.3.3",
