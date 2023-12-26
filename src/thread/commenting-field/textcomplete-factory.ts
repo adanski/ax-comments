@@ -1,11 +1,11 @@
-import {CommentsOptions} from '../api.js';
-import {OptionsProvider, ServiceProvider} from '../provider.js';
+import {CommentsOptions} from '../../options/options.js';
+import {OptionsProvider, ServiceProvider} from '../../common/provider.js';
 import {TextareaElement} from './textarea-element.js';
 import {StrategyProps, Textcomplete, TextcompleteOption} from '@textcomplete/core';
 import {TextareaEditor} from '@textcomplete/textarea';
-import {isStringEmpty, normalizeSpaces} from '../util.js';
-import {ProfilePictureFactory} from './profile-picture-factory.js';
-import {PingableUser, ReferenceableHashtag} from '../options/models.js';
+import {isStringEmpty, normalizeSpaces} from '../../common/util.js';
+import {ProfilePictureFactory} from '../basic/profile-picture-factory.js';
+import {PingableUser, ReferenceableHashtag} from '../../options/models.js';
 
 export class TextcompleteFactory {
 

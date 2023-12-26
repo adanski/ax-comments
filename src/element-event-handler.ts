@@ -1,11 +1,11 @@
-import {CommentsOptions} from './api.js';
-import {OptionsProvider} from './provider.js';
+import {CommentsOptions} from './options/options.js';
+import {OptionsProvider} from './common/provider.js';
 import {
     findParentsBySelector,
     hideElement,
     showElement
-} from './html-util.js';
-import {CommentingFieldElement} from './subcomponent/commenting-field-element.js';
+} from './common/html-util.js';
+import {CommentingFieldElement} from './thread/commenting-field/commenting-field-element.js';
 
 export interface ElementEventHandler {
     closeDropdowns(e: UIEvent): void;

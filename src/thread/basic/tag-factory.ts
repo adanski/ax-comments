@@ -1,7 +1,7 @@
 import {ButtonElement} from './button-element.js';
-import {CommentsOptions} from '../api.js';
-import {OptionsProvider} from '../provider.js';
-import {AttachmentModel} from '../options/models.js';
+import {CommentsOptions} from '../../options/options.js';
+import {OptionsProvider} from '../../common/provider.js';
+import {AttachmentModel} from '../../options/models.js';
 
 export class TagFactory {
 

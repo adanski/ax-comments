@@ -28,4 +28,8 @@ class Expectation<T> {
         assert.notDeepStrictEqual(this.#actual, expected, message);
     }
 
+    toBeGreaterThan(expected: number, message?: string | Error): void {
+        assert.ok(this.#actual as number > expected, message);
+    }
+
 }

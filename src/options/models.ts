@@ -1,7 +1,7 @@
 export interface CommentModel {
-    id: string;
+    id: CommentId;
     // Required if replying is enabled
-    parentId?: string;
+    parentId?: CommentId;
     createdAt: Date;
     // Required if editing is enabled
     modifiedAt?: Date;
@@ -10,7 +10,7 @@ export interface CommentModel {
     attachments?: AttachmentModel[];
     // Required if pinging is enabled
     pings?: UserDisplayNamesById;
-    creatorUserId: string;
+    creatorUserId: UserId;
     creatorDisplayName?: string;
     creatorProfilePictureURL?: string;
     isNew?: boolean;
@@ -24,6 +24,15 @@ export interface CommentModel {
     upvotedByCurrentUser?: boolean;
 }
 
+export interface CommentModelWithUpvotes extends CommentModel {
+    upvoteCount: number;
+    upvotedByCurrentUser: boolean;
+}
+
+export type CommentId = string;
+
+export type UserId = string;
+
 /**
  * User dictionary in the following format:
  * ```javascript
@@ -35,11 +44,11 @@ export interface CommentModel {
  * ```
  */
 export interface UserDisplayNamesById {
-    [userId: string]: string;
+    [userId: UserId]: string;
 }
 
 export interface PingableUser {
-    id: string;
+    id: UserId;
     displayName?: string;
     email?: string;
     profilePictureURL?: string;
@@ -57,7 +66,9 @@ export interface ReferenceableHashtag {
 }
 
 export interface AttachmentModel<F extends File | string = File | string> {
-    id: string;
+    id: AttachmentId;
     file: F;
     mimeType: string;
 }
+
+export type AttachmentId = string;

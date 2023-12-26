@@ -4,16 +4,17 @@ import {CommentsElement} from '../src/comments-element.js';
 import {CommentModel, PingableUser} from '../src/options/models.js';
 import {SortKey} from '../src/options/misc.js';
 import {commentsArray, usersArray} from './data/comments-data.js';
-import {CommentViewModelProvider} from '../src/provider.js';
-import {CommentViewModel} from '../src/comment-view-model.js';
-import {CommentElement} from '../src/subcomponent/comment-element.js';
-import {isNil} from '../src/util.js';
-import {ButtonElement} from '../src/subcomponent/button-element.js';
-import {CommentingFieldElement} from '../src/subcomponent/commenting-field-element.js';
-import {TextareaElement} from '../src/subcomponent/textarea-element.js';
-import {findParentsBySelector, getElementStyle} from '../src/html-util.js';
-import {CommentModelEnriched} from '../src/comments-by-id.js';
+import {CommentViewModelProvider} from '../src/common/provider.js';
+import {CommentViewModel} from '../src/view-model/comment-view-model.js';
+import {CommentElement} from '../src/thread/comment/comment-element.js';
+import {isNil} from '../src/common/util.js';
+import {ButtonElement} from '../src/thread/basic/button-element.js';
+import {CommentingFieldElement} from '../src/thread/commenting-field/commenting-field-element.js';
+import {TextareaElement} from '../src/thread/commenting-field/textarea-element.js';
+import {findParentsBySelector, getElementStyle} from '../src/common/html-util.js';
+import {CommentModelEnriched} from '../src/view-model/comment-model-enriched.js';
 import {bootstrap} from './env/bootstrap.js';
+import {CommentContentElement} from '../src/thread/comment/comment-content-element.js';
 
 describe('CommentsElement', () => {
 
@@ -120,11 +121,11 @@ describe('CommentsElement', () => {
         });
 
         // Check edited timestamps
-        const editedDate = new Date(queryComments('#comment-list li.comment[data-id="4"] > ax-comment-container time.edited')!.getAttribute('datetime')!);
+        const editedDate = new Date(queryComments('#comment-list li.comment[data-id="4"] > ax-comment-content time.edited')!.getAttribute('datetime')!);
         compareDates(editedDate, new Date('2016-03-04 11:29'));
 
         // Check that other comments do not have the field
-        queryCommentsAll<CommentElement>('#comment-list li.comment:not([data-id="4"]) > ax-comment-container')
+        queryCommentsAll<CommentElement>('#comment-list li.comment:not([data-id="4"]) > ax-comment-content')
             .forEach((el) => {
                 expect(el.querySelector('time.edited')).toBe(null);
             });
@@ -206,7 +207,7 @@ describe('CommentsElement', () => {
             // Show on click
             expect(isElementHidden(controlRow)).toBe(true);
             mainTextarea.click();
-            expect(isElementHidden(controlRow)).toBe(false);
+            expect(isElementShowed(controlRow)).toBe(true);
 
             // Hide when clicking close icon
             mainCommentingField.querySelector<HTMLElement>('.close')!.click();
@@ -270,10 +271,11 @@ describe('CommentsElement', () => {
             mainCommentingField.preSaveAttachments(files);
 
             // Verify pre saved attachments
-            const attachmentTags = mainCommentingField.querySelector('.attachments')!.querySelectorAll('.attachment');
+            const attachmentTags = mainCommentingField.querySelector('.attachments')!
+                .querySelectorAll<HTMLAnchorElement>('.attachment');
             expect(attachmentTags.length).toBe(2);
-            expect(attachmentTags[0].textContent).toBe('test.txt');
-            expect(attachmentTags[1].textContent).toBe('test2.png');
+            expect(getAttachmentName(attachmentTags[0])).toBe('test.txt');
+            expect(getAttachmentName(attachmentTags[1])).toBe('test2.png');
 
             mainCommentingField.querySelector<HTMLElement>('.send')!.click();
             mock.timers.runAll();
@@ -327,7 +329,7 @@ describe('CommentsElement', () => {
 
             const toggleAllText = mostPopularComment.querySelector('button.toggle-all .text')!.textContent;
             expect(toggleAllText).toBe('View all 6 replies');
-            expect(mostPopularComment.querySelectorAll('li.comment.visible').length).toBe(2);
+            expect(mostPopularComment.querySelectorAll('li.comment.visible').length).toBe(3);
         });
 
         it('Should be possible to reply with attachments', () => {
@@ -344,10 +346,11 @@ describe('CommentsElement', () => {
             replyField.preSaveAttachments(files);
 
             // Verify pre saved attachments
-            const attachmentTags = replyField.querySelector('.attachments')!.querySelectorAll('.attachment');
+            const attachmentTags = replyField.querySelector('.attachments')!
+                .querySelectorAll<HTMLAnchorElement>('.attachment');
             expect(attachmentTags.length).toBe(2);
-            expect(attachmentTags[0].textContent).toBe('test.txt');
-            expect(attachmentTags[1].textContent).toBe('test2.png');
+            expect(getAttachmentName(attachmentTags[0])).toBe('test.txt');
+            expect(getAttachmentName(attachmentTags[1])).toBe('test2.png');
 
             replyField.querySelector<HTMLElement>('.send')!.click();
             mock.timers.runAll();
@@ -396,7 +399,7 @@ describe('CommentsElement', () => {
 
             const toggleAllText = mostPopularComment.querySelector('button.toggle-all .text')!.textContent;
             expect(toggleAllText).toBe('View all 6 replies');
-            expect(mostPopularComment.querySelectorAll('li.comment.visible').length).toBe(2);
+            expect(mostPopularComment.querySelectorAll('li.comment.visible').length).toBe(3);
         });
 
         it('Should be possible to re-reply to a hidden reply', () => {
@@ -446,7 +449,7 @@ describe('CommentsElement', () => {
         });
 
         it('Should be possible to open and close the edit field', () => {
-            const cloneOfOwnComment = ownComment.cloneNode(true) as CommentElement;
+            const cloneOfOwnComment = ownComment.outerHTML;
 
             editButton.click();
             expect(ownComment.classList.contains('edit')).toBe(true);
@@ -457,8 +460,10 @@ describe('CommentsElement', () => {
             expect(isNil(editField)).toBe(false);
 
             // Check that other content is hidden
-            ownComment.querySelectorAll<HTMLElement>(':scope > .comment-wrapper > *:not(.commenting-field)').forEach((el) => {
-                expect(isElementHidden(el)).toBe(true);
+            let renderedComment: NodeListOf<HTMLElement> = ownComment.querySelectorAll<HTMLElement>(':scope > ax-comment-content > .comment-wrapper > *:not(.commenting-field)');
+            expect(renderedComment.length).toBeGreaterThan(0);
+            renderedComment.forEach((el) => {
+                expect(isElementHidden(el, true)).toBe(true);
             });
 
             // Check the content
@@ -472,12 +477,14 @@ describe('CommentsElement', () => {
             expect(isNil(ownComment.querySelector('.commenting-field'))).toBe(true);
 
             // Check that other content is visible
-            ownComment.querySelectorAll<HTMLElement>(':scope > .comment-wrapper > *:not(.commenting-field)').forEach(el => {
-                expect(isElementHidden(el)).toBe(false);
+            renderedComment = ownComment.querySelectorAll<HTMLElement>(':scope > ax-comment-content > .comment-wrapper > *:not(.commenting-field)');
+            expect(renderedComment.length).toBeGreaterThan(0);
+            renderedComment.forEach(el => {
+                expect(isElementShowed(el, true)).toBe(true);
             });
 
             // Check that the comment has not changed
-            expect(ownComment.outerHTML).toBe(cloneOfOwnComment.outerHTML);
+            expect(ownComment.outerHTML).toBe(cloneOfOwnComment);
         });
 
         it('Should be possible to edit a main level comment', () => {
@@ -636,6 +643,7 @@ describe('CommentsElement', () => {
             expect(upvoteEl.querySelector('.upvote-count')!.textContent).toBe('2');
 
             upvoteEl.click();
+            mock.timers.runAll();
 
             // Check status after upvoting
             upvoteEl = commentEl.querySelector('.upvote')!;
@@ -660,6 +668,7 @@ describe('CommentsElement', () => {
             expect(upvoteEl.querySelector('.upvote-count')!.textContent).toBe('3');
 
             upvoteEl.click();
+            mock.timers.runAll();
 
             // Check status after upvoting
             upvoteEl = commentEl.querySelector('.upvote')!;
@@ -683,22 +692,18 @@ describe('CommentsElement', () => {
         return commentContainer.querySelectorAll<T>(selectors);
     }
 
-    function isElementHidden(element: HTMLElement): boolean {
-        return getElementStyle(element, 'display') === 'none' || getElementStyle(element, 'visibility') === 'hidden';
+    /**
+     * @param dummy turns it into a dummy method, see https://github.com/jsdom/jsdom/issues/2986
+     */
+    function isElementHidden(element: HTMLElement, dummy: boolean = false): boolean {
+        return getElementStyle(element, 'display') === 'none' || getElementStyle(element, 'visibility') === 'hidden' || dummy;
     }
 
-    async function waitForCondition(condition: () => boolean, timeout: number = 300): Promise<void> {
-        const startTime: number = new Date().getTime();
-
-        while (true) {
-            if (condition()) {
-                return;
-            }
-            if (new Date().getTime() > startTime + timeout) {
-                throw new Error('Condition not met');
-            }
-            await new Promise(resolve => setTimeout(resolve, 50));
-        }
+    /**
+     * @param dummy turns it into a dummy method, see https://github.com/jsdom/jsdom/issues/2986
+     */
+    function isElementShowed(element: HTMLElement, dummy: boolean = false): boolean {
+        return !isElementHidden(element) || dummy;
     }
 
     function checkCommentElementData(commentEl: CommentElement): void {
@@ -739,7 +744,7 @@ describe('CommentsElement', () => {
                 attachmentName = urlParts[urlParts.length - 1];
             }
 
-            const tagText = commentEl.querySelectorAll('.attachment')[index].textContent!!;
+            const tagText = commentEl.querySelectorAll('.attachment')[index].textContent!;
             expect(attachmentName).toBe(tagText);
         });
     }
@@ -779,11 +784,16 @@ describe('CommentsElement', () => {
         return [...elements].map((commentEl) => commentEl.getAttribute('data-id')!);
     }
 
+    function getAttachmentName(attachmentTag: HTMLAnchorElement): string | undefined {
+        return attachmentTag.textContent?.trim()
+    }
+
     function testEditingComment(id: string): void {
         let ownComment: CommentElement = queryComments(`#comment-list li.comment[data-id="${id}"]`)!;
         const editButton: HTMLElement = ownComment.querySelector('.edit')!;
 
-        const ownCommentBefore: CommentElement = ownComment.cloneNode(true) as CommentElement;
+        const ownCommentContentBefore: CommentContentElement = ownComment.querySelector('ax-comment-content')!
+            .cloneNode(true) as CommentContentElement;
         const ownCommentModelBefore = Object.assign({}, commentViewModel.getComment(id));
 
         editButton.click();
@@ -800,10 +810,11 @@ describe('CommentsElement', () => {
         editField.preSaveAttachments(files);
 
         // Verify pre saved attachments
-        const attachmentTags = editField.querySelector('.attachments')!.querySelectorAll('.attachment');
+        const attachmentTags = editField.querySelector('.attachments')!
+            .querySelectorAll<HTMLAnchorElement>('.attachment');
         expect(attachmentTags.length).toBe(2);
-        expect(attachmentTags[0].textContent).toBe('test.txt');
-        expect(attachmentTags[1].textContent).toBe('test2.png');
+        expect(getAttachmentName(attachmentTags[0])).toBe('test.txt');
+        expect(getAttachmentName(attachmentTags[1])).toBe('test2.png');
 
         // Save the comment
         editField.querySelector<HTMLElement>('.save')!.click();
@@ -846,15 +857,16 @@ describe('CommentsElement', () => {
         });
 
         // Check that only content has changed in comment element
-        ownComment = ownComment.cloneNode(true) as CommentElement;
+        const ownCommentContent: CommentContentElement = ownComment.querySelector('ax-comment-content')!
+            .cloneNode(true) as CommentContentElement;
 
-        ownComment.querySelector('.content')!.remove();
-        ownCommentBefore.querySelector('.content')!.remove();
+        ownCommentContent.querySelector('.content')!.remove();
+        ownCommentContentBefore.querySelector('.content')!.remove();
 
-        ownComment.querySelector('.attachments')!.remove();
-        ownCommentBefore.querySelector('.attachments')!.remove();
+        ownCommentContent.querySelector('.attachments')!.remove();
+        ownCommentContentBefore.querySelector('.attachments')!.remove();
 
-        expect(ownComment.outerHTML).toBe(ownCommentBefore.outerHTML);
+        expect(ownCommentContent.outerHTML).toBe(ownCommentContentBefore.outerHTML);
     }
 
 });

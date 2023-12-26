@@ -1,9 +1,9 @@
-import {TagFactory} from './tag-factory.js';
-import {isNil, normalizeSpaces} from '../util.js';
-import {OptionsProvider, ServiceProvider} from '../provider.js';
-import {Functionalities} from '../options/functionalities.js';
-import {CommentModelEnriched} from '../comments-by-id.js';
-import {Callbacks} from '../options/callbacks.js';
+import {TagFactory} from '../basic/tag-factory.js';
+import {isNil, normalizeSpaces} from '../../common/util.js';
+import {OptionsProvider, ServiceProvider} from '../../common/provider.js';
+import {Functionalities} from '../../options/functionalities.js';
+import {CommentModelEnriched} from '../../view-model/comment-model-enriched.js';
+import {Callbacks} from '../../options/callbacks.js';
 import DOMPurify from 'dompurify';
 
 export class CommentContentFormatter {

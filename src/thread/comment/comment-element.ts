@@ -1,8 +1,7 @@
-import {isNil} from '../util.js';
-import {CustomElement, defineCustomElement} from '../custom-element.js';
-import {WebComponent} from '../web-component.js';
-import {CommentContainerElement} from './comment-container-element.js';
-import {CommentModelEnriched} from '../comments-by-id.js';
+import {CustomElement, defineCustomElement} from '../../common/custom-element.js';
+import {WebComponent} from '../../common/web-component.js';
+import {CommentContentElement} from './comment-content-element.js';
+import {CommentModelEnriched} from '../../view-model/comment-model-enriched.js';
 
 //@CustomElement('ax-comment', {extends: 'li'})
 export class CommentElement extends HTMLLIElement implements WebComponent {
@@ -32,7 +31,7 @@ export class CommentElement extends HTMLLIElement implements WebComponent {
     }
 
     #initElement(): void {
-        this.classList.add('comment');
+        this.classList.add('comment', 'visible');
         this.id = `comment-${this.#commentModel.id}`;
         this.setAttribute('data-id', this.#commentModel.id);
 
@@ -43,21 +42,14 @@ export class CommentElement extends HTMLLIElement implements WebComponent {
             this.classList.add('by-admin');
         }
 
-        // Child comments
-        const childComments: HTMLUListElement = document.createElement('ul');
-        childComments.classList.add('child-comments');
-
         // Comment container
-        const commentContainer: CommentContainerElement = CommentContainerElement.create({commentModel: this.#commentModel});
+        const commentContainer: CommentContentElement = CommentContentElement.create({commentModel: this.#commentModel});
 
-        this.append(commentContainer);
-        if (isNil(this.#commentModel.parentId)) {
-            this.append(childComments);
-        }
+        this.prepend(commentContainer);
     }
 
     reRenderCommentActionBar(): void {
-        const commentContainer: CommentContainerElement = this.querySelector('ax-comment-container')!;
+        const commentContainer: CommentContentElement = this.querySelector('ax-comment-content')!;
         commentContainer.reRenderCommentActionBar();
     }
 }

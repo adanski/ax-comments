@@ -1,6 +1,5 @@
-import {CommentsOptions} from './api.js';
-import {CommentsById} from './comments-by-id.js';
-import {CommentViewModel} from './comment-view-model.js';
+import {CommentsOptions} from '../options/options.js';
+import {CommentViewModel} from '../view-model/comment-view-model.js';
 
 export class OptionsProvider {
     private static readonly OPTIONS: WeakMap<HTMLElement, Required<CommentsOptions>> = new WeakMap();
@@ -21,11 +20,11 @@ export class CommentViewModelProvider {
 
     private static readonly COMMENTS: WeakMap<HTMLElement, CommentViewModel> = new WeakMap();
 
-    static set(container: HTMLElement, commentsById: CommentsById): CommentViewModel {
+    static set(container: HTMLElement): CommentViewModel {
         if (this.COMMENTS.has(container)) {
             console.warn('[CommentsProvider] Comments reference cannot be changed after initialization');
         } else {
-            this.COMMENTS.set(container, new CommentViewModel(commentsById));
+            this.COMMENTS.set(container, new CommentViewModel());
         }
         return CommentViewModelProvider.get(container);
     }

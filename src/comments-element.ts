@@ -1,23 +1,22 @@
-import {WebComponent} from './web-component.js';
-import {isMobileBrowser, isNil, noop} from './util.js';
-import {getDefaultOptions} from './default-options-factory.js';
-import {CommentTransformer} from './comment-transformer.js';
+import {WebComponent} from './common/web-component.js';
+import {isMobileBrowser, isNil, noop} from './common/util.js';
+import {getDefaultOptions} from './options/default-options-factory.js';
 import {EVENT_HANDLERS_MAP} from './events.js';
-import {CommentModel, CommentsOptions, SortKey} from './api.js';
-import {CommentModelEnriched} from './comments-by-id.js';
-import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from './provider.js';
+import {CommentModel, CommentsOptions, SortKey} from './options/options.js';
+import {CommentModelEnriched} from './view-model/comment-model-enriched.js';
+import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from './common/provider.js';
 import {CommentsElementEventHandler, ElementEventHandler} from './element-event-handler.js';
-import {CommentSorter} from './comment-sorter.js';
-import {NavigationElement} from './subcomponent/navigation-element.js';
-import {SpinnerFactory} from './subcomponent/spinner-factory.js';
-import {CommentViewModel, CommentViewModelEvent} from './comment-view-model.js';
-import {findParentsBySelector, hideElement} from './html-util.js';
+import {CommentSorter} from './view-model/comment-sorter.js';
+import {NavigationElement} from './thread/basic/navigation-element.js';
+import {SpinnerFactory} from './thread/basic/spinner-factory.js';
+import {CommentViewModel, CommentViewModelEvent} from './view-model/comment-view-model.js';
+import {hideElement} from './common/html-util.js';
+import {createElement} from './common/html-element-factory.js';
 import {STYLE_SHEET} from './css/stylesheet.js';
-import {CustomElement, defineCustomElement} from './custom-element.js';
+import {CustomElement, defineCustomElement} from './common/custom-element.js';
 import {createDynamicStylesheet} from './css/dynamic-stylesheet-factory.js';
-import {ToggleAllButtonElement} from './subcomponent/toggle-all-button-element.js';
-import {CommentingFieldElement} from './subcomponent/commenting-field-element.js';
-import {CommentElement} from './subcomponent/comment-element.js';
+import {CommentingFieldElement} from './thread/commenting-field/commenting-field-element.js';
+import {ThreadElement} from './thread/thread-element.js';
 
 //@CustomElement('ax-comments')
 export class CommentsElement extends HTMLElement implements WebComponent {
@@ -28,7 +27,6 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     #commentViewModel!: CommentViewModel;
     #elementEventHandler!: ElementEventHandler;
 
-    #commentTransformer!: CommentTransformer;
     #commentSorter!: CommentSorter;
     #spinnerFactory!: SpinnerFactory;
 
@@ -96,9 +94,8 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
     #initServices(): void {
         OptionsProvider.set(this.container, this.#options);
-        this.#commentViewModel = CommentViewModelProvider.set(this.container, {});
+        this.#commentViewModel = CommentViewModelProvider.set(this.container);
         this.#elementEventHandler = new CommentsElementEventHandler(this.container);
-        this.#commentTransformer = ServiceProvider.get(this.container, CommentTransformer);
         this.#commentSorter = ServiceProvider.get(this.container, CommentSorter);
         this.#spinnerFactory = ServiceProvider.get(this.container, SpinnerFactory);
     }
@@ -130,7 +127,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
     #initEmitterListeners(): void {
         this.#commentViewModel.subscribe(CommentViewModelEvent.COMMENT_ADDED, commentId => {
             const comment: CommentModelEnriched = this.#commentViewModel.getComment(commentId)!;
-            this.#createComment(comment);
+            if (!comment.parentId) this.#createThread(comment);
             this.#getNavigation().commentCount += 1;
         });
         this.#commentViewModel.subscribe(CommentViewModelEvent.COMMENT_DELETED, commentId => {
@@ -172,16 +169,13 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         // ========
 
         const success: (comments: CommentModel[]) => void = comments => {
-            // Convert comments to enriched data model
-            const commentModels: CommentModelEnriched[] = this.#commentTransformer.enrichMany([...comments]);
-
-            this.#commentViewModel.initComments(commentModels);
+            this.#commentViewModel.initComments(comments);
 
             // Mark data as fetched
             this.#dataFetched = true;
 
             // Render
-            this.#render(commentModels.length);
+            this.#render(this.#commentViewModel.size);
         };
         const error: () => void = noop;
 
@@ -195,9 +189,8 @@ export class CommentsElement extends HTMLElement implements WebComponent {
 
         const success: (comments: CommentModel[]) => void = comments => {
             comments.forEach(comment => {
-                const commentEnriched: CommentModelEnriched = this.#commentTransformer.enrich(comment);
-                this.#commentViewModel.addComment(commentEnriched)
-                this.#createComment(commentEnriched);
+                const commentEnriched: CommentModelEnriched = this.#commentViewModel.addComment(comment);
+                this.#createThread(commentEnriched);
             });
             spinner.remove();
         };
@@ -216,7 +209,7 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         }
 
         // Create comments and attachments
-        this.#createComments();
+        this.#createThreads();
         this.#getNavigation().commentCount = commentCount;
 
         this.#subscribeEvents();
@@ -232,77 +225,41 @@ export class CommentsElement extends HTMLElement implements WebComponent {
         return this.container.querySelector<NavigationElement>('ax-navigation')!
     }
 
-    #createComments() {
+    #createThreads() {
         // Create the list element before appending to DOM in order to reach better performance
         this.container.querySelector('#comment-list')?.remove();
-        const commentList: HTMLUListElement = document.createElement('ul');
-        commentList.id = 'comment-list';
-        commentList.classList.add('main');
+        const commentList: HTMLUListElement = createElement(`
+            <ul id="comment-list" class="main">
+            </ul>
+        `);
 
         // Divide comments into top level comments and replies
-        const rootComments: CommentModelEnriched[] = [];
-        const replies: CommentModelEnriched[] = [];
-        this.#commentViewModel.getComments().forEach(commentModel => {
-            if (isNil(commentModel.parentId)) {
-                rootComments.push(commentModel);
-            } else {
-                replies.push(commentModel);
-            }
-        });
-
-
-        this.#commentSorter.sortComments(rootComments, this.#currentSortKey);
-        this.#commentSorter.sortComments(replies, SortKey.OLDEST);
+        const rootComments: CommentModelEnriched[] = this.#commentViewModel.getRootComments(this.#commentSorter.getSorter(this.#currentSortKey));
 
         // Append list to DOM
         this.container.querySelector('[data-container="comments"]')!.prepend(commentList);
 
         // Append sorted top level comments
         rootComments.forEach(commentModel => {
-            this.#addComment(commentModel, commentList);
-        });
-
-        // Append replies in chronological order
-        replies.forEach(commentModel => {
-            this.#addComment(commentModel, commentList);
+            this.#addThread(commentModel, commentList);
         });
     }
 
-    #addComment(commentModel: CommentModelEnriched, commentList: HTMLElement = this.container.querySelector('#comment-list')!, prependComment: boolean = false): void {
-        const commentEl: CommentElement = CommentElement.create({commentModel: commentModel});
+    #addThread(commentModel: CommentModelEnriched, commentList: HTMLUListElement, prependThread: boolean = false): void {
+        const threadEl: ThreadElement = ThreadElement.create({commentModel: commentModel});
 
-        if (commentModel.parentId) { // Case: reply
-            const directParentEl: CommentElement = commentList.querySelector(`li.comment[data-id="${commentModel.parentId}"]`)!;
-
-            // Re-render action bar of direct parent element
-            directParentEl.reRenderCommentActionBar();
-
-            // Force replies into one level only
-            let outerMostParent: HTMLElement | null = findParentsBySelector(directParentEl, '.comment').last();
-            if (isNil(outerMostParent)) {
-                outerMostParent = directParentEl;
-            }
-
-            // Append element to DOM
-            const childCommentsEl: HTMLElement = outerMostParent!.querySelector('.child-comments')!;
-            childCommentsEl.append(commentEl);
-
-            // Update toggle all button
-            ToggleAllButtonElement.updateToggleAllButton(outerMostParent, this.#options);
-        } else { // Case: main level comment
-            if (prependComment) {
-                commentList.prepend(commentEl);
-            } else {
-                commentList.append(commentEl);
-            }
+        if (prependThread) {
+            commentList.prepend(threadEl);
+        } else {
+            commentList.append(threadEl);
         }
     }
 
-    #createComment(comment: CommentModelEnriched): void {
+    #createThread(comment: CommentModelEnriched): void {
         // Add comment element
-        const commentList: HTMLElement = this.container.querySelector('#comment-list')!;
-        const prependComment = this.#currentSortKey === SortKey.NEWEST;
-        this.#addComment(comment, commentList, prependComment);
+        const commentList: HTMLUListElement = this.container.querySelector('#comment-list')!;
+        const prependThread = this.#currentSortKey === SortKey.NEWEST;
+        this.#addThread(comment, commentList, prependThread);
     }
 
     #createHTML(): void {

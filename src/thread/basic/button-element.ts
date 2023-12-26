@@ -1,13 +1,13 @@
-import {CommentModel, CommentsOptions} from '../api.js';
-import {OptionsProvider, ServiceProvider} from '../provider.js';
+import {CommentModel, CommentsOptions} from '../../options/options.js';
+import {CommentViewModelProvider, OptionsProvider, ServiceProvider} from '../../common/provider.js';
 import {SpinnerFactory} from './spinner-factory.js';
-import {CustomElement, defineCustomElement} from '../custom-element.js';
-import {WebComponent} from '../web-component.js';
-import {getHostContainer} from '../html-util.js';
-import {CommentTransformer} from '../comment-transformer.js';
-import {CommentModelEnriched} from '../comments-by-id.js';
-import {ErrorFct, SuccessFct} from '../options/callbacks.js';
-import {isNil, noop} from '../util.js';
+import {CustomElement, defineCustomElement} from '../../common/custom-element.js';
+import {WebComponent} from '../../common/web-component.js';
+import {getHostContainer} from '../../common/html-util.js';
+import {CommentModelEnriched} from '../../view-model/comment-model-enriched.js';
+import {ErrorFct, SuccessFct} from '../../options/callbacks.js';
+import {isNil, noop} from '../../common/util.js';
+import {CommentViewModel} from '../../view-model/comment-view-model.js';
 
 //@CustomElement('ax-button', {extends: 'button'})
 export class ButtonElement extends HTMLButtonElement implements WebComponent {
@@ -75,9 +75,9 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
         return saveButton;
     }
 
-    static createUploadButton(options: Pick<ButtonElement, 'inline' | 'onclick'>): ButtonElement {
+    static createUploadButton(options: Pick<ButtonElement, 'inline'> & Pick<HTMLInputElement, 'onchange'>): ButtonElement {
         const uploadButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
-        Object.assign(uploadButton, options);
+        uploadButton.inline = options.inline;
         uploadButton.classList.add('upload', 'enabled');
 
         uploadButton.onInitialized = button => {
@@ -86,6 +86,8 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
             const fileInput: HTMLInputElement = document.createElement('input');
             fileInput.type = 'file';
             fileInput.multiple = true;
+            fileInput.title = button.#options.attachmentDropText;
+            fileInput.onchange = options.onchange;
 
             if (button.#options.uploadIconURL.length) {
                 uploadIcon.style.backgroundImage = `url("${button.#options.uploadIconURL}")`;
@@ -124,14 +126,20 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
         const upvoteButton: ButtonElement = document.createElement('button', {is: 'ax-button'}) as ButtonElement;
         upvoteButton.classList.add('action', 'upvote');
         upvoteButton.classList.toggle("disabled", !!commentModel.createdByCurrentUser || !!commentModel.isDeleted);
-        const upvoteCount: HTMLSpanElement = document.createElement('span');
-        upvoteCount.classList.add('upvote-count');
+        const upvoteCounter: HTMLSpanElement = document.createElement('span');
+        upvoteCounter.classList.add('upvote-count');
 
-        const reRenderUpvotes: () => void = () => {
-            if (commentModel.upvotedByCurrentUser) upvoteButton.classList.add('highlight-font');
+        const reRenderUpvotes: (
+            upvoteCount?: number,
+            upvotedByCurrentUser?: boolean
+        ) => void = (
+            upvoteCount = commentModel.upvoteCount,
+            upvotedByCurrentUser = commentModel.upvotedByCurrentUser
+        ) => {
+            if (upvotedByCurrentUser) upvoteButton.classList.add('highlight-font');
             else upvoteButton.classList.remove('highlight-font');
 
-            upvoteCount.textContent = isNil(commentModel.upvoteCount) ? '' : `${commentModel.upvoteCount}`;
+            upvoteCounter.textContent = isNil(upvoteCount) ? '' : `${upvoteCount}`;
         };
         reRenderUpvotes();
 
@@ -143,13 +151,13 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
                 upvoteIcon.classList.add('image');
             }
 
-            button.append(upvoteCount, upvoteIcon);
+            button.append(upvoteCounter, upvoteIcon);
         };
 
         const upvoteComment: (e: UIEvent) => void = e => {
             // Check whether user upvoted the comment or revoked the upvote
-            const previousUpvoteCount = commentModel.upvoteCount ?? 0;
-            let newUpvoteCount;
+            const previousUpvoteCount: number = commentModel.upvoteCount ?? 0;
+            let newUpvoteCount: number;
             if (commentModel.upvotedByCurrentUser) {
                 newUpvoteCount = previousUpvoteCount - 1;
             } else {
@@ -157,27 +165,29 @@ export class ButtonElement extends HTMLButtonElement implements WebComponent {
             }
 
             // Show changes immediately
-            commentModel.upvotedByCurrentUser = !commentModel.upvotedByCurrentUser;
-            commentModel.upvoteCount = newUpvoteCount;
-            reRenderUpvotes();
+            reRenderUpvotes(newUpvoteCount, !commentModel.upvotedByCurrentUser);
 
             // Reverse mapping
-            const commentTransformer = ServiceProvider.get(getHostContainer(upvoteButton), CommentTransformer);
+            const commentViewModel: CommentViewModel = CommentViewModelProvider.get(getHostContainer(upvoteButton));
 
             const success: SuccessFct<CommentModel> = updatedComment => {
-                const commentModel = commentTransformer.enrich(updatedComment);
-                Object.assign(commentModel, commentModel);
-                reRenderUpvotes();
+                reRenderUpvotes(updatedComment.upvoteCount, updatedComment.upvotedByCurrentUser);
+                commentViewModel.upvoteComment(updatedComment)
             };
 
             const error: ErrorFct = () => {
                 // Revert changes
-                commentModel.upvotedByCurrentUser = !commentModel.upvotedByCurrentUser;
-                commentModel.upvoteCount = previousUpvoteCount;
-                reRenderUpvotes();
+                reRenderUpvotes(previousUpvoteCount, !commentModel.upvotedByCurrentUser);
             };
 
-            upvoteButton.#options.upvoteComment(commentTransformer.deplete(commentModel), success, error);
+            upvoteButton.#options.upvoteComment(
+                commentModel.deplete({
+                    upvoteCount: newUpvoteCount,
+                    upvotedByCurrentUser: !commentModel.upvotedByCurrentUser
+                }),
+                success,
+                error
+            );
         };
 
         upvoteButton.onclick = upvoteComment;
